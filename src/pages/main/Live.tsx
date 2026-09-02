@@ -18,7 +18,10 @@ export default function Live() {
 
   if (!settings) return null;
   const name = (id: string) => models.find((m) => m.info.id === id)?.info.name ?? id;
-  const src = settings.asr.source_lang === "auto" ? t("overlay.auto") : settings.asr.source_lang.toUpperCase();
+  // 캡처 중에는 돌고 있는 세션의 설정을 보여준다 — 설정을 바꿔도 다음 세션부터 적용된다.
+  const srcLang = (view.capturing ? view.sourceLang ?? "auto" : settings.asr.source_lang);
+  const asrModel = (view.capturing ? view.modelId : null) ?? settings.asr.model_id;
+  const src = srcLang === "auto" ? t("overlay.auto") : srcLang.toUpperCase();
   const tgt = settings.overlay.subtitle_lang === "system" ? t("general.langSystem") : settings.overlay.subtitle_lang.toUpperCase();
 
   return (
@@ -35,7 +38,7 @@ export default function Live() {
 
       <div className="flex items-center gap-2 text-xs text-fg-muted">
         <span className={`h-2 w-2 shrink-0 rounded-full ${view.capturing ? "bg-accent" : "bg-fg-muted"}`} />
-        <span>{src} → {tgt} · {name(settings.asr.model_id)}{settings.translation.backend === "local" ? ` · ${name(settings.translation.local_model)}` : ""}</span>
+        <span>{src} → {tgt} · {name(asrModel)}{settings.translation.backend === "local" ? ` · ${name(settings.translation.local_model)}` : ""}</span>
         {view.gpuFallback && <Badge>{t("live.cpuFallback")}</Badge>}
         {view.lagging && <Badge>{t("live.lagging")}</Badge>}
       </div>

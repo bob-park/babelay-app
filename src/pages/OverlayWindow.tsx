@@ -51,7 +51,8 @@ export default function OverlayWindow() {
   // 2단계에는 번역이 없다. 표시 모드가 target이어도 원문을 보여준다.
   const last = view.finals[view.finals.length - 1];
   const partial = view.partial?.text ?? "";
-  const visible = adjust || (fresh && Boolean(last || partial));
+  // 정지 뒤에는 마지막 자막이 다시 뜨면 안 된다(캡처 중일 때만 보인다).
+  const visible = adjust || (view.capturing && fresh && Boolean(last || partial));
 
   return (
     <div className="flex h-full w-full items-end justify-center bg-transparent p-2">

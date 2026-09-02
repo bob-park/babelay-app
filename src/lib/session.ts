@@ -14,6 +14,9 @@ export interface SessionView {
   lagging: boolean;
   partial: Partial | null;
   finals: Final[];
+  /// 실행 중인 세션의 설정(설정 화면에서 바꿔도 안 흔들린다). idle 이면 null.
+  modelId: string | null;
+  sourceLang: string | null;
   lastEventAt: number;
 }
 
@@ -30,6 +33,8 @@ export const initialView: SessionView = {
   lagging: false,
   partial: null,
   finals: [],
+  modelId: null,
+  sourceLang: null,
   lastEventAt: 0,
 };
 
@@ -41,7 +46,7 @@ export function reduce(v: SessionView, ev: EngineEvent): SessionView {
   switch (ev.type) {
     case "started":
       // 새 세션은 빈 타임라인에서 시작한다. 지난 세션의 줄이 섞이면 시간축이 거짓말을 한다.
-      return { ...next, capturing: true, stopping: false, gpuFallback: ev.gpu_fallback, lagging: false, partial: null, finals: [] };
+      return { ...next, capturing: true, stopping: false, gpuFallback: ev.gpu_fallback, lagging: false, partial: null, finals: [], modelId: ev.model_id, sourceLang: ev.source_lang };
     case "partial":
       return { ...next, partial: { text: ev.text, lang: ev.lang, start_ms: ev.start_ms } };
     case "final": {
@@ -53,8 +58,8 @@ export function reduce(v: SessionView, ev: EngineEvent): SessionView {
     case "stopped":
       return { ...next, capturing: false, stopping: false, gpuFallback: false, lagging: false, partial: null };
     case "error":
-      // 배너는 bind가 띄운다. 뷰는 이벤트 시각만 갱신한다.
-      return next;
+      // 배너는 bind가 띄운다. 시작이 실패했으면 Stopped 가 안 오므로 버튼 잠금은 여기서 푼다.
+      return { ...next, stopping: false };
   }
 }
 

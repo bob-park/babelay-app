@@ -22,13 +22,18 @@ export default function Onboarding() {
 
   useEffect(() => {
     api.getPlatform().then((p) => { if (p !== "macos") setSteps((s) => s.filter((x) => x !== "permission")); }).catch(() => {});
-    api.checkAudioPermission().then(setPerm).catch(() => {});
     refresh();
   }, []);
 
   const last = steps.length - 1;
   const cur = Math.min(idx, last);
   const step = steps[cur];
+
+  // 권한 조회는 실제 탭을 만들어 TCC 프롬프트를 띄운다. 그 단계에 왔을 때 딱 한 번만.
+  useEffect(() => {
+    if (step === "permission" && perm === null) api.checkAudioPermission().then(setPerm).catch(() => {});
+  }, [step, perm]);
+
   const next = () => setIdx(Math.min(cur + 1, last));
   const back = () => { setWaiting(null); setIdx(Math.max(cur - 1, 0)); };
 
