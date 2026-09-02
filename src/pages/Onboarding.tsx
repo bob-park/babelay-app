@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ErrorBar } from "../components/ErrorBar";
 import { ModelRow } from "../components/ModelRow";
 import { PillButton } from "../components/PillButton";
 import { ASR_MODELS, BALANCED, LLM_MODELS } from "../lib/models.fixture";
@@ -35,6 +36,7 @@ export default function Onboarding() {
 
   return (
     <div className="flex h-full flex-col p-6">
+      <ErrorBar />
       <div className="mb-4 flex gap-4 text-[11px] font-bold uppercase tracking-[1.2px]">
         {steps.map((s, i) => (
           <span key={s} className={`flex items-center gap-1 ${i > idx ? "text-fg-muted" : "text-fg"}`}>

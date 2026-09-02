@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { useTranslation } from "react-i18next";
 import { PillButton } from "../../components/PillButton";
 import { api } from "../../lib/tauri";
@@ -10,11 +11,16 @@ const select = "rounded-md bg-surface px-3 py-2 text-sm text-fg";
 
 export default function OverlaySettings() {
   const { t } = useTranslation();
-  const { settings, update } = useSettings();
+  const { settings, update, setError } = useSettings();
   const [monitors, setMonitors] = useState<MonitorInfo[]>([]);
   const [adjust, setAdjust] = useState(false);
 
-  useEffect(() => { api.overlayGetMonitors().then(setMonitors); }, []);
+  useEffect(() => { api.overlayGetMonitors().then(setMonitors).catch(setError); }, []);
+  // 트레이·단축키로도 조정 모드가 꺼지므로 백엔드가 진실이다.
+  useEffect(() => {
+    const un = listen<boolean>("overlay-adjust-mode", (e) => setAdjust(e.payload));
+    return () => { un.then((f) => f()); };
+  }, []);
   // 페이지를 떠날 때는 무조건 끈다(이미 꺼져 있으면 무해).
   useEffect(() => () => { api.overlaySetAdjustMode(false); }, []);
 
@@ -22,10 +28,10 @@ export default function OverlaySettings() {
   const o = settings.overlay;
   const selectedId = o.monitor_id || monitors.find((m) => m.primary)?.id || "";
 
-  const toggleAdjust = async () => {
+  const toggleAdjust = () => {
     const next = !adjust;
-    setAdjust(next);
-    await api.overlaySetAdjustMode(next);
+    setAdjust(next); // 낙관적. 백엔드 이벤트가 곧 확정한다.
+    api.overlaySetAdjustMode(next).catch(setError);
   };
 
   const modes: DisplayMode[] = ["both", "source", "target"];

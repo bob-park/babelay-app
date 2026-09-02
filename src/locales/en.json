@@ -1,5 +1,6 @@
 {
   "app": { "name": "Babelay" },
+  "common": { "dismiss": "Dismiss" },
   "nav": { "live": "Live", "history": "History", "settings": "Settings", "collapse": "Collapse sidebar", "expand": "Expand sidebar" },
   "status": { "idle": "Idle", "capturing": "Capturing" },
   "live": { "start": "Start", "stop": "Stop", "overlayOn": "Overlay on", "overlayOff": "Overlay off", "empty": "Press Start to begin capturing system audio.", "shortcutHint": "Shortcut: {{capture}} to start/stop, {{overlay}} to toggle overlay" },

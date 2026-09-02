@@ -21,7 +21,10 @@ export default function OverlayWindow() {
     const win = getCurrentWindow();
     const commit = () => {
       window.clearTimeout(timer.current);
-      timer.current = window.setTimeout(() => api.overlayCommitPosition(), 300);
+      timer.current = window.setTimeout(
+        () => api.overlayCommitPosition().catch(useSettings.getState().setError),
+        300,
+      );
     };
     const subs = [win.onMoved(commit), win.onResized(commit)];
     return () => {

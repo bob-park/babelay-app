@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { HashRouter, Navigate, Route, Routes } from "react-router";
+import { ErrorBar } from "../components/ErrorBar";
 import { Sidebar } from "../components/Sidebar";
 import Live from "./main/Live";
 import History from "./main/History";
@@ -25,6 +26,7 @@ export default function MainApp() {
       <div className="flex h-full">
         <Sidebar collapsed={collapsed} onToggle={toggle} />
         <main className="flex-1 overflow-auto p-6">
+          <ErrorBar />
           <Routes>
             <Route path="/" element={<Navigate to="/live" replace />} />
             <Route path="/live" element={<Live />} />
