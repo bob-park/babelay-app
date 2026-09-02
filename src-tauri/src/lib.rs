@@ -22,9 +22,13 @@ pub fn run() {
             app.manage(SettingsState::new(path));
             app.manage(models::Downloads::default());
             app.manage(SessionState::default());
-            app.manage(history::open(
-                &app.path().app_local_data_dir()?.join("history.sqlite"),
-            )?);
+            // 기록은 있으면 좋은 기능이다. 열지 못해도 앱은 떠야 한다.
+            match history::open(&app.path().app_local_data_dir()?.join("history.sqlite")) {
+                Ok(db) => {
+                    app.manage(db);
+                }
+                Err(e) => eprintln!("babelay history: disabled: {e}"),
+            }
             babelay_engine::transcribe::install_logging_hooks();
             let settings = app.state::<SettingsState>().get();
             let handle = app.handle().clone();

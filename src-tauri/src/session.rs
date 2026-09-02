@@ -128,9 +128,7 @@ fn run_session(app: AppHandle, cfg: EngineConfig, gen: u64, log: (String, String
     crate::history::begin(&app, &log.0, &log.1, &log.2);
     // EngineHandle 이 tx 클론을 붙들고 있어 rx 는 스스로 닫히지 않는다. Stopped 에서 끊는다.
     for ev in rx {
-        if let EngineEvent::Final { .. } = &ev {
-            crate::history::on_final(&app, &ev);
-        }
+        crate::history::on_final(&app, &ev);
         let stopped = matches!(ev, EngineEvent::Stopped);
         let _ = app.emit("engine-event", &ev);
         if stopped {
@@ -180,8 +178,10 @@ pub fn stop_on_exit(app: &AppHandle) {
             drop(phase);
             let _ = drain.join();
         }
-        _ => {}
+        _ => return,
     }
+    // 중계 루프가 Stopped 를 보기 전에 프로세스가 죽을 수 있다. ended_at 은 여기서 닫는다.
+    crate::history::end(app);
 }
 
 pub fn toggle(app: &AppHandle) -> Result<(), String> {
