@@ -29,12 +29,15 @@ export default function Onboarding() {
   const cur = Math.min(idx, last);
   const step = steps[cur];
   const next = () => setIdx(Math.min(cur + 1, last));
-  const back = () => setIdx(Math.max(cur - 1, 0));
+  const back = () => { setWaiting(null); setIdx(Math.max(cur - 1, 0)); };
+
+  // 지금 이 단계에서 고른 모델. 다른 모델을 고르거나 다른 단계로 가면 대기 중인 다운로드는 무효다.
+  const chosenId = step === "asr" ? settings?.asr.model_id : step === "llm" ? settings?.translation.local_model : null;
 
   // 다운로드가 끝나 설치되면 자동으로 다음 단계
   useEffect(() => {
-    if (waiting && models.find((m) => m.info.id === waiting)?.installed) { setWaiting(null); next(); }
-  }, [models, waiting]);
+    if (waiting && waiting === chosenId && models.find((m) => m.info.id === waiting)?.installed) { setWaiting(null); next(); }
+  }, [models, waiting, chosenId]);
 
   if (!settings) return null;
 
@@ -46,7 +49,7 @@ export default function Onboarding() {
       ? <PillButton variant="primary" onClick={next}>{t("models.continue")}</PillButton>
       : chosen.download
         ? <PillButton variant="primary" disabled>{`${Math.round((chosen.download.received / Math.max(1, chosen.download.total)) * 100)}%`}</PillButton>
-        : <PillButton variant="primary" onClick={() => { setWaiting(chosen.info.id); download(chosen.info.id); }}>{t("models.continueWith", { size: formatSize(chosen.info.size_bytes) })}</PillButton>;
+        : <PillButton variant="primary" disabled={waiting === chosen.info.id} onClick={() => { setWaiting(chosen.info.id); download(chosen.info.id); }}>{t("models.continueWith", { size: formatSize(chosen.info.size_bytes) })}</PillButton>;
     const rows = models
       .filter((m) => m.info.kind === kind)
       .map((m) => <ModelRow key={m.info.id} status={m} selected={current === m.info.id} onSelect={() => select(m.info.id)} />);
