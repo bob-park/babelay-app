@@ -11,6 +11,7 @@ serde = { version = "1", features = ["derive"] }
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
 sha2 = "0.10"
 thiserror = "2"
+whisper-rs = "0.16"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 wasapi = "0.24"
@@ -18,3 +19,7 @@ wasapi = "0.24"
 [dev-dependencies]
 httpmock = "0.7"
 tempfile = "3"
+
+[features]
+metal = ["whisper-rs/metal"]
+cuda = ["whisper-rs/cuda"]

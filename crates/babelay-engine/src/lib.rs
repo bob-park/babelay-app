@@ -3,6 +3,7 @@ pub mod audio;
 pub mod capture;
 pub mod download;
 pub mod models;
+pub mod transcribe;
 
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
