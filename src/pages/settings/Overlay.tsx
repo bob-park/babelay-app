@@ -25,7 +25,7 @@ export default function OverlaySettings() {
 
   if (!settings) return null;
   const o = settings.overlay;
-  const toggleAdjust = () => { const next = !adjust; setAdjust(next); api.overlaySetAdjustMode(next).catch((e) => { setAdjust(!next); setError(String(e)); }); };
+  const toggleAdjust = () => { const next = !adjust; setAdjust(next); api.overlaySetAdjustMode(next).catch((e) => { setAdjust(!next); setError(e); }); };
 
   return (
     <div className="flex max-w-xl flex-col gap-4">

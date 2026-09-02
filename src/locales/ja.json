@@ -2,14 +2,13 @@
   "app": { "name": "Babelay" },
   "common": { "dismiss": "閉じる" },
   "nav": { "live": "ライブ", "history": "履歴", "settings": "設定", "collapse": "サイドバーを閉じる", "expand": "サイドバーを開く" },
-  "status": { "idle": "待機中", "capturing": "キャプチャ中" },
   "live": { "start": "開始", "stop": "停止", "overlay": "オーバーレイ" },
   "history": { "empty": "まだセッションがありません。" },
   "settings": { "general": "一般", "models": "モデル", "translation": "翻訳", "overlay": "オーバーレイ" },
   "general": {
     "theme": "テーマ", "themeSystem": "システム", "themeDark": "ダーク", "themeLight": "ライト",
     "language": "言語", "langSystem": "システム既定", "langKo": "韓国語", "langEn": "英語", "langJa": "日本語",
-    "shortcuts": "ショートカット", "shortcutCapture": "キャプチャ開始 / 停止", "shortcutOverlay": "オーバーレイ表示 / 非表示"
+    "shortcutCapture": "キャプチャ開始 / 停止", "shortcutOverlay": "オーバーレイ表示 / 非表示"
   },
   "models": {
     "desc": { "tiny": "最速・精度は低い", "base": "速い・短い文向け", "small": "速度と精度のバランス", "medium": "高精度", "large_v3_turbo": "高精度・多言語に強い", "large_v3": "最高精度", "gemma3_1b": "最速・単純な文向け", "qwen3_5_2b": "バランス良好", "gemma3_4b": "より自然な文", "qwen3_5_4b": "最高品質・日中韓に強い" },
@@ -20,7 +19,7 @@
     "download": "ダウンロード", "select": "選択", "delete": "削除"
   },
   "translation": {
-    "backend": "方式", "local": "ローカルモデル", "cloud": "クラウド API",
+    "local": "ローカルモデル", "cloud": "クラウド API",
     "currentModel": "現在のモデル", "changeInModels": "モデルページで変更",
     "provider": "プロバイダー", "model": "モデル", "baseUrl": "Base URL",
     "providerOpenai": "OpenAI", "providerAnthropic": "Anthropic", "providerGemini": "Google Gemini", "providerDeepl": "DeepL", "providerCustom": "カスタム (OpenAI 互換)"
@@ -35,15 +34,9 @@
     "sampleTarget": "モデルを実行する前に約2秒分の音声をバッファします。"
   },
   "onboarding": {
-    "stepLanguage": "言語", "stepPermission": "権限", "stepAsr": "文字起こしモデル", "stepLlm": "翻訳モデル", "stepDone": "完了",
     "next": "次へ", "back": "戻る", "skip": "スキップ", "finish": "始める",
-    "languageTitle": "言語を選択してください",
-    "permissionTitle": "システム音声のキャプチャを許可",
-    "permissionDesc": "Babelay が Mac の再生音を聞くには権限が必要です。ディスクには録音しません。",
+    "title": { "language": "言語", "permission": "システム音声のキャプチャを許可", "asr": "文字起こしモデル", "llm": "翻訳モデル", "done": "準備完了" },
     "permissionCheck": "権限を確認", "permissionGranted": "権限が許可されました", "permissionDenied": "権限が拒否されました", "permissionUnknown": "権限はキャプチャ開始時に確認します。",
-    "openSettings": "システム設定を開く",
-    "asrTitle": "文字起こしモデルを選択", "asrDesc": "この端末に合うおすすめモデルに balanced バッジを付けています。",
-    "llmTitle": "翻訳モデルを選択", "llmDesc": "スキップして後でクラウド API を使うこともできます。",
-    "doneTitle": "準備完了", "doneDesc": "ライブページで開始を押してください。"
+    "openSettings": "システム設定を開く"
   }
 }

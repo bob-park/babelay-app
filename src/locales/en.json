@@ -2,14 +2,13 @@
   "app": { "name": "Babelay" },
   "common": { "dismiss": "Dismiss" },
   "nav": { "live": "Live", "history": "History", "settings": "Settings", "collapse": "Collapse sidebar", "expand": "Expand sidebar" },
-  "status": { "idle": "Idle", "capturing": "Capturing" },
   "live": { "start": "Start", "stop": "Stop", "overlay": "Overlay" },
   "history": { "empty": "No sessions yet." },
   "settings": { "general": "General", "models": "Models", "translation": "Translation", "overlay": "Overlay" },
   "general": {
     "theme": "Theme", "themeSystem": "System", "themeDark": "Dark", "themeLight": "Light",
     "language": "Language", "langSystem": "System default", "langKo": "Korean", "langEn": "English", "langJa": "Japanese",
-    "shortcuts": "Shortcuts", "shortcutCapture": "Start / stop capture", "shortcutOverlay": "Show / hide overlay"
+    "shortcutCapture": "Start / stop capture", "shortcutOverlay": "Show / hide overlay"
   },
   "models": {
     "desc": { "tiny": "fastest, low accuracy", "base": "fast, short sentences", "small": "balanced speed and accuracy", "medium": "high accuracy", "large_v3_turbo": "high accuracy, strong multilingual", "large_v3": "best accuracy", "gemma3_1b": "fastest, simple sentences", "qwen3_5_2b": "good balance", "gemma3_4b": "better fluency", "qwen3_5_4b": "best quality, strong CJK" },
@@ -20,7 +19,7 @@
     "download": "Download", "select": "Select", "delete": "Delete"
   },
   "translation": {
-    "backend": "Backend", "local": "Local model", "cloud": "Cloud API",
+    "local": "Local model", "cloud": "Cloud API",
     "currentModel": "Current model", "changeInModels": "Change in Models",
     "provider": "Provider", "model": "Model", "baseUrl": "Base URL",
     "providerOpenai": "OpenAI", "providerAnthropic": "Anthropic", "providerGemini": "Google Gemini", "providerDeepl": "DeepL", "providerCustom": "Custom (OpenAI compatible)"
@@ -35,15 +34,9 @@
     "sampleTarget": "The model runs after buffering about two seconds of audio."
   },
   "onboarding": {
-    "stepLanguage": "Language", "stepPermission": "Permission", "stepAsr": "Transcription model", "stepLlm": "Translation model", "stepDone": "Done",
     "next": "Next", "back": "Back", "skip": "Skip", "finish": "Get started",
-    "languageTitle": "Choose your language",
-    "permissionTitle": "Allow system audio capture",
-    "permissionDesc": "Babelay needs permission to hear what your Mac is playing. Nothing is recorded to disk.",
+    "title": { "language": "Language", "permission": "Allow system audio capture", "asr": "Transcription model", "llm": "Translation model", "done": "All set" },
     "permissionCheck": "Check permission", "permissionGranted": "Permission granted", "permissionDenied": "Permission denied", "permissionUnknown": "Permission status will be checked when capture starts.",
-    "openSettings": "Open System Settings",
-    "asrTitle": "Choose a transcription model", "asrDesc": "The recommended model for this machine is marked balanced.",
-    "llmTitle": "Choose a translation model", "llmDesc": "You can skip this and use a cloud API later.",
-    "doneTitle": "All set", "doneDesc": "Open the Live page and press Start."
+    "openSettings": "Open System Settings"
   }
 }

@@ -3,103 +3,89 @@ import { useTranslation } from "react-i18next";
 import { ErrorBar } from "../components/ErrorBar";
 import { ModelRow } from "../components/ModelRow";
 import { PillButton } from "../components/PillButton";
-import { useModels } from "../lib/models";
+import { formatSize, useModels } from "../lib/models";
 import { api } from "../lib/tauri";
 import { useSettings } from "../lib/settings";
-import type { UiLang } from "../lib/types";
+import type { ModelKind, UiLang } from "../lib/types";
 
 type Step = "language" | "permission" | "asr" | "llm" | "done";
+const ALL: Step[] = ["language", "permission", "asr", "llm", "done"];
 
 export default function Onboarding() {
   const { t } = useTranslation();
-  const { settings, update } = useSettings();
-  const models = useModels((s) => s.models);
-  const [steps, setSteps] = useState<Step[]>(["language", "permission", "asr", "llm", "done"]);
+  const { settings, update, setError } = useSettings();
+  const { models, download, refresh } = useModels();
+  const [steps, setSteps] = useState<Step[]>(ALL);
   const [idx, setIdx] = useState(0);
   const [perm, setPerm] = useState<"granted" | "denied" | "unknown" | null>(null);
+  const [waiting, setWaiting] = useState<string | null>(null); // 다운로드 완료를 기다리는 모델 id
 
   useEffect(() => {
-    api.getPlatform().then((p) => { if (p !== "macos") setSteps(["language", "asr", "llm", "done"]); });
+    api.getPlatform().then((p) => { if (p !== "macos") setSteps((s) => s.filter((x) => x !== "permission")); }).catch(() => {});
+    refresh();
   }, []);
 
-  if (!settings) return null;
-  const step = steps[idx];
-  const next = () => setIdx((i) => Math.min(i + 1, steps.length - 1));
-  const back = () => setIdx((i) => Math.max(i - 1, 0));
+  const last = steps.length - 1;
+  const cur = Math.min(idx, last);
+  const step = steps[cur];
+  const next = () => setIdx(Math.min(cur + 1, last));
+  const back = () => setIdx(Math.max(cur - 1, 0));
 
-  const stepLabel: Record<Step, string> = {
-    language: t("onboarding.stepLanguage"), permission: t("onboarding.stepPermission"),
-    asr: t("onboarding.stepAsr"), llm: t("onboarding.stepLlm"), done: t("onboarding.stepDone"),
+  // 다운로드가 끝나 설치되면 자동으로 다음 단계
+  useEffect(() => {
+    if (waiting && models.find((m) => m.info.id === waiting)?.installed) { setWaiting(null); next(); }
+  }, [models, waiting]);
+
+  if (!settings) return null;
+
+  const modelStep = (kind: ModelKind) => {
+    const current = kind === "asr" ? settings.asr.model_id : settings.translation.local_model;
+    const chosen = models.find((m) => m.info.id === current);
+    const select = (id: string) => (kind === "asr" ? update({ asr: { model_id: id } }) : update({ translation: { local_model: id } }));
+    const primary = !chosen ? null : chosen.installed
+      ? <PillButton variant="primary" onClick={next}>{t("models.continue")}</PillButton>
+      : chosen.download
+        ? <PillButton variant="primary" disabled>{`${Math.round((chosen.download.received / Math.max(1, chosen.download.total)) * 100)}%`}</PillButton>
+        : <PillButton variant="primary" onClick={() => { setWaiting(chosen.info.id); download(chosen.info.id); }}>{t("models.continueWith", { size: formatSize(chosen.info.size_bytes) })}</PillButton>;
+    const rows = models
+      .filter((m) => m.info.kind === kind)
+      .map((m) => <ModelRow key={m.info.id} status={m} selected={current === m.info.id} onSelect={() => select(m.info.id)} />);
+    return { rows, primary };
   };
-  const langBtn = (v: UiLang, text: string) => (
-    <PillButton key={v} variant={settings.general.ui_language === v ? "primary" : "default"} onClick={() => update({ general: { ui_language: v } })}>{text}</PillButton>
-  );
+
+  const asr = step === "asr" ? modelStep("asr") : null;
+  const llm = step === "llm" ? modelStep("llm") : null;
+  const langBtn = (v: UiLang, text: string) => <PillButton key={v} variant={settings.general.ui_language === v ? "primary" : "default"} onClick={() => update({ general: { ui_language: v } })}>{text}</PillButton>;
 
   return (
-    <div className="flex h-full flex-col p-6">
+    <div className="flex h-full flex-col gap-4 p-6">
+      <div className="flex gap-1.5">{steps.map((s, i) => <span key={s} className={`h-1 flex-1 rounded-full ${i <= cur ? "bg-accent" : "bg-surface"}`} />)}</div>
       <ErrorBar />
-      <div className="mb-4 flex gap-4 text-[11px] font-bold uppercase tracking-[1.2px]">
-        {steps.map((s, i) => (
-          <span key={s} className={`flex items-center gap-1 ${i > idx ? "text-fg-muted" : "text-fg"}`}>
-            {i < idx ? <span className="rounded-full bg-accent px-1.5 text-accent-fg">✓</span> : `${i + 1} `}
-            {stepLabel[s]}
-          </span>
-        ))}
-      </div>
+      <h2 className="text-2xl font-bold">{t(`onboarding.title.${step}`)}</h2>
 
-      <div className="flex flex-1 flex-col gap-3 overflow-auto">
-        {step === "language" && (
-          <>
-            <h2 className="text-2xl font-bold">{t("onboarding.languageTitle")}</h2>
-            <div className="flex flex-wrap gap-2">
-              {langBtn("system", t("general.langSystem"))}{langBtn("ko", "한국어")}{langBtn("en", "English")}{langBtn("ja", "日本語")}
-            </div>
-          </>
-        )}
+      <div className="flex flex-1 flex-col gap-2 overflow-auto">
+        {step === "language" && <div className="flex flex-wrap gap-2">{langBtn("system", t("general.langSystem"))}{langBtn("ko", "한국어")}{langBtn("en", "English")}{langBtn("ja", "日本語")}</div>}
         {step === "permission" && (
-          <>
-            <h2 className="text-2xl font-bold">{t("onboarding.permissionTitle")}</h2>
-            <p className="text-fg-muted">{t("onboarding.permissionDesc")}</p>
+          <div className="flex flex-col gap-3">
             <div className="flex gap-2">
-              <PillButton variant="primary" onClick={() => api.checkAudioPermission().then(setPerm)}>{t("onboarding.permissionCheck")}</PillButton>
-              <PillButton variant="outline" onClick={() => api.openPrivacySettings()}>{t("onboarding.openSettings")}</PillButton>
+              <PillButton variant="primary" onClick={() => api.checkAudioPermission().then(setPerm).catch(setError)}>{t("onboarding.permissionCheck")}</PillButton>
+              <PillButton variant="outline" onClick={() => api.openPrivacySettings().catch(setError)}>{t("onboarding.openSettings")}</PillButton>
             </div>
-            {perm && <p className="text-sm">{t(`onboarding.permission${perm[0].toUpperCase()}${perm.slice(1)}`)}</p>}
-          </>
+            {perm && <p className="text-sm text-fg-muted">{t(`onboarding.permission${perm[0].toUpperCase()}${perm.slice(1)}`)}</p>}
+          </div>
         )}
-        {step === "asr" && (
-          <>
-            <h2 className="text-2xl font-bold">{t("onboarding.asrTitle")}</h2>
-            <p className="text-fg-muted">{t("onboarding.asrDesc")}</p>
-            {models.filter((m) => m.info.kind === "asr").map((m) => (
-              <ModelRow key={m.info.id} status={m} selected={settings.asr.model_id === m.info.id} onSelect={() => update({ asr: { model_id: m.info.id } })} />
-            ))}
-          </>
-        )}
-        {step === "llm" && (
-          <>
-            <h2 className="text-2xl font-bold">{t("onboarding.llmTitle")}</h2>
-            <p className="text-fg-muted">{t("onboarding.llmDesc")}</p>
-            {models.filter((m) => m.info.kind === "llm").map((m) => (
-              <ModelRow key={m.info.id} status={m} selected={settings.translation.local_model === m.info.id} onSelect={() => update({ translation: { local_model: m.info.id } })} />
-            ))}
-          </>
-        )}
-        {step === "done" && (
-          <>
-            <h2 className="text-2xl font-bold">{t("onboarding.doneTitle")}</h2>
-            <p className="text-fg-muted">{t("onboarding.doneDesc")}</p>
-          </>
-        )}
+        {asr?.rows}
+        {llm?.rows}
       </div>
 
-      <div className="mt-4 flex items-center justify-between">
-        <PillButton onClick={back} disabled={idx === 0}>{t("onboarding.back")}</PillButton>
+      <div className="flex items-center justify-between">
+        <PillButton variant="ghost" onClick={back} disabled={cur === 0}>{t("onboarding.back")}</PillButton>
         <div className="flex gap-2">
           {step === "llm" && <PillButton variant="outline" onClick={next}>{t("onboarding.skip")}</PillButton>}
-          {step === "done"
-            ? <PillButton variant="primary" onClick={() => api.finishOnboarding()}>{t("onboarding.finish")}</PillButton>
-            : <PillButton variant="primary" onClick={next}>{t("onboarding.next")}</PillButton>}
+          {step === "asr" && asr?.primary}
+          {step === "llm" && llm?.primary}
+          {(step === "language" || step === "permission") && <PillButton variant="primary" onClick={next}>{t("onboarding.next")}</PillButton>}
+          {step === "done" && <PillButton variant="primary" onClick={() => api.finishOnboarding().catch(setError)}>{t("onboarding.finish")}</PillButton>}
         </div>
       </div>
     </div>
