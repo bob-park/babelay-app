@@ -23,16 +23,17 @@ export default function MainApp() {
 
   return (
     <HashRouter>
-      <div className="flex h-full">
+      <div className="flex h-full bg-base">
         <Sidebar collapsed={collapsed} onToggle={toggle} />
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto px-6 py-5">
           <ErrorBar />
           <Routes>
             <Route path="/" element={<Navigate to="/live" replace />} />
             <Route path="/live" element={<Live />} />
             <Route path="/history" element={<History />} />
             <Route path="/settings/general" element={<General />} />
-            <Route path="/settings/transcription" element={<Transcription />} />
+            <Route path="/settings/models" element={<Transcription />} />
+            <Route path="/settings/transcription" element={<Navigate to="/settings/models" replace />} />
             <Route path="/settings/translation" element={<Translation />} />
             <Route path="/settings/overlay" element={<Overlay />} />
             <Route path="*" element={<Navigate to="/live" replace />} />

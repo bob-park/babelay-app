@@ -7,10 +7,12 @@
   --color-surface: #eeeeee;
   --color-surface-2: #e4e4e4;
   --color-fg: #121212;
-  --color-fg-muted: #5a5a5a;
+  --color-fg-muted: #6a6a6a;
   --color-accent: #1ed760;
   --color-accent-fg: #000000;
   --color-danger: #d33a4a;
+  --radius-card: 12px;
+  --radius-panel: 14px;
   --font-sans: -apple-system, "Helvetica Neue", Arial, "Hiragino Sans", "Apple SD Gothic Neo", "Meiryo", sans-serif;
 }
 
@@ -20,7 +22,7 @@
   --color-surface: #1f1f1f;
   --color-surface-2: #252525;
   --color-fg: #ffffff;
-  --color-fg-muted: #b3b3b3;
+  --color-fg-muted: #8a8a8a;
   --color-danger: #f3727f;
 }
 

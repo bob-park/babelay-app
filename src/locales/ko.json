@@ -5,7 +5,7 @@
   "status": { "idle": "대기", "capturing": "캡처 중" },
   "live": { "start": "시작", "stop": "정지", "overlayOn": "오버레이 켬", "overlayOff": "오버레이 끔", "empty": "시작을 누르면 시스템 오디오 캡처를 시작합니다.", "shortcutHint": "단축키: {{capture}} 시작/정지, {{overlay}} 오버레이 토글" },
   "history": { "empty": "아직 세션이 없습니다." },
-  "settings": { "general": "일반", "transcription": "전사 모델", "translation": "번역", "overlay": "오버레이" },
+  "settings": { "general": "일반", "models": "모델", "transcription": "전사 모델", "translation": "번역", "overlay": "오버레이" },
   "general": {
     "theme": "테마", "themeSystem": "시스템", "themeDark": "다크", "themeLight": "라이트",
     "language": "언어", "langSystem": "시스템 기본", "langKo": "한국어", "langEn": "영어", "langJa": "일본어",

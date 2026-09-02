@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes } from "react";
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "default" | "outline";
+  variant?: "primary" | "default" | "outline" | "ghost";
   size?: "sm" | "md";
 };
 
@@ -9,6 +9,7 @@ const variants = {
   primary: "bg-accent text-accent-fg hover:brightness-110",
   default: "bg-surface text-fg hover:bg-surface-2",
   outline: "bg-transparent text-fg border border-fg-muted/60 hover:bg-surface",
+  ghost: "bg-transparent text-fg-muted hover:text-fg",
 };
 
 export function PillButton({ variant = "default", size = "md", className = "", ...rest }: Props) {
@@ -16,7 +17,7 @@ export function PillButton({ variant = "default", size = "md", className = "", .
   return (
     <button
       {...rest}
-      className={`rounded-full font-bold uppercase tracking-[1.4px] transition disabled:opacity-40 ${pad} ${variants[variant]} ${className}`}
+      className={`rounded-full font-semibold transition disabled:opacity-40 ${pad} ${variants[variant]} ${className}`}
     />
   );
 }

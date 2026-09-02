@@ -5,7 +5,7 @@
   "status": { "idle": "待機中", "capturing": "キャプチャ中" },
   "live": { "start": "開始", "stop": "停止", "overlayOn": "オーバーレイ オン", "overlayOff": "オーバーレイ オフ", "empty": "開始を押すとシステム音声のキャプチャが始まります。", "shortcutHint": "ショートカット: {{capture}} 開始/停止, {{overlay}} オーバーレイ切替" },
   "history": { "empty": "まだセッションがありません。" },
-  "settings": { "general": "一般", "transcription": "文字起こしモデル", "translation": "翻訳", "overlay": "オーバーレイ" },
+  "settings": { "general": "一般", "models": "モデル", "transcription": "文字起こしモデル", "translation": "翻訳", "overlay": "オーバーレイ" },
   "general": {
     "theme": "テーマ", "themeSystem": "システム", "themeDark": "ダーク", "themeLight": "ライト",
     "language": "言語", "langSystem": "システム既定", "langKo": "韓国語", "langEn": "英語", "langJa": "日本語",
