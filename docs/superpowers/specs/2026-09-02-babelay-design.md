@@ -54,7 +54,7 @@ babelay-app/
 
 ```
 시스템 오디오 (mac: Core Audio Tap / win: WASAPI loopback)
-  → 리샘플: 48kHz stereo → 16kHz mono f32 (rubato)
+  → 리샘플: 48kHz stereo → 16kHz mono f32 (선형 보간 자체 구현, `audio.rs`)
   → 청커: 링버퍼 + 에너지 VAD, 무음 0.6s 또는 최대 8s에서 조각 확정
        확정 전에도 2s마다 미확정 버퍼를 전사해 Partial 발행
   → Whisper → Segment { id, t0_ms, t1_ms, lang, text }
@@ -82,7 +82,7 @@ babelay-app/
 
 공통 출력은 `f32` 인터리브 PCM과 샘플레이트다. OS별 모듈 둘.
 
-- **macOS**: Core Audio Process Tap. 전역 탭(모든 프로세스 출력)을 만들어 집계 장치에 붙이고 IOProc으로 읽는다. 바인딩은 `objc2-core-audio`를 쓰고, 부족한 부분은 `cc`로 컴파일하는 작은 ObjC 심으로 메운다. Info.plist의 `NSAudioCaptureUsageDescription`으로 첫 탭 생성 시 TCC 프롬프트가 뜬다.
+- **macOS**: Core Audio Process Tap. 탭 생성과 집계 장치 구성은 `cc`로 컴파일하는 ObjC 심(`crates/babelay-engine/csrc/tap.m`)이 맡고, Rust에는 C ABI 세 개(`babelay_tap_start` / `babelay_tap_stop` / `babelay_tap_probe`)로만 노출한다(objc2 바인딩 크레이트는 쓰지 않는다). 전역 탭(모든 프로세스 출력)을 만들고, 비공개 집계 장치에 기본 출력 장치를 서브 장치 겸 메인 서브 장치로, 탭을 탭 목록에 넣어 IOProc으로 읽는다(탭 자동 시작은 쓰지 않는다). Info.plist의 `NSAudioCaptureUsageDescription`으로 첫 탭 생성 시 TCC 프롬프트가 뜬다.
 - **Windows**: `wasapi` 크레이트로 기본 출력 장치 루프백. 기본 장치가 바뀌면 스트림을 재시작한다.
 
 권한 확인 API `check_audio_permission()`은 실제로 탭 생성을 시도해 결과를 돌려준다. 거부 시 프론트는 `x-apple.systempreferences:com.apple.preference.security?Privacy_AudioCapture` 딥링크 버튼을 보여준다.
@@ -102,7 +102,9 @@ babelay-app/
 
 ### 4.4 스레드와 백프레셔
 
-오디오 콜백 → 청커 스레드 → 전사 스레드 → 번역 워커(로컬은 스레드, 클라우드는 tokio 태스크). 전사가 밀리면 `Partial` 실행은 건너뛰고 `Final` 조각은 버리지 않는다. 미처리 큐가 10초를 넘으면 `Status::Lagging`을 발행한다.
+오디오 콜백 → 청커 스레드 → 전사 스레드 → 번역 워커(로컬은 스레드, 클라우드는 tokio 태스크). 프레임 채널은 unbounded라 과부하에서도 프레임을 버리지 않는다. 전사가 밀리면 `Partial` 실행은 건너뛰고 `Final` 조각은 버리지 않는다. 큐에 오래 머문 조각이 기준을 넘으면 `Lagging`을 한 번 발행하고 회복되면 해제한다 — 경고일 뿐 부하를 덜지는 않는다(load shedding 없음).
+
+전사 루프는 패닉에 안전하다. `catch_unwind`로 감싸 whisper 쪽이 패닉해도 세션은 `Error{code:"panic"}`을 발행하고 정상적으로 멈춘다.
 
 ### 4.5 오류
 
@@ -142,7 +144,7 @@ babelay-app/
 
 ### 5.4 balanced 추천 규칙
 
-시스템 정보는 `sysinfo`(RAM), macOS는 Apple Silicon 여부, Windows는 `nvml-wrapper` 초기화 성공 여부와 VRAM으로 판단한다. 메모리 기준은 Apple Silicon이면 통합 메모리, NVIDIA면 VRAM이다.
+`hardware::detect()`가 사양을 읽는다. 시스템 정보는 `sysinfo`(RAM), macOS는 Apple Silicon 여부, Windows는 `nvml-wrapper` 초기화 성공 여부와 VRAM으로 판단한다. 메모리 기준은 Apple Silicon이면 통합 메모리, NVIDIA면 VRAM이다. 실측 총량은 16 GiB를 15.9 GiB로 보고하므로 가장 가까운 GiB로 반올림한다. Windows에서 NVIDIA가 아닌 GPU(AMD·Intel)는 감지하지 않고 CPU 행으로 떨어진다.
 
 | 조건 | 전사 | 번역 |
 |---|---|---|
@@ -150,11 +152,11 @@ babelay-app/
 | GPU 있음, 메모리 ≥ 8 GB | small | qwen3.5-2b |
 | 그 외(CPU) | base | gemma3-1b |
 
-이 표는 `ponytail:` 주석으로 표시하고 실측 후 조정한다. 사양 기반 판정은 2단계에서 붙이고, 그 전까지 레지스트리의 고정값(small / qwen3.5-2b)을 `balanced`로 돌려준다.
+이 표는 `ponytail:` 주석으로 표시하고 실측 후 조정한다. 2단계부터 `balanced`는 이 표를 `hardware::detect()` 결과에 적용해 계산한다(레지스트리 고정값 아님).
 
 ### 5.5 설정 페이지 표시
 
-설정 > 모델 페이지는 세그먼트(전사/번역)로 목록을 전환한다. 온보딩과 같은 `ModelRow`에 배지 `사용 중`(초록), `설치됨`, `추천`(회색)을 붙이고, 메타 한 줄(용량 · 설명 · 속도 점 5개)을 둔다. 다운로드 중이면 메타에 퍼센트·받은 용량, 아래에 얇은 진행 바. 오른쪽 버튼: 미설치→다운로드, 다운로드 중→취소, 설치됨(미사용)→선택 + 삭제, 사용 중→없음(배지로 표시). 다른 모델을 내려받는 동안 다운로드 버튼은 비활성. 페이지 하단에 GPU 가속 토글. 감지된 사양 한 줄은 2단계에서 추가한다.
+설정 > 모델 페이지는 세그먼트(전사/번역)로 목록을 전환한다. 온보딩과 같은 `ModelRow`에 배지 `사용 중`(초록), `설치됨`, `추천`(회색)을 붙이고, 메타 한 줄(용량 · 설명 · 속도 점 5개)을 둔다. 다운로드 중이면 메타에 퍼센트·받은 용량, 아래에 얇은 진행 바. 오른쪽 버튼: 미설치→다운로드, 다운로드 중→취소, 설치됨(미사용)→선택 + 삭제, 사용 중→없음(배지로 표시). 다른 모델을 내려받는 동안 다운로드 버튼은 비활성. 페이지 하단에 GPU 가속 토글. 페이지 상단에는 `hardware::detect()`가 읽은 사양 한 줄(칩 · 메모리 · GPU)을 둔다.
 
 ## 6. 번역 프로바이더
 
@@ -200,7 +202,7 @@ react-i18next, `src/locales/{ko,en,ja}.json`. "시스템 기본"은 프론트에
 
 ### 7.4 오버레이 창
 
-조정 모드에서만 클릭 통과를 끄고 드래그 영역과 모서리 리사이즈 핸들을 보여준다. 위치는 `{monitor_id, x_ratio, y_ratio, w_ratio}`로 저장해 해상도가 바뀌어도 비율로 복원한다. 다른 모니터로 드래그하면 위치 확정 시 백엔드가 현재 모니터를 읽어 `monitor_id`를 갱신하므로 별도의 모니터 선택 UI는 없다. 최신 `Final`+번역 한 쌍과 그 아래 `Partial`을 흐리게 보여주고, 무음 6초 후 페이드아웃한다. 표시 모드에 따라 원문 줄 또는 번역 줄을 숨긴다.
+조정 모드에서만 클릭 통과를 끄고 드래그 영역과 모서리 리사이즈 핸들을 보여준다. 위치는 `{monitor_id, x_ratio, y_ratio, w_ratio}`로 저장해 해상도가 바뀌어도 비율로 복원한다. 다른 모니터로 드래그하면 위치 확정 시 백엔드가 현재 모니터를 읽어 `monitor_id`를 갱신하므로 별도의 모니터 선택 UI는 없다. 최신 `Final`+번역 한 쌍과 그 아래 `Partial`을 흐리게 보여주고, 무음 6초 후 페이드아웃한다. 표시 모드에 따라 원문 줄 또는 번역 줄을 숨긴다. 2단계에서는 번역기가 없으므로 오버레이가 원문만 보여준다(번역 줄은 3단계에서).
 
 ### 7.5 온보딩
 
@@ -223,13 +225,17 @@ overlay:     enabled, monitor_id, x_ratio, y_ratio, w_ratio,
 
 ## 8. 저장소
 
-`rusqlite`(bundled, fts5).
+`rusqlite`(bundled, fts5). 파일은 로컬 데이터 디렉터리의 `history.sqlite`.
 
 ```
 sessions(id, started_at, ended_at, src_lang, tgt_lang, asr_model, translator)
 segments(id, session_id, t0_ms, t1_ms, lang, src_text, tgt_text)
-segments_fts(src_text, tgt_text)   -- 히스토리 검색
+segments_fts(src_text, tgt_text)   -- 히스토리 검색, external content(content='segments')
 ```
+
+`segments_fts`는 `segments`를 원본으로 하는 external-content FTS5 테이블이고 INSERT·DELETE 트리거로 동기화한다. `tgt_text`는 2단계에서 항상 비어 있어 UPDATE 트리거가 없다 — 3단계에서 번역 결과를 나중에 써 넣는 순간 UPDATE 트리거를 추가해야 검색 색인이 맞는다.
+
+히스토리 DB는 시작 시 선택 사항이다. 열기에 실패해도 앱은 뜨고 캡처·오버레이는 그대로 동작하며 히스토리 기능만 빠진다.
 
 TXT/SRT 내보내기는 `segments`를 순서대로 포매팅하는 함수 하나.
 
@@ -267,7 +273,8 @@ NSIS 인스톨러, 서명 없음. cudart/cublas/cublasLt DLL을 `bundle.resource
 
 1. **앱 셸**: Tauri 2 + React 스캐폴드, 테마, i18n, 설정 파일, 접이식 사이드바, 트레이, 온보딩 골격, 오버레이 창(조정 모드 포함), 아이콘, 서명 설정 — 완료(2026-09-03)
 1.5. **모델 다운로드 + UI 리디자인**: 엔진 모델 레지스트리·다운로드(진행률·이어받기·취소·삭제), 설치/사용 중 배지, 모니터 선택 제거, 떠 있는 패널 사이드바·그룹 리스트 설정·모델 페이지·온보딩 리디자인, 문구 정리
-2. **전사 엔진**: 오디오 캡처(mac/win), 청커, whisper, 사양 기반 balanced, GPU 토글, 라이브 페이지, SQLite·히스토리
+2. **전사 엔진**: 오디오 캡처(mac/win), 청커, whisper, 사양 기반 balanced, GPU 토글, 라이브 페이지, SQLite·히스토리 — 완료(2026-09-03), 런타임 캡처 검증은 coreaudiod 재시작 후 보류
+   - Windows 캡처는 캡처 모듈만 크로스 타깃 `cargo check`로 확인했다(워크스페이스 전체 check는 `ring`이 막는다). 런타임 검증은 Windows 머신에서.
 3. **번역**: 로컬 llama, 클라우드 어댑터 5종, keyring, 설정 > 번역, 표시 모드
 
 ## 12. 범위 밖 (1차)
