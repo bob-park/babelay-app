@@ -22,7 +22,7 @@ export default function OverlaySettings() {
     return () => { un.then((f) => f()); };
   }, []);
   // 페이지를 떠날 때는 무조건 끈다(이미 꺼져 있으면 무해).
-  useEffect(() => () => { api.overlaySetAdjustMode(false); }, []);
+  useEffect(() => () => { api.overlaySetAdjustMode(false).catch(setError); }, []);
 
   if (!settings) return null;
   const o = settings.overlay;
