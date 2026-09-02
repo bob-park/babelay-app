@@ -6,6 +6,8 @@ const SILENCE_END: usize = TARGET_RATE as usize * 6 / 10; // 0.6s
 const MAX_CHUNK: usize = TARGET_RATE as usize * 8;
 const PARTIAL_EVERY: usize = TARGET_RATE as usize * 2;
 const DROP_SILENCE: usize = TARGET_RATE as usize; // 1s
+/// 이보다 말소리가 적은 조각은 전사해도 잡음뿐이라 버린다(300ms).
+const MIN_SPEECH: usize = TARGET_RATE as usize * 3 / 10;
 
 /// 인터리브 입력을 모노 16kHz 로 바꾸는 선형 보간 리샘플러.
 pub struct Resampler {
@@ -29,6 +31,10 @@ impl Resampler {
 
     /// 인터리브 입력을 모노 16kHz 로 변환해 `out` 에 덧붙인다.
     pub fn push(&mut self, interleaved: &[f32], out: &mut Vec<f32>) {
+        // rate 0 이면 step 이 0 이라 보간 루프가 영원히 돈다. 아무것도 내지 않고 나간다.
+        if self.src_rate == 0 {
+            return;
+        }
         let ch = self.channels as usize;
         let mono: Vec<f32> = interleaved
             .chunks_exact(ch)
@@ -81,6 +87,7 @@ pub struct Chunker {
     buf: Vec<f32>,
     consumed: u64, // 세션 시작부터 버퍼 앞까지 흘려보낸 샘플 수
     speech_seen: bool,
+    speech_run: usize, // 현재 조각에 담긴 말소리 샘플 수
     silence_run: usize,
     since_partial: usize,
     pending: Vec<f32>, // 20ms 프레임 미만 잔여
@@ -98,6 +105,7 @@ impl Chunker {
             buf: Vec::new(),
             consumed: 0,
             speech_seen: false,
+            speech_run: 0,
             silence_run: 0,
             since_partial: 0,
             pending: Vec::new(),
@@ -119,6 +127,7 @@ impl Chunker {
             self.buf.extend_from_slice(frame);
             if speech {
                 self.speech_seen = true;
+                self.speech_run += FRAME;
                 self.silence_run = 0;
             } else {
                 self.silence_run += FRAME;
@@ -135,7 +144,7 @@ impl Chunker {
             // 무음만 쌓이는 동안은 partial 타이머를 돌리지 않는다.
             self.since_partial += FRAME;
             if self.silence_run >= SILENCE_END || self.buf.len() >= MAX_CHUNK {
-                events.push(self.finalize());
+                events.extend(self.finalize());
             } else if self.since_partial >= PARTIAL_EVERY {
                 self.since_partial = 0;
                 events.push(ChunkEvent::Partial {
@@ -148,24 +157,27 @@ impl Chunker {
         events
     }
 
-    fn finalize(&mut self) -> ChunkEvent {
+    /// 조각을 닫는다. 말소리가 `MIN_SPEECH` 에 못 미치면 버리고 `None`.
+    fn finalize(&mut self) -> Option<ChunkEvent> {
         let pcm = std::mem::take(&mut self.buf);
         let start_ms = Self::ms(self.consumed);
         self.consumed += pcm.len() as u64;
         let end_ms = Self::ms(self.consumed);
+        let enough = self.speech_run >= MIN_SPEECH;
         self.speech_seen = false;
+        self.speech_run = 0;
         self.silence_run = 0;
         self.since_partial = 0;
-        ChunkEvent::Final {
+        enough.then_some(ChunkEvent::Final {
             pcm,
             start_ms,
             end_ms,
-        }
+        })
     }
 
     pub fn flush(&mut self) -> Option<ChunkEvent> {
         if self.speech_seen && !self.buf.is_empty() {
-            Some(self.finalize())
+            self.finalize()
         } else {
             None
         }
@@ -235,6 +247,26 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn resampler_rejects_zero_rate() {
+        let mut r = Resampler::new(0, 1);
+        let mut out = Vec::new();
+        r.push(&[0.1; 100], &mut out);
+        assert!(out.is_empty(), "rate 0 은 출력 없이 즉시 반환해야 한다");
+    }
+
+    #[test]
+    fn chunker_drops_chunks_with_too_little_speech() {
+        let mut c = Chunker::new();
+        let mut ev = c.push(&sine(TARGET_RATE, 0.1, 0.3));
+        ev.extend(c.push(&silence(0.7)));
+        assert!(
+            !ev.iter().any(|e| matches!(e, ChunkEvent::Final { .. })),
+            "100ms 말소리는 Final 로 나가면 안 된다"
+        );
+        assert!(c.flush().is_none());
     }
 
     #[test]

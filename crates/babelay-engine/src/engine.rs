@@ -15,6 +15,8 @@ const LAG_CLEAR: Duration = Duration::from_secs(2);
 
 pub struct EngineConfig {
     pub model_path: PathBuf,
+    /// 이 세션이 쓰는 모델 id. `Started` 로 실려 나가 UI 가 실행 중인 설정을 보여준다.
+    pub model_id: String,
     pub use_gpu: bool,
     /// None 이면 자동 감지.
     pub source_lang: Option<String>,
@@ -26,6 +28,8 @@ pub enum EngineEvent {
     Started {
         gpu_active: bool,
         gpu_fallback: bool,
+        model_id: String,
+        source_lang: Option<String>,
     },
     Partial {
         text: String,
@@ -68,9 +72,19 @@ impl EngineHandle {
     /// **UI 스레드에서 호출하면 안 된다** — 호출자가 백그라운드 스레드에서 돌려야 한다.
     /// 반환 시점에는 `Stopped` 가 정확히 한 번 발행되어 있다.
     pub fn stop(mut self) {
-        // 캡처를 먼저 멈춰야 sink(= frames_tx 클론)가 드롭되고 청커 루프가 끝난다.
+        self.stop_capture();
+        self.drain();
+    }
+
+    /// 캡처만 즉시 멈춘다(오디오 탭 해제). 큐에 남은 조각은 그대로 두므로 빠르다.
+    /// sink(= frames_tx 클론)가 드롭돼야 청커 루프가 끝난다.
+    pub fn stop_capture(&mut self) {
         self.source.stop();
         drop(self.frames_tx.take());
+    }
+
+    /// 남은 큐를 다 비울 때까지 블로킹한다. `stop_capture` 뒤에 호출한다.
+    pub fn drain(mut self) {
         if let Some(h) = self.chunker.take() {
             let _ = h.join();
         }
@@ -144,6 +158,8 @@ pub fn start(
     let _ = tx.send(EngineEvent::Started {
         gpu_active,
         gpu_fallback,
+        model_id: cfg.model_id,
+        source_lang: cfg.source_lang,
     });
     Ok(EngineHandle {
         source,
@@ -158,7 +174,18 @@ fn chunker_loop(rx: Receiver<Frame>, tx: SyncSender<Job>) {
     let mut resampler: Option<Resampler> = None;
     let mut chunker = Chunker::new();
     let mut mono = Vec::new();
+    let mut warned = false;
     for f in rx {
+        if f.rate == 0 || f.channels == 0 {
+            if !warned {
+                warned = true;
+                eprintln!(
+                    "babelay: 잘못된 오디오 포맷(rate {}, channels {}) — 프레임을 버린다",
+                    f.rate, f.channels
+                );
+            }
+            continue;
+        }
         let r = resampler.get_or_insert_with(|| Resampler::new(f.rate, f.channels));
         mono.clear();
         r.push(&f.samples, &mut mono);
@@ -373,6 +400,7 @@ mod tests {
         let (tx, rx) = mpsc::channel();
         let cfg = EngineConfig {
             model_path: "unused".into(),
+            model_id: "test-model".into(),
             use_gpu: false,
             source_lang: None,
         };
@@ -430,6 +458,7 @@ mod tests {
         let (tx, rx) = mpsc::channel();
         let cfg = EngineConfig {
             model_path: "unused".into(),
+            model_id: "test-model".into(),
             use_gpu: false,
             source_lang: None,
         };

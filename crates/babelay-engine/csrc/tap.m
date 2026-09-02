@@ -122,6 +122,10 @@ int babelay_tap_start(babelay_cb cb, void *user, void **handle_out) {
         babelay_tap_stop(h);
         return -2;  // float32 아닌 탭 포맷은 지원하지 않는다
     }
+    if (asbd.mSampleRate <= 0 || asbd.mChannelsPerFrame == 0) {
+        babelay_tap_stop(h);
+        return -2;  // 레이트/채널 0 은 리샘플러가 다룰 수 없다
+    }
     h->channels = asbd.mChannelsPerFrame;
     h->rate = asbd.mSampleRate;
     h->interleaved = (asbd.mFormatFlags & kAudioFormatFlagIsNonInterleaved) == 0;
