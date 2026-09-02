@@ -1,0 +1,86 @@
+<style>
+  .sp { width:100%; height:100%; min-height:320px; background:#121212; color:#fff; font-family:-apple-system,"Helvetica Neue",Arial,"Hiragino Sans","Apple SD Gothic Neo",sans-serif; font-size:11px; display:flex; flex-direction:column; }
+  .sp .bar { height:20px; background:#181818; display:flex; align-items:center; gap:6px; padding:0 8px; flex:none; }
+  .sp .dot { width:8px; height:8px; border-radius:50%; background:#3a3a3a; }
+  .sp .steps { display:flex; gap:14px; padding:10px 16px 0; color:#7c7c7c; font-size:10px; }
+  .sp .steps .on { color:#fff; font-weight:700; }
+  .sp .steps .done { color:#1ed760; }
+  .sp .body { padding:10px 16px; flex:1; display:flex; flex-direction:column; gap:8px; }
+  .sp h4 { margin:0; font-size:14px; font-weight:700; }
+  .sp .muted { color:#b3b3b3; }
+  .sp .row { display:flex; gap:8px; align-items:center; }
+  .sp .pill { background:#1f1f1f; color:#fff; border-radius:9999px; padding:5px 12px; font-size:9px; letter-spacing:1.2px; text-transform:uppercase; font-weight:700; }
+  .sp .pill.go { background:#1ed760; color:#000; }
+  .sp .badge { background:#1ed760; color:#000; border-radius:2px; padding:1px 5px; font-size:8.5px; font-weight:700; margin-left:6px; }
+  .sp .badge.gray { background:#4d4d4d; color:#fff; }
+  /* list rows */
+  .sp .item { background:#181818; border-radius:8px; padding:8px 10px; display:grid; grid-template-columns: 14px 1.4fr 1.6fr .6fr .8fr; gap:8px; align-items:center; }
+  .sp .item.sel { box-shadow: 0 0 0 1px #1ed760 inset; background:#1f1f1f; }
+  .sp .radio { width:10px; height:10px; border-radius:50%; border:1.5px solid #7c7c7c; }
+  .sp .item.sel .radio { border-color:#1ed760; background:#1ed760; }
+  .sp .name { font-weight:700; }
+  .sp .spd { display:inline-block; width:36px; height:5px; border-radius:3px; background:#333; position:relative; vertical-align:middle; margin-right:4px; }
+  .sp .spd i { position:absolute; left:0; top:0; bottom:0; border-radius:3px; background:#b3b3b3; }
+  .sp .foot { margin-top:auto; display:flex; justify-content:space-between; align-items:center; }
+  /* card grid */
+  .sp .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; }
+  .sp .mcard { background:#181818; border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:4px; }
+  .sp .mcard.sel { box-shadow: 0 0 0 1px #1ed760 inset; background:#1f1f1f; }
+</style>
+
+<h2>온보딩 — 전사 모델 선택 화면은 어떤 형태가 좋을까요?</h2>
+<p class="subtitle">자막 스타일은 A로 확정했습니다. 온보딩 순서는 <b>언어 → 권한 → 전사 모델 → 번역 모델(건너뛰기 가능) → 완료</b>로 제안합니다. 아래는 그 중 "전사 모델" 단계입니다. 모델명·특징·용량·속도·balanced 배지를 어떻게 배치할지 골라주세요.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="sp">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="steps"><span class="done">✓ 언어</span><span class="done">✓ 권한</span><span class="on">3 전사 모델</span><span>4 번역 모델</span><span>5 완료</span></div>
+        <div class="body">
+          <h4>전사 모델을 선택하세요</h4>
+          <div class="muted">이 Mac(Apple M2 · 16GB · Metal)에 맞는 추천에 배지를 표시했습니다.</div>
+          <div class="item"><span class="radio"></span><span class="name">Whisper Tiny</span><span class="muted">가장 빠름 · 정확도 낮음</span><span class="muted">75 MB</span><span><span class="spd"><i style="width:100%"></i></span>매우 빠름</span></div>
+          <div class="item"><span class="radio"></span><span class="name">Whisper Base</span><span class="muted">빠름 · 짧은 문장에 적합</span><span class="muted">142 MB</span><span><span class="spd"><i style="width:85%"></i></span>빠름</span></div>
+          <div class="item sel"><span class="radio"></span><span class="name">Whisper Small<span class="badge">balanced</span></span><span class="muted">속도·정확도 균형</span><span class="muted">466 MB</span><span><span class="spd"><i style="width:65%"></i></span>보통</span></div>
+          <div class="item"><span class="radio"></span><span class="name">Whisper Large v3 Turbo</span><span class="muted">높은 정확도 · 다국어 강함</span><span class="muted">1.6 GB</span><span><span class="spd"><i style="width:40%"></i></span>느림</span></div>
+          <div class="foot"><span class="pill">이전</span><span class="row"><span class="muted">466 MB 다운로드</span><span class="pill go">다운로드 후 다음</span></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 리스트 행 (테이블형)</h3>
+      <p>한 줄에 이름·특징·용량·속도. 모델이 6~8개여도 스크롤 없이 비교 가능. 설정 페이지의 모델 목록과 동일한 컴포넌트를 재사용.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="sp">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="steps"><span class="done">✓ 언어</span><span class="done">✓ 권한</span><span class="on">3 전사 모델</span><span>4 번역 모델</span><span>5 완료</span></div>
+        <div class="body">
+          <h4>전사 모델을 선택하세요</h4>
+          <div class="muted">이 Mac(Apple M2 · 16GB · Metal)에 맞는 추천에 배지를 표시했습니다.</div>
+          <div class="grid">
+            <div class="mcard"><span class="name">Tiny</span><span class="muted">가장 빠름 · 정확도 낮음</span><span class="muted">75 MB</span><span><span class="spd"><i style="width:100%"></i></span>매우 빠름</span></div>
+            <div class="mcard"><span class="name">Base</span><span class="muted">빠름 · 짧은 문장</span><span class="muted">142 MB</span><span><span class="spd"><i style="width:85%"></i></span>빠름</span></div>
+            <div class="mcard sel"><span class="name">Small<span class="badge">balanced</span></span><span class="muted">속도·정확도 균형</span><span class="muted">466 MB</span><span><span class="spd"><i style="width:65%"></i></span>보통</span></div>
+            <div class="mcard"><span class="name">Medium</span><span class="muted">정확도 높음</span><span class="muted">1.5 GB</span><span><span class="spd"><i style="width:45%"></i></span>느림</span></div>
+            <div class="mcard"><span class="name">Large v3 Turbo</span><span class="muted">다국어 강함</span><span class="muted">1.6 GB</span><span><span class="spd"><i style="width:40%"></i></span>느림</span></div>
+            <div class="mcard"><span class="name">Large v3</span><span class="muted">최고 정확도</span><span class="muted">3.1 GB</span><span><span class="spd"><i style="width:20%"></i></span>매우 느림</span></div>
+          </div>
+          <div class="foot"><span class="pill">이전</span><span class="row"><span class="muted">466 MB 다운로드</span><span class="pill go">다운로드 후 다음</span></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 카드 그리드</h3>
+      <p>3열 카드. 시각적으로 풍성하지만 속도·용량을 가로로 비교하기 어렵고, 창이 좁으면 2열로 접혀 스크롤이 생김.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;">제 추천은 <b>A</b>입니다. 비교가 목적인 목록이라 열 정렬이 중요하고, 설정 페이지에서도 같은 행 컴포넌트에 "설치됨 / 사용 중" 배지만 얹으면 됩니다.</p>

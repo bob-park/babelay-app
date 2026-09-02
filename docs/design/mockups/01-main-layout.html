@@ -1,0 +1,116 @@
+<style>
+  .sp { background:#121212; color:#fff; font-family: -apple-system, "Helvetica Neue", Arial, "Hiragino Sans", "Apple SD Gothic Neo", sans-serif; border-radius:8px; overflow:hidden; box-shadow: rgba(0,0,0,0.5) 0 8px 24px; font-size:11px; }
+  .sp .bar { height:22px; background:#181818; display:flex; align-items:center; gap:6px; padding:0 8px; }
+  .sp .dot { width:8px; height:8px; border-radius:50%; background:#3a3a3a; }
+  .sp .side { background:#121212; width:120px; padding:10px; display:flex; flex-direction:column; gap:6px; border-right:1px solid #1f1f1f; }
+  .sp .nav { padding:6px 8px; border-radius:6px; color:#b3b3b3; }
+  .sp .nav.on { color:#fff; font-weight:700; background:#1f1f1f; }
+  .sp .main { flex:1; padding:12px; display:flex; flex-direction:column; gap:8px; background:#121212; }
+  .sp .card { background:#181818; border-radius:8px; padding:10px; }
+  .sp .line { display:flex; gap:8px; align-items:flex-start; padding:4px 0; }
+  .sp .t { color:#7c7c7c; width:34px; flex:none; font-variant-numeric: tabular-nums; }
+  .sp .src { color:#b3b3b3; }
+  .sp .tr { color:#fff; font-weight:600; }
+  .sp .pill { background:#1f1f1f; color:#fff; border-radius:9999px; padding:4px 10px; font-size:9px; letter-spacing:1.2px; text-transform:uppercase; font-weight:700; display:inline-block; }
+  .sp .pill.go { background:#1ed760; color:#000; }
+  .sp .row { display:flex; gap:8px; align-items:center; }
+  .sp .muted { color:#b3b3b3; }
+  .sp .tabs { display:flex; gap:4px; padding:8px 12px 0; background:#121212; }
+  .sp .tab { padding:6px 12px; border-radius:9999px; color:#b3b3b3; }
+  .sp .tab.on { background:#1f1f1f; color:#fff; font-weight:700; }
+  .sp .status { margin-top:auto; padding:8px; background:#181818; border-radius:8px; display:flex; align-items:center; gap:6px; color:#b3b3b3; }
+  .sp .grn { width:6px; height:6px; border-radius:50%; background:#1ed760; }
+  .sp .modal { position:absolute; inset:24px 40px; background:#252525; border-radius:8px; box-shadow: rgba(0,0,0,0.5) 0 8px 24px; padding:12px; }
+</style>
+
+<h2>메인 창 레이아웃 — 어느 구조가 맞을까요?</h2>
+<p class="subtitle">디자인 시스템(docs/design/spotify-design.md)의 근흑 배경 + 초록 액센트 + 필 버튼을 적용한 와이어프레임입니다. 실제 창 크기는 약 960×640을 가정합니다.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="sp" style="height:300px; display:flex; flex-direction:column;">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div style="display:flex; flex:1;">
+          <div class="side">
+            <div style="color:#1ed760; font-weight:700; margin-bottom:6px;">● Babelay</div>
+            <div class="nav on">라이브</div>
+            <div class="nav">히스토리</div>
+            <div class="nav">설정</div>
+            <div class="status"><span class="grn"></span> 캡처 중 · whisper small</div>
+          </div>
+          <div class="main">
+            <div class="row" style="justify-content:space-between;">
+              <div class="row"><span class="pill go">■ 정지</span><span class="pill">오버레이 켬</span></div>
+              <span class="muted">EN → KO · Qwen 3.5 4B</span>
+            </div>
+            <div class="card" style="flex:1;">
+              <div class="line"><span class="t">00:12</span><div><div class="src">So the key idea here is latency.</div><div class="tr">그래서 여기서 핵심은 지연 시간입니다.</div></div></div>
+              <div class="line"><span class="t">00:15</span><div><div class="src">We buffer about two seconds of audio.</div><div class="tr">약 2초 분량의 오디오를 버퍼링합니다.</div></div></div>
+              <div class="line"><span class="t">00:18</span><div><div class="src" style="color:#7c7c7c;">and then we run the mod…</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 좌측 사이드바 내비게이션</h3>
+      <p>라이브 / 히스토리 / 설정을 사이드바로 전환. 캡처 상태와 현재 모델을 사이드바 하단에 상시 표시. Spotify 레이아웃과 가장 유사.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="sp" style="height:300px; display:flex; flex-direction:column;">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="tabs"><span style="color:#1ed760; font-weight:700; padding:6px 8px 6px 0;">● Babelay</span><span class="tab on">라이브</span><span class="tab">히스토리</span><span class="tab">설정</span></div>
+        <div class="main">
+          <div class="row" style="justify-content:space-between;">
+            <div class="row"><span class="pill go">■ 정지</span><span class="pill">오버레이 켬</span></div>
+            <span class="muted"><span class="grn" style="display:inline-block;"></span> EN → KO · whisper small · Qwen 3.5 4B</span>
+          </div>
+          <div class="card" style="flex:1;">
+            <div class="line"><span class="t">00:12</span><div><div class="src">So the key idea here is latency.</div><div class="tr">그래서 여기서 핵심은 지연 시간입니다.</div></div></div>
+            <div class="line"><span class="t">00:15</span><div><div class="src">We buffer about two seconds of audio.</div><div class="tr">약 2초 분량의 오디오를 버퍼링합니다.</div></div></div>
+            <div class="line"><span class="t">00:18</span><div><div class="src" style="color:#7c7c7c;">and then we run the mod…</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 상단 필 탭</h3>
+      <p>사이드바 없이 상단 필 탭으로 전환. 콘텐츠 폭이 넓어 로그 읽기에 유리하고, 창을 작게 줄여도 잘 맞음.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="sp" style="height:300px; display:flex; flex-direction:column; position:relative;">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="main">
+          <div class="row" style="justify-content:space-between;">
+            <div class="row"><span style="color:#1ed760; font-weight:700;">● Babelay</span><span class="pill go">■ 정지</span></div>
+            <div class="row"><span class="pill">히스토리</span><span class="pill">⚙ 설정</span></div>
+          </div>
+          <div class="card" style="flex:1;">
+            <div class="line"><span class="t">00:12</span><div><div class="src">So the key idea here is latency.</div><div class="tr">그래서 여기서 핵심은 지연 시간입니다.</div></div></div>
+            <div class="line"><span class="t">00:15</span><div><div class="src">We buffer about two seconds of audio.</div><div class="tr">약 2초 분량의 오디오를 버퍼링합니다.</div></div></div>
+          </div>
+        </div>
+        <div class="modal">
+          <div style="font-weight:700; margin-bottom:8px;">설정</div>
+          <div class="row" style="gap:6px; margin-bottom:8px;"><span class="tab on">일반</span><span class="tab">모델</span><span class="tab">번역</span><span class="tab">오버레이</span></div>
+          <div class="muted">테마 · 언어 · 시작 시 실행…</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 라이브 단일 화면 + 설정/히스토리는 모달</h3>
+      <p>메인 창은 항상 라이브 로그. 설정과 히스토리는 위에 뜨는 모달. 가장 단순하지만 설정 항목이 많아지면 모달이 답답해짐.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;">제 추천은 <b>A</b>입니다. 설정 항목(모델·번역·오버레이·GPU)이 많아 사이드바 하위 항목으로 펼치기 좋고, 캡처 상태를 항상 볼 수 있습니다.</p>

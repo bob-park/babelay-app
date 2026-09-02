@@ -1,0 +1,93 @@
+<style>
+  .sp { width:100%; height:100%; min-height:300px; background:#121212; color:#fff; font-family:-apple-system,"Helvetica Neue",Arial,"Hiragino Sans","Apple SD Gothic Neo",sans-serif; font-size:11px; display:flex; }
+  .sp .side { width:96px; padding:10px; border-right:1px solid #1f1f1f; display:flex; flex-direction:column; gap:4px; flex:none; }
+  .sp .nav { padding:5px 8px; border-radius:6px; color:#b3b3b3; }
+  .sp .nav.on { color:#fff; font-weight:700; background:#1f1f1f; }
+  .sp .nav.sub { padding-left:16px; font-size:10px; }
+  .sp .main { flex:1; padding:12px; display:flex; flex-direction:column; gap:10px; }
+  .sp h4 { margin:0; font-size:13px; font-weight:700; }
+  .sp .muted { color:#b3b3b3; }
+  .sp .lbl { font-size:9px; letter-spacing:1.2px; text-transform:uppercase; color:#7c7c7c; font-weight:700; }
+  .sp .row { display:flex; gap:8px; align-items:center; }
+  .sp .pill { background:#1f1f1f; color:#fff; border-radius:9999px; padding:4px 10px; font-size:9px; letter-spacing:1px; text-transform:uppercase; font-weight:700; }
+  .sp .pill.go { background:#1ed760; color:#000; }
+  .sp .mons { display:flex; gap:8px; }
+  .sp .mon { width:84px; height:50px; border-radius:4px; background:#1f1f1f; box-shadow:0 0 0 1px #4d4d4d inset; position:relative; display:flex; align-items:flex-end; justify-content:center; padding-bottom:4px; color:#7c7c7c; font-size:9px; }
+  .sp .mon.sel { box-shadow:0 0 0 1.5px #1ed760 inset; color:#fff; }
+  .sp .mon .cap { position:absolute; left:50%; transform:translateX(-50%); bottom:8px; width:60%; height:7px; border-radius:3px; background:#1ed760; }
+  .sp .g9 { display:grid; grid-template-columns:repeat(3,1fr); gap:3px; width:96px; }
+  .sp .g9 span { height:18px; border-radius:3px; background:#1f1f1f; box-shadow:0 0 0 1px #333 inset; }
+  .sp .g9 span.sel { background:#1ed760; }
+  .sp .slider { height:4px; border-radius:2px; background:#333; position:relative; width:120px; }
+  .sp .slider i { position:absolute; left:0; top:0; bottom:0; width:40%; background:#1ed760; border-radius:2px; }
+  .sp .slider b { position:absolute; left:40%; top:-4px; width:12px; height:12px; border-radius:50%; background:#fff; }
+  .sp .desk { flex:1; min-height:110px; border-radius:6px; position:relative; background:linear-gradient(#1b2230,#0e1218); box-shadow:0 0 0 1px #333 inset; }
+  .sp .desk .cap { position:absolute; left:50%; transform:translateX(-50%); bottom:14px; background:rgba(18,18,18,.85); border-radius:8px; padding:5px 10px; text-align:center; box-shadow:0 0 0 1.5px #1ed760; }
+  .sp .desk .cap .src { color:#b3b3b3; font-size:9px; }
+  .sp .desk .cap .tr { font-weight:700; }
+  .sp .desk .hint { position:absolute; top:6px; left:8px; color:#1ed760; font-size:9px; font-weight:700; }
+  .sp .desk .handle { position:absolute; width:6px; height:6px; background:#1ed760; border-radius:1px; }
+</style>
+
+<h2>오버레이 위치 설정 — 어떻게 위치를 잡게 할까요?</h2>
+<p class="subtitle">설정 &gt; 오버레이 페이지입니다. 다중 모니터 선택은 두 안 모두 동일하게 상단 썸네일로 넣었습니다. 차이는 <b>위치를 정하는 방식</b>입니다.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="sp">
+        <div class="side">
+          <div style="color:#1ed760;font-weight:700;">● Babelay</div>
+          <div class="nav">라이브</div><div class="nav">히스토리</div>
+          <div class="nav on">설정</div>
+          <div class="nav sub">일반</div><div class="nav sub">전사 모델</div><div class="nav sub">번역</div><div class="nav sub" style="color:#fff;font-weight:700;">오버레이</div>
+        </div>
+        <div class="main">
+          <h4>오버레이</h4>
+          <div><div class="lbl">모니터</div><div class="mons" style="margin-top:4px;"><div class="mon sel"><span class="cap"></span>1 · 내장 (주)</div><div class="mon">2 · LG 27"</div></div></div>
+          <div class="row" style="gap:16px;">
+            <div><div class="lbl">위치</div><div class="g9" style="margin-top:4px;"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span class="sel"></span><span></span></div></div>
+            <div><div class="lbl">가장자리 여백</div><div class="slider" style="margin-top:8px;"><i></i><b></b></div><div class="muted" style="margin-top:6px;">48 px</div></div>
+            <div><div class="lbl">표시 모드</div><div class="row" style="margin-top:4px;gap:4px;"><span class="pill go">원문+번역</span><span class="pill">원문</span><span class="pill">번역</span></div></div>
+          </div>
+          <div class="row" style="gap:16px;"><div><div class="lbl">자막 언어</div><div class="muted">시스템 기본 (한국어) ▾</div></div><div><div class="lbl">원어</div><div class="muted">자동 감지 ▾</div></div><div><div class="lbl">글자 크기</div><div class="muted">24 px ▾</div></div><div><div class="lbl">배경 투명도</div><div class="muted">80 % ▾</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 9분할 프리셋 + 여백 슬라이더</h3>
+      <p>상·중·하 × 좌·중·우 그리드에서 클릭. 값이 단순해 저장·복원이 확실하고, 모니터가 바뀌어도 위치가 자연스럽게 따라감.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="sp">
+        <div class="side">
+          <div style="color:#1ed760;font-weight:700;">● Babelay</div>
+          <div class="nav">라이브</div><div class="nav">히스토리</div>
+          <div class="nav on">설정</div>
+          <div class="nav sub">일반</div><div class="nav sub">전사 모델</div><div class="nav sub">번역</div><div class="nav sub" style="color:#fff;font-weight:700;">오버레이</div>
+        </div>
+        <div class="main">
+          <h4>오버레이</h4>
+          <div><div class="lbl">모니터</div><div class="mons" style="margin-top:4px;"><div class="mon sel"><span class="cap"></span>1 · 내장 (주)</div><div class="mon">2 · LG 27"</div></div></div>
+          <div class="row" style="justify-content:space-between;"><div class="lbl">위치</div><span class="pill go">위치 조정 모드 켬</span></div>
+          <div class="desk">
+            <div class="hint">↔ 실제 화면에서 자막을 드래그해 옮기세요 · 모서리로 크기 조절</div>
+            <div class="cap"><div class="src">We buffer about two seconds…</div><div class="tr">약 2초 분량의 오디오를 버퍼링합니다.</div><span class="handle" style="left:-3px;top:-3px;"></span><span class="handle" style="right:-3px;top:-3px;"></span><span class="handle" style="left:-3px;bottom:-3px;"></span><span class="handle" style="right:-3px;bottom:-3px;"></span></div>
+          </div>
+          <div class="row" style="gap:16px;"><div><div class="lbl">표시 모드</div><div class="row" style="margin-top:4px;gap:4px;"><span class="pill go">원문+번역</span><span class="pill">원문</span><span class="pill">번역</span></div></div><div><div class="lbl">글자 크기</div><div class="muted">24 px ▾</div></div><div><div class="lbl">배경 투명도</div><div class="muted">80 % ▾</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 드래그 자유 배치 (조정 모드)</h3>
+      <p>"위치 조정 모드"를 켜면 실제 오버레이가 드래그·리사이즈 가능해짐. 직관적이지만 픽셀 좌표 저장이라 모니터 해상도가 바뀌면 다시 잡아야 함.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;">제 추천은 <b>A</b>입니다. 자막 앱은 "하단 중앙 + 여백" 이 사용의 대부분이고, 구현과 상태 저장이 가장 단순합니다. B는 나중에 A 위에 "사용자 지정" 항목으로 붙일 수 있습니다.</p>

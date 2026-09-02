@@ -1,0 +1,78 @@
+<style>
+  .desk { position:relative; width:100%; height:100%; min-height:220px; border-radius:8px; overflow:hidden; background:
+    radial-gradient(ellipse at 30% 20%, #3b4a6b 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, #6b3b4a 0%, transparent 50%),
+    linear-gradient(#1b2230, #0e1218); font-family:-apple-system,"Helvetica Neue",Arial,"Hiragino Sans","Apple SD Gothic Neo",sans-serif; }
+  .desk .video { position:absolute; inset:18px 40px 40px 40px; background:#000; border-radius:6px; opacity:.85; display:flex; align-items:center; justify-content:center; color:#333; font-size:11px; }
+  .desk .dockbar { position:absolute; left:50%; bottom:6px; transform:translateX(-50%); width:180px; height:14px; border-radius:7px; background:rgba(255,255,255,.12); }
+  .cap { position:absolute; left:50%; transform:translateX(-50%); text-align:center; max-width:80%; }
+  .cap .src { font-size:11px; color:#b3b3b3; }
+  .cap .tr { font-size:15px; color:#fff; font-weight:700; line-height:1.3; }
+  .cap.bar { bottom:34px; background:rgba(18,18,18,.78); border-radius:10px; padding:8px 14px; backdrop-filter:blur(6px); }
+  .cap.outline { bottom:34px; }
+  .cap.outline .tr { font-size:17px; text-shadow: 0 0 2px #000, 0 0 4px #000, 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; }
+  .cap.outline .src { display:none; }
+  .cap.pill { bottom:34px; display:flex; flex-direction:column; gap:4px; align-items:center; }
+  .cap.pill span { background:rgba(18,18,18,.85); border-radius:9999px; padding:5px 14px; display:inline-block; }
+  .cap.pill .tr { font-size:14px; }
+  .cap.pill .src { font-size:10px; }
+</style>
+
+<h2>오버레이 자막 스타일 — 기본 스타일을 골라주세요</h2>
+<p class="subtitle">사이드바는 접기/펼치기 가능한 A로 확정했습니다. 다음은 화면 위에 뜨는 자막 창의 <b>기본 스타일</b>입니다. 폰트 크기·투명도·색상은 설정에서 조절 가능하고, 여기서 정하는 것은 출시 시 기본값입니다.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="desk">
+        <div class="video">▶ 재생 중인 영상 / 회의</div>
+        <div class="cap bar">
+          <div class="src">We buffer about two seconds of audio before running the model.</div>
+          <div class="tr">모델을 돌리기 전에 약 2초 분량의 오디오를 버퍼링합니다.</div>
+        </div>
+        <div class="dockbar"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 반투명 바 · 원문 + 번역 2줄</h3>
+      <p>어두운 반투명 배경 위에 원문(작게, 회색)과 번역(크게, 흰색). 배경 덕에 어떤 화면 위에서도 읽힘. 원문 표시는 끌 수 있음.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="desk">
+        <div class="video">▶ 재생 중인 영상 / 회의</div>
+        <div class="cap outline">
+          <div class="tr">모델을 돌리기 전에 약 2초 분량의<br>오디오를 버퍼링합니다.</div>
+        </div>
+        <div class="dockbar"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 외곽선 텍스트 · 번역만</h3>
+      <p>배경 없이 검은 외곽선 텍스트. 영화 자막 느낌으로 화면을 가장 덜 가림. 밝은 화면에서는 가독성이 A보다 낮음.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="desk">
+        <div class="video">▶ 재생 중인 영상 / 회의</div>
+        <div class="cap pill">
+          <span class="src">We buffer about two seconds of audio…</span>
+          <span class="tr">모델을 돌리기 전에 약 2초 분량의 오디오를 버퍼링합니다.</span>
+        </div>
+        <div class="dockbar"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 필 캡슐 · 줄마다 배경</h3>
+      <p>디자인 시스템의 필 형태를 그대로 가져온 스타일. 줄 길이에 맞춰 배경이 붙어 여백이 적음. 짧은 문장에 예쁘고 긴 문장은 줄바꿈이 어색할 수 있음.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;">제 추천은 <b>A</b>입니다. 회의·강의처럼 밝은 화면이 많은 용도에서 가독성이 가장 안정적이고, 원문을 함께 보여줘 오역을 바로 알아챌 수 있습니다. B, C는 설정의 "스타일 프리셋"으로 추가하면 됩니다.</p>
