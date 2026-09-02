@@ -117,7 +117,6 @@ impl Chunker {
             let rms = (frame.iter().map(|s| s * s).sum::<f32>() / FRAME as f32).sqrt();
             let speech = rms > RMS_THRESHOLD;
             self.buf.extend_from_slice(frame);
-            self.since_partial += FRAME;
             if speech {
                 self.speech_seen = true;
                 self.silence_run = 0;
@@ -133,6 +132,8 @@ impl Chunker {
                 }
                 continue;
             }
+            // 무음만 쌓이는 동안은 partial 타이머를 돌리지 않는다.
+            self.since_partial += FRAME;
             if self.silence_run >= SILENCE_END || self.buf.len() >= MAX_CHUNK {
                 events.push(self.finalize());
             } else if self.since_partial >= PARTIAL_EVERY {
@@ -205,6 +206,35 @@ mod tests {
         let mut out = Vec::new();
         r.push(&sine(44_100, 1.0, 0.5), &mut out);
         assert!((out.len() as i64 - 16_000).abs() <= 2, "got {}", out.len());
+    }
+
+    #[test]
+    fn resampler_is_block_size_independent() {
+        let src = sine(44_100, 3.0, 0.5);
+        let resample = |blk: usize| {
+            let mut r = Resampler::new(44_100, 1);
+            let mut out = Vec::new();
+            for c in src.chunks(blk) {
+                r.push(c, &mut out);
+            }
+            out
+        };
+        let whole = resample(src.len());
+        for blk in [441, 1000] {
+            let blocked = resample(blk);
+            assert!(
+                (whole.len() as i64 - blocked.len() as i64).abs() <= 1,
+                "blk {blk}: {} vs whole {}",
+                blocked.len(),
+                whole.len()
+            );
+            for (i, (w, b)) in whole.iter().zip(blocked.iter()).enumerate() {
+                assert!(
+                    (w - b).abs() < 1e-4,
+                    "blk {blk} sample {i}: {b} vs whole {w}"
+                );
+            }
+        }
     }
 
     #[test]
