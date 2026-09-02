@@ -8,9 +8,9 @@ export type RowAction = "download" | "cancel" | "select" | "delete";
 
 export function rowAction(s: ModelStatus): RowAction {
   if (s.download) return "cancel";
+  if (!s.installed) return "download";
   if (s.in_use) return "delete";
-  if (s.installed) return "select";
-  return "download";
+  return "select";
 }
 
 const MB = 1024 * 1024;

@@ -35,13 +35,13 @@ export function ModelRow({ status, selected, onSelect }: Props) {
       tabIndex={0}
       aria-pressed={selected}
       onClick={onSelect}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(); } }}
-      className={`grid grid-cols-[1fr_auto] items-center gap-3 rounded-[var(--radius-card)] bg-base-2 px-4 py-3 text-left text-sm hover:bg-surface ${selected ? "ring-[1.5px] ring-inset ring-accent" : ""}`}
+      onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(); } }}
+      className={`grid grid-cols-[1fr_auto] items-center gap-3 rounded-[var(--radius-card)] bg-base-2 px-4 py-3 text-left text-sm hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${selected ? "ring-[1.5px] ring-inset ring-accent" : ""}`}
     >
       <div className="min-w-0">
         <div className="flex items-center gap-2 font-semibold">
           <span className="truncate">{info.name}</span>
-          {status.in_use && <Badge tone="accent">{t("models.badgeInUse")}</Badge>}
+          {status.in_use && status.installed && <Badge tone="accent">{t("models.badgeInUse")}</Badge>}
           {status.installed && !status.in_use && <Badge>{t("models.badgeInstalled")}</Badge>}
           {status.balanced && <Badge>{t("models.badgeRecommended")}</Badge>}
         </div>

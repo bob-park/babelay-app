@@ -30,7 +30,7 @@ export default function Translation() {
         <SettingGroup>
           <SettingRow as="div" label={t("translation.currentModel")}>
             <span className="text-fg">{localName}</span>
-            <Link to="/settings/models" className="text-accent hover:underline">{t("translation.changeInModels")}</Link>
+            <Link to="/settings/models" className="text-fg underline underline-offset-2 hover:text-fg-muted">{t("translation.changeInModels")}</Link>
           </SettingRow>
         </SettingGroup>
       ) : (
