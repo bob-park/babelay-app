@@ -49,6 +49,20 @@ pub struct Downloads {
     active: Mutex<Option<Active>>,
 }
 
+/// 잠금이 오염돼도 모델 패널이 죽지 않게 한다. 이 슬롯은 매번 통째로 갱신된다.
+fn lock(downloads: &Downloads) -> std::sync::MutexGuard<'_, Option<Active>> {
+    downloads.active.lock().unwrap_or_else(|p| p.into_inner())
+}
+
+/// 다운로드 스레드가 어떻게 끝나든(패닉 포함) 슬롯을 비운다.
+struct ClearActive(AppHandle);
+
+impl Drop for ClearActive {
+    fn drop(&mut self) {
+        lock(&self.0.state::<Downloads>()).take();
+    }
+}
+
 pub fn models_dir(app: &AppHandle) -> Result<PathBuf, String> {
     app.path()
         .app_data_dir()
@@ -64,7 +78,7 @@ pub fn list(app: &AppHandle) -> Result<Vec<ModelStatus>, String> {
     let dir = models_dir(app)?;
     let settings = app.state::<SettingsState>().get();
     let downloads = app.state::<Downloads>();
-    let active = downloads.active.lock().unwrap();
+    let active = lock(&downloads);
     Ok(babelay_engine::models::REGISTRY
         .iter()
         .map(|m| ModelStatus {
@@ -95,7 +109,7 @@ pub fn start(app: &AppHandle, id: &str) -> Result<(), String> {
     let downloads = app.state::<Downloads>();
     let cancel = Arc::new(AtomicBool::new(false));
     {
-        let mut active = downloads.active.lock().unwrap();
+        let mut active = lock(&downloads);
         if active.is_some() {
             return Err("busy".into());
         }
@@ -111,14 +125,18 @@ pub fn start(app: &AppHandle, id: &str) -> Result<(), String> {
     let app2 = app.clone();
     let id_owned = id.to_string();
     tauri::async_runtime::spawn_blocking(move || {
+        // 패닉으로 빠져나가도 슬롯은 비운다. 안 비우면 이후 요청이 영영 "busy".
+        let _clear = ClearActive(app2.clone());
         let dest = model_path(&dir, m);
-        let mut last = Instant::now() - Duration::from_secs(1);
+        let mut last = Instant::now()
+            .checked_sub(Duration::from_secs(1))
+            .unwrap_or_else(Instant::now);
         let mut on_progress = |p: Progress| {
             let progress = DownloadProgress {
                 received: p.received,
                 total: p.total,
             };
-            if let Some(a) = app2.state::<Downloads>().active.lock().unwrap().as_mut() {
+            if let Some(a) = lock(&app2.state::<Downloads>()).as_mut() {
                 a.progress = progress;
             }
             if last.elapsed() >= Duration::from_millis(200) || p.received == p.total {
@@ -149,12 +167,8 @@ pub fn start(app: &AppHandle, id: &str) -> Result<(), String> {
             Err(DownloadError::Cancelled) => ("cancelled", None),
             Err(e) => ("error", Some(e.to_string())),
         };
-        let progress = app2
-            .state::<Downloads>()
-            .active
-            .lock()
-            .unwrap()
-            .take()
+        let progress = lock(&app2.state::<Downloads>())
+            .as_ref()
             .map(|a| a.progress)
             .unwrap_or(DownloadProgress {
                 received: 0,
@@ -176,7 +190,7 @@ pub fn start(app: &AppHandle, id: &str) -> Result<(), String> {
 
 pub fn cancel(app: &AppHandle, id: &str) -> Result<(), String> {
     let downloads = app.state::<Downloads>();
-    let active = downloads.active.lock().unwrap();
+    let active = lock(&downloads);
     match active.as_ref() {
         Some(a) if a.id == id => {
             a.cancel.store(true, Ordering::Relaxed);
@@ -192,11 +206,7 @@ pub fn delete(app: &AppHandle, id: &str) -> Result<(), String> {
     if in_use(&settings, m) {
         return Err("in_use".into());
     }
-    if app
-        .state::<Downloads>()
-        .active
-        .lock()
-        .unwrap()
+    if lock(&app.state::<Downloads>())
         .as_ref()
         .is_some_and(|a| a.id == id)
     {
