@@ -2,6 +2,11 @@
 
 시스템 오디오를 실시간으로 전사·번역해 화면 위 자막으로 보여주는 데스크톱 앱 (macOS 14.2+, Windows 10+).
 
+## 사전 준비
+
+- [mise](https://mise.jdx.dev) (`.mise.toml`이 node 24, yarn 4.18.0을 고정)
+- Rust stable 툴체인
+
 ## 개발
 
     yarn install
@@ -19,7 +24,7 @@ macOS 서명 빌드에는 아래 환경변수가 필요하다.
     APPLE_ID=... APPLE_PASSWORD=<앱 암호> APPLE_TEAM_ID=...   # 공증
     yarn tauri build
 
-GitHub Actions 시크릿: `APPLE_CERTIFICATE`(p12 base64), `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID`.
+빌드는 로컬에서만 한다(CI 없음). Windows 빌드는 Windows 머신에서 `yarn tauri build`로 만들며 서명하지 않는다.
 
 ## 문서
 

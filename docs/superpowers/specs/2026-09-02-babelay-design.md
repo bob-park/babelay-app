@@ -242,7 +242,7 @@ Hardened Runtime 엔타이틀먼트 `com.apple.security.device.audio-input`, Inf
 
 ### 9.2 Windows
 
-NSIS 인스톨러, 서명 없음. cudart/cublas/cublasLt DLL을 `bundle.resources`로 동봉한다. GitHub Actions `windows-latest`에 CUDA 툴킷을 설치해 빌드한다. macOS 잡은 같은 워크플로에서 시크릿으로 서명한다.
+NSIS 인스톨러, 서명 없음. cudart/cublas/cublasLt DLL을 `bundle.resources`로 동봉한다. 빌드는 로컬에서만 한다(CI 없음). Windows 빌드는 CUDA 툴킷이 설치된 Windows 머신에서 수행한다.
 
 ### 9.3 아이콘
 
@@ -259,7 +259,7 @@ NSIS 인스톨러, 서명 없음. cudart/cublas/cublasLt DLL을 `bundle.resource
 
 각 단계는 별도 구현 계획으로 작성한다.
 
-1. **앱 셸**: Tauri 2 + React 스캐폴드, 테마, i18n, 설정 파일, 접이식 사이드바, 트레이, 온보딩 골격, 오버레이 창(조정 모드 포함), 아이콘, 서명 설정, CI
+1. **앱 셸**: Tauri 2 + React 스캐폴드, 테마, i18n, 설정 파일, 접이식 사이드바, 트레이, 온보딩 골격, 오버레이 창(조정 모드 포함), 아이콘, 서명 설정
 2. **전사 엔진**: 오디오 캡처(mac/win), 청커, whisper, 모델 레지스트리·다운로드, GPU 토글, 라이브 페이지, SQLite·히스토리, 온보딩 연결
 3. **번역**: 로컬 llama, 클라우드 어댑터 5종, keyring, 설정 > 번역, 표시 모드
 
