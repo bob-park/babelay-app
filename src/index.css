@@ -25,4 +25,5 @@
 }
 
 html, body, #root { height: 100%; margin: 0; }
-body { background: var(--color-base); color: var(--color-fg); font-family: var(--font-sans); font-size: 14px; }
+body { color: var(--color-fg); font-family: var(--font-sans); font-size: 14px; }
+body:not(.overlay) { background: var(--color-base); }

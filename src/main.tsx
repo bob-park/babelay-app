@@ -29,6 +29,10 @@ function Root() {
   }, []);
 
   useEffect(() => {
+    if (label === "overlay") document.body.classList.add("overlay");
+  }, [label]);
+
+  useEffect(() => {
     if (!settings) return;
     applyTheme(settings.general.theme);
     initI18n(resolveLang(settings.general.ui_language, navigator.language));
