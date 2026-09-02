@@ -30,6 +30,10 @@ Babelay는 현재 재생 중인 시스템 오디오를 캡처해 실시간으로
 | 온보딩 모델 목록 | 리스트 행(목업 03, A) |
 | 오버레이 위치 | 조정 모드에서 드래그·리사이즈, 비율 좌표 저장(목업 04, B) |
 | 앱 아이콘 | 바벨탑 자막 줄(목업 05, C) |
+| 메인 창 내비게이션(리디자인) | 떠 있는 둥근 패널 사이드바, 아이콘+라벨, 설정 하위 4개 노출(목업 06-01, B) |
+| 모델 행(리디자인) | 행 안 진행 바 + 받은 용량, 상태별 버튼 하나(목업 06-02, A) |
+| 모니터 선택 | 제거. 조정 모드에서 다른 모니터로 드래그하면 `monitor_id` 자동 저장(목업 06-03) |
+| 설정 화면 형식 | 그룹 리스트(라벨 왼쪽, 컨트롤 오른쪽) + 오버레이 미리보기 카드(목업 06-03) |
 
 ## 3. 전체 구조
 
@@ -107,7 +111,7 @@ babelay-app/
 
 ## 5. 모델 레지스트리와 다운로드
 
-레지스트리는 엔진에 정적 테이블로 내장한다(원격 카탈로그 없음). 필드: `id, kind(asr|llm), display_name, desc_key, size_bytes, speed_tier(1~5), min_mem_gb, url, sha256, filename`.
+레지스트리는 엔진(`crates/babelay-engine/src/models.rs`)에 정적 테이블로 내장한다(원격 카탈로그 없음). 필드: `id, kind(asr|llm), name, desc_key, size_bytes, speed(1~5), url, filename, sha256: Option`. `installed(dir, &ModelInfo)`는 파일 존재 + 크기 일치로 판단한다.
 
 ### 5.1 전사 모델 (Hugging Face `ggerganov/whisper.cpp`)
 
@@ -120,7 +124,7 @@ babelay-app/
 | large-v3-turbo | Whisper Large v3 Turbo | 1.6 GB | 2 |
 | large-v3 | Whisper Large v3 | 3.1 GB | 1 |
 
-### 5.2 번역 모델 (GGUF Q4_K_M, 저장소·해시는 구현 시 확정)
+### 5.2 번역 모델 (GGUF Q4_K_M, 게이트 없는 미러 사용; 정확한 URL·크기는 구현 시 HEAD 요청으로 확정)
 
 | id | 표시명 | 용량(근사) | 속도 |
 |---|---|---|---|
@@ -132,8 +136,9 @@ babelay-app/
 ### 5.3 다운로드
 
 - 저장 위치: 앱 데이터 디렉터리 `models/asr/`, `models/llm/`.
-- `reqwest` 스트리밍으로 `.part`에 받고, Range 헤더로 이어받기, sha256 검증 후 이름 변경.
-- `DownloadProgress{id, received, total}` 이벤트, 취소 가능, 동시 다운로드 1개.
+- 엔진 `download.rs`: `reqwest` 스트리밍으로 `.part`에 받고, Range 헤더로 이어받기, `sha256`이 있으면 해시 검증·없으면 크기 검증 후 이름 변경. 취소 시 `.part`를 남겨 다음에 이어받는다.
+- `src-tauri` 커맨드: `get_models() -> Vec<ModelStatus { info, installed, in_use, balanced, download: Option<{received, total}> }>`, `download_model(id)`, `cancel_download(id)`, `delete_model(id)`(사용 중이면 거부).
+- 이벤트 `model-download { id, received, total, state: downloading|done|error|cancelled, message? }`. 동시 다운로드 1개.
 
 ### 5.4 balanced 추천 규칙
 
@@ -145,11 +150,11 @@ babelay-app/
 | GPU 있음, 메모리 ≥ 8 GB | small | qwen3.5-2b |
 | 그 외(CPU) | base | gemma3-1b |
 
-이 표는 `ponytail:` 주석으로 표시하고 실측 후 조정한다.
+이 표는 `ponytail:` 주석으로 표시하고 실측 후 조정한다. 사양 기반 판정은 2단계에서 붙이고, 그 전까지 레지스트리의 고정값(small / qwen3.5-2b)을 `balanced`로 돌려준다.
 
 ### 5.5 설정 페이지 표시
 
-온보딩과 같은 `ModelRow` 컴포넌트에 배지 `balanced`(추천), `설치됨`(파일 존재 + 해시 일치), `사용 중`(현재 선택)을 붙인다. 행 액션은 다운로드 / 선택 / 삭제이며, 사용 중인 모델은 삭제할 수 없다. 페이지 상단에 감지된 사양(칩, RAM, GPU)을 한 줄로 표시한다.
+설정 > 모델 페이지는 세그먼트(전사/번역)로 목록을 전환한다. 온보딩과 같은 `ModelRow`에 배지 `사용 중`(초록), `설치됨`, `추천`(회색)을 붙이고, 메타 한 줄(용량 · 설명 · 속도 점 5개)을 둔다. 다운로드 중이면 메타에 퍼센트·받은 용량, 아래에 얇은 진행 바. 오른쪽 버튼은 상태별로 하나: 미설치→다운로드, 다운로드 중→취소, 설치됨→선택, 사용 중→삭제(거부). 페이지 하단에 GPU 가속 토글. 감지된 사양 한 줄은 2단계에서 추가한다.
 
 ## 6. 번역 프로바이더
 
@@ -172,8 +177,9 @@ struct TranslateRequest { text: String, src: Lang, tgt: Lang, context: Vec<Strin
 
 - 하나의 Vite 앱. 창 라벨에 따라 `#/main/*`, `#/overlay`, `#/onboarding`을 렌더한다. 라우팅은 react-router.
 - 상태는 zustand 스토어 둘. `settings`는 커맨드 `get_settings/set_settings`와 이벤트 `settings-changed`로 동기화. `session`은 `engine-event`로 라이브 로그와 오버레이 텍스트를 채운다.
-- UI 라이브러리 없음. Tailwind + 네이티브 요소(`<select>`, `<dialog>`, `<input type=range>`).
-- 공용 컴포넌트: `Sidebar`(접기 상태 저장), `ModelRow`, `Badge`, `PillButton`, `Toggle`.
+- UI 라이브러리 없음. Tailwind + 네이티브 요소(`<select>`, `<dialog>`, `<input type=range>`). 아이콘은 인라인 SVG 7개(`src/components/icons.tsx`).
+- 공용 컴포넌트: `Sidebar`(떠 있는 패널, 접기 상태 저장), `ModelRow`, `Badge`, `PillButton`, `Toggle`, `SegmentedControl`, `SettingGroup`/`SettingRow`, `ProgressBar`, `ErrorBar`.
+- 디자인 토큰: 카드 반경 12px, 사이드바 패널 14px, 컨트롤은 pill. 필 버튼은 대문자·자간 없이 굵기 600. 보조 텍스트 `#8a8a8a`(다크) / `#6a6a6a`(라이트). 안내 문장·힌트 문구는 두지 않는다(제목과 컨트롤만).
 
 ### 7.1 i18n
 
@@ -185,20 +191,20 @@ react-i18next, `src/locales/{ko,en,ja}.json`. "시스템 기본"은 프론트에
 
 ### 7.3 페이지
 
-- 라이브: 시작/정지, 오버레이 켬/끔, 현재 원어→자막 언어·모델 표시, 원문/번역 타임라인
+- 라이브: 헤더(제목, 시작/정지, 오버레이 켬/끔), "원어 → 자막 언어 · 모델명" 한 줄, 원문/번역 타임라인. 빈 상태 문장 없음.
 - 히스토리: 세션 목록(날짜·길이·언어), 상세, 텍스트 검색, TXT/SRT 내보내기, 삭제
-- 설정 > 일반: 테마, UI 언어, 단축키 안내
-- 설정 > 전사 모델: 사양 한 줄, 모델 행 목록, GPU 가속 토글(macOS "Apple Silicon 가속", Windows "NVIDIA GPU 가속")
-- 설정 > 번역: 로컬/클라우드 선택, 로컬 모델 행 목록, 프로바이더·모델·키·연결 테스트
-- 설정 > 오버레이: 모니터 썸네일, 위치 조정 모드, 표시 모드, 자막 언어, 원어, 글자 크기, 배경 투명도
+- 설정 > 일반: 그룹 리스트(테마, UI 언어) + 단축키 그룹(값만)
+- 설정 > 모델(`/settings/models`): 세그먼트 전사/번역, 모델 행 목록(다운로드·삭제·선택), GPU 가속 토글(macOS "Apple Silicon 가속", Windows "NVIDIA GPU 가속")
+- 설정 > 번역: 세그먼트 로컬/클라우드. 로컬은 현재 모델 한 줄(변경은 모델 페이지), 클라우드는 그룹 리스트(프로바이더·모델·Base URL·키·연결 테스트)
+- 설정 > 오버레이: 미리보기 카드 + 위치 조정 버튼, 그룹 1(표시 모드, 자막 언어, 원어), 그룹 2(글자 크기, 배경 투명도). 모니터 선택 없음
 
 ### 7.4 오버레이 창
 
-조정 모드에서만 클릭 통과를 끄고 드래그 영역과 모서리 리사이즈 핸들을 보여준다. 위치는 `{monitor_id, x_ratio, y_ratio, w_ratio}`로 저장해 해상도가 바뀌어도 비율로 복원한다. 최신 `Final`+번역 한 쌍과 그 아래 `Partial`을 흐리게 보여주고, 무음 6초 후 페이드아웃한다. 표시 모드에 따라 원문 줄 또는 번역 줄을 숨긴다.
+조정 모드에서만 클릭 통과를 끄고 드래그 영역과 모서리 리사이즈 핸들을 보여준다. 위치는 `{monitor_id, x_ratio, y_ratio, w_ratio}`로 저장해 해상도가 바뀌어도 비율로 복원한다. 다른 모니터로 드래그하면 위치 확정 시 백엔드가 현재 모니터를 읽어 `monitor_id`를 갱신하므로 별도의 모니터 선택 UI는 없다. 최신 `Final`+번역 한 쌍과 그 아래 `Partial`을 흐리게 보여주고, 무음 6초 후 페이드아웃한다. 표시 모드에 따라 원문 줄 또는 번역 줄을 숨긴다.
 
 ### 7.5 온보딩
 
-언어 → 권한(macOS만, Windows는 건너뜀) → 전사 모델 → 번역 모델(건너뛰기 가능) → 완료. 완료 시 `onboarding_done=true`를 저장하고 메인 창으로 전환한다.
+언어 → 권한(macOS만, Windows는 건너뜀) → 전사 모델 → 번역 모델(건너뛰기 가능) → 완료. 상단은 단계 수만큼의 진행 바, 각 단계는 제목과 컨트롤만(설명 문장 없음). 모델 단계는 `ModelRow`로 선택하고, 미설치 모델이면 버튼이 "N MB 받고 계속"이 되어 다운로드를 시작하고 행에 진행률을 보여준 뒤 완료되면 다음 단계로 넘어간다. 설치된 모델이면 "계속". 완료 시 `onboarding_done=true`를 저장하고 메인 창으로 전환한다.
 
 ### 7.6 설정 스키마
 
@@ -259,8 +265,9 @@ NSIS 인스톨러, 서명 없음. cudart/cublas/cublasLt DLL을 `bundle.resource
 
 각 단계는 별도 구현 계획으로 작성한다.
 
-1. **앱 셸**: Tauri 2 + React 스캐폴드, 테마, i18n, 설정 파일, 접이식 사이드바, 트레이, 온보딩 골격, 오버레이 창(조정 모드 포함), 아이콘, 서명 설정
-2. **전사 엔진**: 오디오 캡처(mac/win), 청커, whisper, 모델 레지스트리·다운로드, GPU 토글, 라이브 페이지, SQLite·히스토리, 온보딩 연결
+1. **앱 셸**: Tauri 2 + React 스캐폴드, 테마, i18n, 설정 파일, 접이식 사이드바, 트레이, 온보딩 골격, 오버레이 창(조정 모드 포함), 아이콘, 서명 설정 — 완료(2026-09-03)
+1.5. **모델 다운로드 + UI 리디자인**: 엔진 모델 레지스트리·다운로드(진행률·이어받기·취소·삭제), 설치/사용 중 배지, 모니터 선택 제거, 떠 있는 패널 사이드바·그룹 리스트 설정·모델 페이지·온보딩 리디자인, 문구 정리
+2. **전사 엔진**: 오디오 캡처(mac/win), 청커, whisper, 사양 기반 balanced, GPU 토글, 라이브 페이지, SQLite·히스토리
 3. **번역**: 로컬 llama, 클라우드 어댑터 5종, keyring, 설정 > 번역, 표시 모드
 
 ## 12. 범위 밖 (1차)

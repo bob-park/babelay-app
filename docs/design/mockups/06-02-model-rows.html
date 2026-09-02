@@ -1,0 +1,92 @@
+<style>
+  .sp { width:100%; height:100%; min-height:330px; background:#121212; color:#fff; font-family:-apple-system,"Helvetica Neue",Arial,"Hiragino Sans","Apple SD Gothic Neo",sans-serif; font-size:11px; display:flex; flex-direction:column; gap:8px; padding:16px; box-sizing:border-box; border-radius:10px; }
+  .sp h4 { margin:0 0 4px; font-size:15px; font-weight:700; }
+  .sp .muted { color:#8a8a8a; }
+  .sp .seg { display:flex; gap:4px; background:#181818; border-radius:9999px; padding:3px; width:max-content; margin-bottom:6px; }
+  .sp .seg span { padding:4px 12px; border-radius:9999px; color:#8a8a8a; }
+  .sp .seg span.on { background:#2a2a2a; color:#fff; font-weight:600; }
+  .sp .row { background:#181818; border-radius:12px; padding:10px 12px; display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center; }
+  .sp .row.sel { box-shadow: inset 0 0 0 1.5px #1ed760; }
+  .sp .name { font-weight:600; display:flex; align-items:center; gap:6px; }
+  .sp .meta { color:#8a8a8a; margin-top:2px; }
+  .sp .badge { border-radius:6px; padding:1px 6px; font-size:9px; font-weight:600; }
+  .sp .badge.acc { background:#1ed760; color:#000; }
+  .sp .badge.ok { background:#2a2a2a; color:#fff; }
+  .sp .btn { border-radius:9999px; padding:5px 12px; font-size:10px; font-weight:600; background:#242424; color:#fff; white-space:nowrap; }
+  .sp .btn.go { background:#1ed760; color:#000; }
+  .sp .btn.ghost { background:transparent; color:#8a8a8a; }
+  .sp .bar { height:4px; border-radius:2px; background:#2a2a2a; margin-top:6px; position:relative; overflow:hidden; }
+  .sp .bar i { position:absolute; left:0; top:0; bottom:0; width:62%; background:#1ed760; border-radius:2px; }
+  .sp .ring { width:26px; height:26px; border-radius:50%; background: conic-gradient(#1ed760 62%, #2a2a2a 0); position:relative; display:grid; place-items:center; }
+  .sp .ring::after { content:""; width:18px; height:18px; border-radius:50%; background:#181818; }
+  .sp .spd { display:inline-flex; gap:2px; vertical-align:middle; margin-left:4px; }
+  .sp .spd i { width:6px; height:6px; border-radius:2px; background:#3a3a3a; }
+  .sp .spd i.on { background:#8a8a8a; }
+</style>
+
+<h2>모델 목록 — 다운로드 진행률과 설치 배지를 어떻게 보여줄까요?</h2>
+<p class="subtitle">사이드바는 B(떠 있는 패널)로 확정했습니다. 아래는 설정 &gt; 모델 페이지입니다. 상단 세그먼트로 전사/번역 모델을 전환하고, 각 행에 <b>설치됨</b>·<b>사용 중</b>·<b>추천</b> 배지와 다운로드 상태가 붙습니다. 두 안의 차이는 진행률 표현입니다.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="sp">
+        <h4>모델</h4>
+        <div class="seg"><span class="on">전사</span><span>번역</span></div>
+        <div class="row sel">
+          <div><div class="name">Whisper Small <span class="badge acc">사용 중</span></div><div class="meta">466 MB · 속도·정확도 균형 <span class="spd"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div></div>
+          <span class="btn ghost">삭제</span>
+        </div>
+        <div class="row">
+          <div><div class="name">Whisper Large v3 Turbo <span class="badge ok">추천</span></div><div class="meta">1.6 GB · 다운로드 중 · 62% · 1.0 GB / 1.6 GB</div><div class="bar"><i></i></div></div>
+          <span class="btn ghost">취소</span>
+        </div>
+        <div class="row">
+          <div><div class="name">Whisper Base <span class="badge ok">설치됨</span></div><div class="meta">142 MB · 빠름 · 짧은 문장에 적합</div></div>
+          <span class="btn">선택</span>
+        </div>
+        <div class="row">
+          <div><div class="name">Whisper Medium</div><div class="meta">1.5 GB · 높은 정확도</div></div>
+          <span class="btn go">다운로드</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 행 안에 진행 바</h3>
+      <p>다운로드 중인 행은 메타 줄에 퍼센트·용량을 쓰고 아래에 얇은 초록 바가 붙음. 오른쪽 버튼은 상태에 따라 다운로드 / 취소 / 선택 / 삭제 하나만 표시.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="sp">
+        <h4>모델</h4>
+        <div class="seg"><span class="on">전사</span><span>번역</span></div>
+        <div class="row sel">
+          <div><div class="name">Whisper Small <span class="badge acc">사용 중</span></div><div class="meta">466 MB · 속도·정확도 균형</div></div>
+          <span class="btn ghost">삭제</span>
+        </div>
+        <div class="row">
+          <div><div class="name">Whisper Large v3 Turbo <span class="badge ok">추천</span></div><div class="meta">1.6 GB · 다운로드 중 62%</div></div>
+          <div style="display:flex;align-items:center;gap:8px;"><span class="ring"></span><span class="btn ghost">취소</span></div>
+        </div>
+        <div class="row">
+          <div><div class="name">Whisper Base <span class="badge ok">설치됨</span></div><div class="meta">142 MB · 빠름 · 짧은 문장에 적합</div></div>
+          <span class="btn">선택</span>
+        </div>
+        <div class="row">
+          <div><div class="name">Whisper Medium</div><div class="meta">1.5 GB · 높은 정확도</div></div>
+          <span class="btn go">다운로드</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 오른쪽 원형 진행 링</h3>
+      <p>행 높이가 변하지 않고 버튼 옆에 링이 뜸. 깔끔하지만 남은 용량 같은 세부 정보를 넣을 자리가 없음.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;">제 추천은 <b>A</b>입니다. 큰 모델(1~3GB)은 몇 분씩 걸리므로 받은 용량과 남은 양이 보이는 편이 낫고, 취소 후 이어받기 상태("일시정지 62%")도 같은 자리에 표시할 수 있습니다. 속도 표시는 A처럼 점 5개로 축약하고, 온보딩의 모델 단계도 같은 행을 씁니다.</p>

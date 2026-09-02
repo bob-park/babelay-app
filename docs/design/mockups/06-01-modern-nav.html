@@ -1,0 +1,157 @@
+<style>
+  .sp { width:100%; height:100%; min-height:330px; background:#121212; color:#fff; font-family:-apple-system,"Helvetica Neue",Arial,"Hiragino Sans","Apple SD Gothic Neo",sans-serif; font-size:11px; display:flex; flex-direction:column; border-radius:10px; overflow:hidden; }
+  .sp .bar { height:22px; display:flex; align-items:center; gap:6px; padding:0 10px; flex:none; }
+  .sp .dot { width:8px; height:8px; border-radius:50%; background:#3a3a3a; }
+  .sp .body { display:flex; flex:1; min-height:0; }
+  .sp .main { flex:1; padding:14px 16px; display:flex; flex-direction:column; gap:10px; }
+  .sp h4 { margin:0; font-size:15px; font-weight:700; letter-spacing:-0.2px; }
+  .sp .muted { color:#8a8a8a; }
+  .sp .card { background:#181818; border-radius:12px; padding:10px 12px; }
+  .sp .row { display:flex; gap:8px; align-items:center; }
+  .sp .pill { background:#242424; color:#fff; border-radius:9999px; padding:5px 12px; font-size:10px; font-weight:600; }
+  .sp .pill.go { background:#1ed760; color:#000; }
+  .sp .line { display:flex; gap:8px; padding:5px 0; }
+  .sp .t { color:#5a5a5a; width:32px; flex:none; font-variant-numeric:tabular-nums; }
+  .sp .src { color:#8a8a8a; }
+  .sp .tr { font-weight:600; }
+  .sp .grn { width:6px; height:6px; border-radius:50%; background:#1ed760; display:inline-block; }
+  .sp .ico { width:16px; height:16px; border-radius:4px; background:currentColor; opacity:.9; display:inline-block; }
+  /* A: icon rail */
+  .rail { width:64px; padding:10px 6px; display:flex; flex-direction:column; align-items:center; gap:4px; flex:none; }
+  .rail .logo { width:28px; height:28px; border-radius:8px; background:#1ed760; margin-bottom:8px; }
+  .rail .it { width:52px; padding:7px 0; border-radius:10px; display:flex; flex-direction:column; align-items:center; gap:4px; color:#8a8a8a; font-size:9px; }
+  .rail .it.on { background:#1f1f1f; color:#fff; }
+  .rail .it .ico { width:18px; height:18px; border-radius:5px; }
+  .rail .st { margin-top:auto; }
+  /* B: floating panel */
+  .float { width:150px; margin:8px 0 8px 8px; padding:10px; background:#181818; border-radius:14px; display:flex; flex-direction:column; gap:2px; flex:none; box-shadow:0 8px 24px rgba(0,0,0,.5); }
+  .float .brand { display:flex; align-items:center; gap:8px; padding:4px 8px 12px; font-weight:700; }
+  .float .brand i { width:20px; height:20px; border-radius:6px; background:#1ed760; }
+  .float .it { display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:9999px; color:#8a8a8a; }
+  .float .it.on { background:#2a2a2a; color:#fff; font-weight:600; }
+  .float .it .ico { width:14px; height:14px; }
+  .float .sec { font-size:9px; letter-spacing:1px; text-transform:uppercase; color:#5a5a5a; padding:10px 10px 4px; }
+  .float .st { margin-top:auto; padding:8px 10px; border-radius:10px; background:#121212; color:#8a8a8a; display:flex; align-items:center; gap:6px; }
+  /* C: polished sidebar */
+  .side { width:150px; padding:12px 10px; border-right:1px solid #1f1f1f; display:flex; flex-direction:column; gap:2px; flex:none; }
+  .side .brand { display:flex; align-items:center; gap:8px; padding:2px 8px 12px; font-weight:700; }
+  .side .brand i { width:20px; height:20px; border-radius:6px; background:#1ed760; }
+  .side .it { display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:8px; color:#8a8a8a; }
+  .side .it.on { background:#1f1f1f; color:#fff; font-weight:600; box-shadow: inset 3px 0 0 #1ed760; }
+  .side .it .ico { width:14px; height:14px; }
+  .side .sec { font-size:9px; letter-spacing:1px; text-transform:uppercase; color:#5a5a5a; padding:10px 10px 4px; }
+  .side .st { margin-top:auto; padding:8px 10px; color:#8a8a8a; display:flex; align-items:center; gap:6px; }
+</style>
+
+<h2>메인 창 — 어떤 방향의 모던 UI로 갈까요?</h2>
+<p class="subtitle">세 안 모두 라이브 페이지를 담았습니다. 문구는 최소한으로 줄였고(안내 문장·단축키 힌트 제거), 상태는 점 하나와 모델명으로만 표시합니다. 색은 기존 다크 팔레트를 유지하되 모서리를 더 둥글게(12~14px), 여백을 넓히고, 필 버튼의 대문자·자간을 없앴습니다.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="sp">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="body">
+          <div class="rail">
+            <div class="logo"></div>
+            <div class="it on"><span class="ico"></span>라이브</div>
+            <div class="it"><span class="ico"></span>기록</div>
+            <div class="it"><span class="ico"></span>설정</div>
+            <div class="it st"><span class="grn"></span></div>
+          </div>
+          <div class="main">
+            <div class="row" style="justify-content:space-between;">
+              <h4>라이브</h4>
+              <div class="row"><span class="pill go">● 시작</span><span class="pill">오버레이</span></div>
+            </div>
+            <div class="muted">EN → KO · Whisper Small · Qwen 3.5 2B</div>
+            <div class="card" style="flex:1;">
+              <div class="line"><span class="t">00:12</span><div><div class="src">So the key idea here is latency.</div><div class="tr">그래서 여기서 핵심은 지연 시간입니다.</div></div></div>
+              <div class="line"><span class="t">00:15</span><div><div class="src">We buffer about two seconds of audio.</div><div class="tr">약 2초 분량의 오디오를 버퍼링합니다.</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 아이콘 레일</h3>
+      <p>64px 고정 레일에 아이콘+짧은 라벨. 접기/펼치기 자체가 사라져 항상 같은 폭. 설정 하위 메뉴는 설정 페이지 안의 상단 세그먼트 탭으로 이동. 가장 넓은 콘텐츠 영역.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="sp">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="body">
+          <div class="float">
+            <div class="brand"><i></i>Babelay</div>
+            <div class="it on"><span class="ico"></span>라이브</div>
+            <div class="it"><span class="ico"></span>기록</div>
+            <div class="sec">설정</div>
+            <div class="it"><span class="ico"></span>일반</div>
+            <div class="it"><span class="ico"></span>모델</div>
+            <div class="it"><span class="ico"></span>번역</div>
+            <div class="it"><span class="ico"></span>오버레이</div>
+            <div class="st"><span class="grn"></span>Whisper Small</div>
+          </div>
+          <div class="main">
+            <div class="row" style="justify-content:space-between;">
+              <h4>라이브</h4>
+              <div class="row"><span class="pill go">● 시작</span><span class="pill">오버레이</span></div>
+            </div>
+            <div class="muted">EN → KO · Qwen 3.5 2B</div>
+            <div class="card" style="flex:1;">
+              <div class="line"><span class="t">00:12</span><div><div class="src">So the key idea here is latency.</div><div class="tr">그래서 여기서 핵심은 지연 시간입니다.</div></div></div>
+              <div class="line"><span class="t">00:15</span><div><div class="src">We buffer about two seconds of audio.</div><div class="tr">약 2초 분량의 오디오를 버퍼링합니다.</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 떠 있는 패널</h3>
+      <p>사이드바를 여백 위에 떠 있는 둥근 패널로. 활성 항목은 필 형태, 설정 하위 항목을 섹션으로 나열. 접기 기능은 유지(아이콘만 남는 좁은 패널). 가장 "앱스러운" 인상.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="sp">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="body">
+          <div class="side">
+            <div class="brand"><i></i>Babelay</div>
+            <div class="it on"><span class="ico"></span>라이브</div>
+            <div class="it"><span class="ico"></span>기록</div>
+            <div class="sec">설정</div>
+            <div class="it"><span class="ico"></span>일반</div>
+            <div class="it"><span class="ico"></span>모델</div>
+            <div class="it"><span class="ico"></span>번역</div>
+            <div class="it"><span class="ico"></span>오버레이</div>
+            <div class="st"><span class="grn"></span>Whisper Small</div>
+          </div>
+          <div class="main">
+            <div class="row" style="justify-content:space-between;">
+              <h4>라이브</h4>
+              <div class="row"><span class="pill go">● 시작</span><span class="pill">오버레이</span></div>
+            </div>
+            <div class="muted">EN → KO · Qwen 3.5 2B</div>
+            <div class="card" style="flex:1;">
+              <div class="line"><span class="t">00:12</span><div><div class="src">So the key idea here is latency.</div><div class="tr">그래서 여기서 핵심은 지연 시간입니다.</div></div></div>
+              <div class="line"><span class="t">00:15</span><div><div class="src">We buffer about two seconds of audio.</div><div class="tr">약 2초 분량의 오디오를 버퍼링합니다.</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 다듬은 사이드바</h3>
+      <p>현재 구조를 유지하되 아이콘 추가, 활성 항목에 초록 인디케이터 바, 설정 섹션 헤더, 문구 정리. 변경 폭이 가장 작음.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;">제 추천은 <b>B</b>입니다. 요청하신 "현대적인 nav"에 가장 부합하면서, 설정 하위 메뉴가 항상 보여 이동이 빠르고, 접기 기능도 남길 수 있습니다. A는 설정 탭이 한 단계 더 들어가고, C는 변화가 작습니다.</p>

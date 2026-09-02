@@ -1,0 +1,87 @@
+<style>
+  .sp { width:100%; min-height:330px; background:#121212; color:#fff; font-family:-apple-system,"Helvetica Neue",Arial,"Hiragino Sans","Apple SD Gothic Neo",sans-serif; font-size:11px; display:flex; flex-direction:column; gap:10px; padding:16px; box-sizing:border-box; border-radius:10px; }
+  .sp h4 { margin:0; font-size:15px; font-weight:700; }
+  .sp .muted { color:#8a8a8a; }
+  .sp .group { background:#181818; border-radius:12px; overflow:hidden; }
+  .sp .item { display:flex; justify-content:space-between; align-items:center; padding:9px 12px; border-top:1px solid #1f1f1f; }
+  .sp .item:first-child { border-top:0; }
+  .sp .ctl { color:#8a8a8a; display:flex; align-items:center; gap:6px; }
+  .sp .seg { display:flex; gap:2px; background:#242424; border-radius:9999px; padding:2px; }
+  .sp .seg span { padding:3px 9px; border-radius:9999px; color:#8a8a8a; font-size:10px; }
+  .sp .seg span.on { background:#1ed760; color:#000; font-weight:600; }
+  .sp .sw { width:28px; height:16px; border-radius:8px; background:#1ed760; position:relative; }
+  .sp .sw::after { content:""; position:absolute; right:2px; top:2px; width:12px; height:12px; border-radius:50%; background:#000; }
+  .sp .slider { width:90px; height:4px; border-radius:2px; background:#2a2a2a; position:relative; }
+  .sp .slider i { position:absolute; left:0; top:0; bottom:0; width:60%; background:#1ed760; border-radius:2px; }
+  .sp .slider b { position:absolute; left:60%; top:-4px; width:12px; height:12px; border-radius:50%; background:#fff; margin-left:-6px; }
+  .sp .btn { border-radius:9999px; padding:6px 14px; font-size:10px; font-weight:600; background:#242424; color:#fff; }
+  .sp .btn.go { background:#1ed760; color:#000; }
+  .sp .btn.ghost { background:transparent; color:#8a8a8a; }
+  .sp .preview { background:linear-gradient(#1b2230,#0e1218); border-radius:12px; height:70px; position:relative; }
+  .sp .preview .cap { position:absolute; left:50%; transform:translateX(-50%); bottom:10px; background:rgba(18,18,18,.85); border-radius:8px; padding:5px 10px; text-align:center; }
+  .sp .preview .cap .s { color:rgba(255,255,255,.7); font-size:8px; }
+  .sp .preview .cap .t { font-weight:600; font-size:10px; }
+  /* onboarding */
+  .steps { display:flex; gap:6px; }
+  .steps i { flex:1; height:3px; border-radius:2px; background:#2a2a2a; }
+  .steps i.on { background:#1ed760; }
+  .mrow { background:#181818; border-radius:12px; padding:9px 12px; display:flex; justify-content:space-between; align-items:center; }
+  .mrow.sel { box-shadow: inset 0 0 0 1.5px #1ed760; }
+  .mrow .name { font-weight:600; display:flex; align-items:center; gap:6px; }
+  .mrow .meta { color:#8a8a8a; margin-top:2px; }
+  .badge { border-radius:6px; padding:1px 6px; font-size:9px; font-weight:600; background:#2a2a2a; }
+  .badge.acc { background:#1ed760; color:#000; }
+</style>
+
+<h2>오버레이 설정과 온보딩 — 이 모습이면 될까요?</h2>
+<p class="subtitle">모델 행은 A(행 안 진행 바)로 확정했습니다. 여기는 선택이 아니라 확인입니다. <b>모니터 선택은 제거</b>했고(조정 모드에서 다른 모니터로 끌면 자동 저장), 설정은 iOS 설정처럼 그룹 리스트로 정리했으며, 온보딩은 설명 문장을 빼고 제목 + 진행 바만 남겼습니다.</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">설정 &gt; 오버레이</div>
+    <div class="mockup-body" style="padding:0;">
+      <div class="sp" style="border-radius:0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;"><h4>오버레이</h4><span class="btn">위치 조정</span></div>
+        <div class="preview"><div class="cap"><div class="s">We buffer about two seconds of audio.</div><div class="t">약 2초 분량의 오디오를 버퍼링합니다.</div></div></div>
+        <div class="group">
+          <div class="item"><span>표시</span><div class="seg"><span class="on">원문+번역</span><span>원문</span><span>번역</span></div></div>
+          <div class="item"><span>자막 언어</span><span class="ctl">시스템 기본 ▾</span></div>
+          <div class="item"><span>원어</span><span class="ctl">자동 감지 ▾</span></div>
+        </div>
+        <div class="group">
+          <div class="item"><span>글자 크기</span><div class="ctl"><div class="slider"><i></i><b></b></div>24</div></div>
+          <div class="item"><span>배경 투명도</span><div class="ctl"><div class="slider"><i style="width:80%"></i><b style="left:80%"></b></div>80%</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">온보딩 · 3/5 전사 모델</div>
+    <div class="mockup-body" style="padding:0;">
+      <div class="sp" style="border-radius:0;">
+        <div class="steps"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div>
+        <h4>전사 모델</h4>
+        <div class="mrow sel"><div><div class="name">Whisper Small <span class="badge acc">추천</span></div><div class="meta">466 MB · 속도·정확도 균형</div></div></div>
+        <div class="mrow"><div><div class="name">Whisper Base</div><div class="meta">142 MB · 빠름 · 짧은 문장에 적합</div></div></div>
+        <div class="mrow"><div><div class="name">Whisper Large v3 Turbo</div><div class="meta">1.6 GB · 높은 정확도 · 다국어 강함</div></div></div>
+        <div class="mrow"><div><div class="name">Whisper Tiny</div><div class="meta">75 MB · 가장 빠름 · 정확도 낮음</div></div></div>
+        <div style="margin-top:auto;display:flex;justify-content:space-between;align-items:center;"><span class="btn ghost">이전</span><span class="btn go">466 MB 받고 계속</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:16px;">
+  <h3>문구 정리 목록</h3>
+  <ul>
+    <li>라이브: 빈 상태 안내 문장·단축키 힌트 삭제. 헤더에 "EN → KO · 모델명" 한 줄만.</li>
+    <li>설정 &gt; 일반: 단축키 카드 유지(값만), 설명 없음.</li>
+    <li>오버레이 미리보기: 설정 페이지 안에 실제 스타일을 미리보는 카드 추가. 조정 모드 힌트 칩은 오버레이 위에서만.</li>
+    <li>온보딩: "권한이 필요합니다" 설명 → 제목 + 버튼 2개만. "추천 모델에 배지를 표시했습니다" 문장 삭제. 완료 화면은 "준비 완료" + 시작하기.</li>
+    <li>모델 행: 속도는 점 5개, 설명은 한 구절.</li>
+    <li>트레이: 그대로.</li>
+  </ul>
+</div>
+
+<p class="subtitle">이 방향이 맞으면 터미널에서 알려주세요. 그러면 설계 섹션(모델 레지스트리·다운로드 백엔드, UI 리디자인 범위)을 정리하고 스펙을 갱신합니다.</p>
