@@ -11,8 +11,16 @@ pub fn resolve(pref: &str) -> Lang {
 }
 
 pub fn resolve_with(pref: &str, system: Option<&str>) -> Lang {
-    let code = if pref == "system" { system.unwrap_or("en") } else { pref };
-    let primary = code.split(['-', '_']).next().unwrap_or("").to_ascii_lowercase();
+    let code = if pref == "system" {
+        system.unwrap_or("en")
+    } else {
+        pref
+    };
+    let primary = code
+        .split(['-', '_'])
+        .next()
+        .unwrap_or("")
+        .to_ascii_lowercase();
     match primary.as_str() {
         "ko" => Lang::Ko,
         "ja" => Lang::Ja,

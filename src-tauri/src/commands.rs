@@ -33,7 +33,11 @@ pub fn get_platform() -> String {
 // ponytail: 2단계에서 Core Audio 탭 생성 시도로 교체한다.
 #[tauri::command]
 pub fn check_audio_permission() -> String {
-    if cfg!(target_os = "windows") { "granted".into() } else { "unknown".into() }
+    if cfg!(target_os = "windows") {
+        "granted".into()
+    } else {
+        "unknown".into()
+    }
 }
 
 #[tauri::command]
@@ -44,7 +48,9 @@ pub fn open_privacy_settings(app: AppHandle) -> Result<(), String> {
     } else {
         "ms-settings:privacy-microphone"
     };
-    app.opener().open_url(url, None::<&str>).map_err(|e| e.to_string())
+    app.opener()
+        .open_url(url, None::<&str>)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

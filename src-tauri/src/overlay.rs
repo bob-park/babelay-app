@@ -59,11 +59,19 @@ fn monitor_id(m: &tauri::Monitor) -> String {
 }
 
 fn monitor_rect(m: &tauri::Monitor) -> Rect {
-    Rect { x: m.position().x, y: m.position().y, w: m.size().width, h: m.size().height }
+    Rect {
+        x: m.position().x,
+        y: m.position().y,
+        w: m.size().width,
+        h: m.size().height,
+    }
 }
 
 pub fn monitors(app: &AppHandle) -> Result<Vec<MonitorInfo>, String> {
-    let primary = app.primary_monitor().map_err(|e| e.to_string())?.map(|m| monitor_id(&m));
+    let primary = app
+        .primary_monitor()
+        .map_err(|e| e.to_string())?
+        .map(|m| monitor_id(&m));
     let list = app.available_monitors().map_err(|e| e.to_string())?;
     Ok(list
         .iter()
@@ -111,7 +119,8 @@ pub fn create(app: &AppHandle, settings: &Settings) -> Result<(), String> {
         .visible(false)
         .build()
         .map_err(|e| e.to_string())?;
-    win.set_ignore_cursor_events(true).map_err(|e| e.to_string())?;
+    win.set_ignore_cursor_events(true)
+        .map_err(|e| e.to_string())?;
     apply_position(app, settings)?;
     if settings.overlay.enabled {
         win.show().map_err(|e| e.to_string())?;
@@ -123,34 +132,46 @@ pub fn apply_position(app: &AppHandle, settings: &Settings) -> Result<(), String
     if ADJUST_MODE.load(Ordering::Relaxed) {
         return Ok(()); // 드래그 중에는 설정 반영으로 창을 되돌리지 않는다
     }
-    let Some(win) = app.get_webview_window(LABEL) else { return Ok(()) };
+    let Some(win) = app.get_webview_window(LABEL) else {
+        return Ok(());
+    };
     let mon = target_monitor(app, &settings.overlay.monitor_id)?;
     let r = rect_from(&settings.overlay, &mon);
-    win.set_size(PhysicalSize::new(r.w, r.h)).map_err(|e| e.to_string())?;
-    win.set_position(PhysicalPosition::new(r.x, r.y)).map_err(|e| e.to_string())?;
+    win.set_size(PhysicalSize::new(r.w, r.h))
+        .map_err(|e| e.to_string())?;
+    win.set_position(PhysicalPosition::new(r.x, r.y))
+        .map_err(|e| e.to_string())?;
     Ok(())
 }
 
 pub fn set_visible(app: &AppHandle, visible: bool) -> Result<(), String> {
-    let Some(win) = app.get_webview_window(LABEL) else { return Ok(()) };
+    let Some(win) = app.get_webview_window(LABEL) else {
+        return Ok(());
+    };
     if visible { win.show() } else { win.hide() }.map_err(|e| e.to_string())
 }
 
 pub fn set_adjust_mode(app: &AppHandle, enabled: bool) -> Result<(), String> {
     // 창이 없으면 플래그를 세우지 않는다. 세워두면 지울 방법이 없다.
-    let Some(win) = app.get_webview_window(LABEL) else { return Ok(()) };
+    let Some(win) = app.get_webview_window(LABEL) else {
+        return Ok(());
+    };
     ADJUST_MODE.store(enabled, Ordering::Relaxed);
-    win.set_ignore_cursor_events(!enabled).map_err(|e| e.to_string())?;
+    win.set_ignore_cursor_events(!enabled)
+        .map_err(|e| e.to_string())?;
     if enabled {
         win.show().map_err(|e| e.to_string())?;
         win.set_focus().map_err(|e| e.to_string())?;
     }
-    app.emit_to(LABEL, "overlay-adjust-mode", enabled).map_err(|e| e.to_string())
+    app.emit_to(LABEL, "overlay-adjust-mode", enabled)
+        .map_err(|e| e.to_string())
 }
 
 /// 현재 창 위치·크기를 비율로 환산해 설정에 저장한다.
 pub fn commit_position(app: &AppHandle) -> Result<(), String> {
-    let Some(win) = app.get_webview_window(LABEL) else { return Ok(()) };
+    let Some(win) = app.get_webview_window(LABEL) else {
+        return Ok(());
+    };
     let pos = win.outer_position().map_err(|e| e.to_string())?;
     let size = win.inner_size().map_err(|e| e.to_string())?;
     let mon = win
@@ -158,7 +179,12 @@ pub fn commit_position(app: &AppHandle) -> Result<(), String> {
         .map_err(|e| e.to_string())?
         .ok_or("no monitor")?;
     let (x, y, w) = ratios_from(
-        &Rect { x: pos.x, y: pos.y, w: size.width, h: size.height },
+        &Rect {
+            x: pos.x,
+            y: pos.y,
+            w: size.width,
+            h: size.height,
+        },
         &monitor_rect(&mon),
     );
     let state = app.state::<SettingsState>();
@@ -176,7 +202,12 @@ mod tests {
     use crate::settings::Overlay;
 
     fn mon() -> Rect {
-        Rect { x: 0, y: 0, w: 2000, h: 1000 }
+        Rect {
+            x: 0,
+            y: 0,
+            w: 2000,
+            h: 1000,
+        }
     }
 
     #[test]
@@ -190,7 +221,12 @@ mod tests {
 
     #[test]
     fn ratios_roundtrip() {
-        let o = Overlay { x_ratio: 0.3, y_ratio: 0.2, w_ratio: 0.5, ..Overlay::default() };
+        let o = Overlay {
+            x_ratio: 0.3,
+            y_ratio: 0.2,
+            w_ratio: 0.5,
+            ..Overlay::default()
+        };
         let r = rect_from(&o, &mon());
         let (x, y, w) = ratios_from(&r, &mon());
         assert!((x - 0.3).abs() < 1e-6);
@@ -200,14 +236,24 @@ mod tests {
 
     #[test]
     fn ratios_are_clamped() {
-        let far = Rect { x: -5000, y: 9000, w: 10, h: 10 };
+        let far = Rect {
+            x: -5000,
+            y: 9000,
+            w: 10,
+            h: 10,
+        };
         let (x, y, w) = ratios_from(&far, &mon());
         assert_eq!((x, y, w), (0.0, 1.0, 0.2));
     }
 
     #[test]
     fn secondary_monitor_offset_is_respected() {
-        let m = Rect { x: 2000, y: -500, w: 1000, h: 1000 };
+        let m = Rect {
+            x: 2000,
+            y: -500,
+            w: 1000,
+            h: 1000,
+        };
         let r = rect_from(&Overlay::default(), &m);
         assert_eq!(r.x, 2000 + 500 - 300);
         assert_eq!(r.y, -500 + 850 - 100);

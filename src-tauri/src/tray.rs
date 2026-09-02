@@ -68,17 +68,19 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
 
     let capture_sc: Shortcut = SHORTCUT_CAPTURE.parse().expect("valid shortcut");
     let overlay_sc: Shortcut = SHORTCUT_OVERLAY.parse().expect("valid shortcut");
-    app.global_shortcut().on_shortcut(capture_sc, |app, _, ev| {
-        if ev.state() == ShortcutState::Pressed {
-            toggle_capture(app);
-        }
-    })
+    app.global_shortcut()
+        .on_shortcut(capture_sc, |app, _, ev| {
+            if ev.state() == ShortcutState::Pressed {
+                toggle_capture(app);
+            }
+        })
         .map_err(std::io::Error::other)?;
-    app.global_shortcut().on_shortcut(overlay_sc, |app, _, ev| {
-        if ev.state() == ShortcutState::Pressed {
-            let _ = toggle_overlay(app);
-        }
-    })
+    app.global_shortcut()
+        .on_shortcut(overlay_sc, |app, _, ev| {
+            if ev.state() == ShortcutState::Pressed {
+                let _ = toggle_overlay(app);
+            }
+        })
         .map_err(std::io::Error::other)?;
     Ok(())
 }

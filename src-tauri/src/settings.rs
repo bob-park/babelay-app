@@ -59,7 +59,7 @@ pub struct Overlay {
     pub x_ratio: f64,
     pub y_ratio: f64,
     pub w_ratio: f64,
-    pub display_mode: String, // both | source | target
+    pub display_mode: String,  // both | source | target
     pub subtitle_lang: String, // system | ko | en | ja
     pub font_size: u32,
     pub bg_opacity: f64,
@@ -79,25 +79,41 @@ impl Default for Settings {
 
 impl Default for General {
     fn default() -> Self {
-        Self { theme: "system".into(), ui_language: "system".into(), onboarding_done: false }
+        Self {
+            theme: "system".into(),
+            ui_language: "system".into(),
+            onboarding_done: false,
+        }
     }
 }
 
 impl Default for Asr {
     fn default() -> Self {
-        Self { model_id: "small".into(), gpu: true, source_lang: "auto".into() }
+        Self {
+            model_id: "small".into(),
+            gpu: true,
+            source_lang: "auto".into(),
+        }
     }
 }
 
 impl Default for Translation {
     fn default() -> Self {
-        Self { backend: "local".into(), local_model: "qwen3.5-2b".into(), cloud: Cloud::default() }
+        Self {
+            backend: "local".into(),
+            local_model: "qwen3.5-2b".into(),
+            cloud: Cloud::default(),
+        }
     }
 }
 
 impl Default for Cloud {
     fn default() -> Self {
-        Self { provider: "openai".into(), model: "gpt-4o-mini".into(), base_url: String::new() }
+        Self {
+            provider: "openai".into(),
+            model: "gpt-4o-mini".into(),
+            base_url: String::new(),
+        }
     }
 }
 
@@ -157,7 +173,8 @@ impl SettingsState {
     pub fn set(&self, app: &AppHandle, new: Settings) -> Result<(), String> {
         new.save(&self.path).map_err(|e| e.to_string())?;
         *self.current.lock().unwrap() = new.clone();
-        app.emit("settings-changed", &new).map_err(|e| e.to_string())
+        app.emit("settings-changed", &new)
+            .map_err(|e| e.to_string())
     }
 }
 
@@ -235,6 +252,9 @@ mod tests {
 
     #[test]
     fn missing_file_is_default() {
-        assert_eq!(Settings::load(Path::new("/nonexistent/settings.json")), Settings::default());
+        assert_eq!(
+            Settings::load(Path::new("/nonexistent/settings.json")),
+            Settings::default()
+        );
     }
 }
