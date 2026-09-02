@@ -1,10 +1,24 @@
+use crate::tray;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::{
     fs, io,
     path::{Path, PathBuf},
     sync::Mutex,
 };
 use tauri::{AppHandle, Emitter};
+
+/// patch를 base에 깊게 병합한다. 객체끼리는 재귀, 그 외는 통째로 치환.
+pub fn merge(base: &mut Value, patch: &Value) {
+    match (base, patch) {
+        (Value::Object(b), Value::Object(p)) => {
+            for (k, v) in p {
+                merge(b.entry(k.clone()).or_insert(Value::Null), v);
+            }
+        }
+        (b, p) => *b = p.clone(),
+    }
+}
 
 // ponytail: 열거형 대신 String. 프론트 TS 유니온이 값을 제한하고,
 // 모르는 값은 각 소비처에서 기본값으로 취급한다.
@@ -140,7 +154,12 @@ impl Settings {
                 eprintln!("settings: parse error, using defaults: {e}");
                 Settings::default()
             }),
-            Err(_) => Settings::default(),
+            Err(e) => {
+                if e.kind() != io::ErrorKind::NotFound {
+                    eprintln!("settings: read error, using defaults: {e}");
+                }
+                Settings::default()
+            }
         }
     }
 
@@ -174,7 +193,9 @@ impl SettingsState {
         new.save(&self.path).map_err(|e| e.to_string())?;
         *self.current.lock().unwrap() = new.clone();
         app.emit("settings-changed", &new)
-            .map_err(|e| e.to_string())
+            .map_err(|e| e.to_string())?;
+        tray::relabel(app, &new); // 트레이가 아직 없으면 무시된다
+        Ok(())
     }
 }
 
@@ -248,6 +269,30 @@ mod tests {
         let path = dir.path().join("settings.json");
         std::fs::write(&path, "{not json").unwrap();
         assert_eq!(Settings::load(&path), Settings::default());
+    }
+
+    #[test]
+    fn merge_recurses_objects_and_replaces_scalars() {
+        let mut base = serde_json::json!({
+            "general": { "theme": "system", "ui_language": "system" },
+            "overlay": { "font_size": 24, "enabled": true },
+            "version": 1
+        });
+        merge(
+            &mut base,
+            &serde_json::json!({ "overlay": { "font_size": 40 }, "version": 2 }),
+        );
+        assert_eq!(base["overlay"]["font_size"], 40);
+        assert_eq!(base["overlay"]["enabled"], true); // 형제 필드는 유지
+        assert_eq!(base["general"]["theme"], "system"); // 다른 가지는 그대로
+        assert_eq!(base["version"], 2); // 스칼라는 치환
+    }
+
+    #[test]
+    fn merge_replaces_object_with_scalar() {
+        let mut base = serde_json::json!({ "a": { "b": 1 } });
+        merge(&mut base, &serde_json::json!({ "a": 5 }));
+        assert_eq!(base["a"], 5);
     }
 
     #[test]

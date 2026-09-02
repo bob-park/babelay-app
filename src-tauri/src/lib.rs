@@ -29,7 +29,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::get_settings,
-            commands::set_settings,
+            commands::patch_settings,
             commands::get_platform,
             commands::check_audio_permission,
             commands::open_privacy_settings,

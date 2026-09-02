@@ -4,7 +4,7 @@ import { api } from "../lib/tauri";
 import type { Settings } from "../lib/types";
 
 vi.mock("../lib/tauri", () => ({
-  api: { getSettings: vi.fn(), setSettings: vi.fn() },
+  api: { getSettings: vi.fn(), patchSettings: vi.fn() },
 }));
 
 const h = vi.hoisted(() => ({
@@ -33,12 +33,24 @@ describe("mergeSettings", () => {
 });
 
 describe("useSettings.update", () => {
-  it("rolls back the optimistic state when the backend rejects", async () => {
-    useSettings.setState({ settings: defaultSettings });
-    vi.mocked(api.setSettings).mockRejectedValueOnce(new Error("disk full"));
+  it("rolls back and surfaces the error when the backend rejects", async () => {
+    useSettings.setState({ settings: defaultSettings, error: null });
+    vi.mocked(api.patchSettings).mockRejectedValueOnce(new Error("disk full"));
 
-    await expect(useSettings.getState().update({ overlay: { font_size: 40 } })).rejects.toThrow("disk full");
+    await useSettings.getState().update({ overlay: { font_size: 40 } });
     expect(useSettings.getState().settings).toBe(defaultSettings);
+    expect(useSettings.getState().error).toBe("disk full");
+
+    useSettings.getState().clearError();
+    expect(useSettings.getState().error).toBeNull();
+  });
+
+  it("sends only the patch, not the whole document", async () => {
+    useSettings.setState({ settings: defaultSettings, error: null });
+    vi.mocked(api.patchSettings).mockResolvedValueOnce(undefined);
+
+    await useSettings.getState().update({ overlay: { font_size: 40 } });
+    expect(api.patchSettings).toHaveBeenLastCalledWith({ overlay: { font_size: 40 } });
   });
 
   it("ignores a settings-changed echo while an update is in flight", async () => {
@@ -46,7 +58,7 @@ describe("useSettings.update", () => {
     const unsub = useSettings.getState().subscribeBackend();
 
     let finish!: () => void;
-    vi.mocked(api.setSettings).mockReturnValueOnce(new Promise<void>((r) => (finish = r)));
+    vi.mocked(api.patchSettings).mockReturnValueOnce(new Promise<void>((r) => (finish = r)));
     const inFlight = useSettings.getState().update({ overlay: { font_size: 40 } });
 
     const stale = mergeSettings(defaultSettings, { overlay: { font_size: 10 } });
@@ -58,6 +70,25 @@ describe("useSettings.update", () => {
 
     h.listeners["settings-changed"]!({ payload: stale });
     expect(useSettings.getState().settings?.overlay.font_size).toBe(10);
+    unsub();
+  });
+
+  it("keeps a backend-originated field from an echo that arrives mid-write", async () => {
+    useSettings.setState({ settings: defaultSettings, error: null });
+    const unsub = useSettings.getState().subscribeBackend();
+
+    let finish!: () => void;
+    vi.mocked(api.patchSettings).mockReturnValueOnce(new Promise<void>((r) => (finish = r)));
+    const inFlight = useSettings.getState().update({ overlay: { font_size: 40 } });
+
+    // 트레이가 오버레이를 끈 결과가 쓰기 도중에 도착한다.
+    const fromTray = mergeSettings(defaultSettings, { overlay: { enabled: false } });
+    h.listeners["settings-changed"]!({ payload: fromTray });
+    expect(useSettings.getState().settings?.overlay.enabled).toBe(false);
+    expect(useSettings.getState().settings?.overlay.font_size).toBe(40);
+
+    finish();
+    await inFlight;
     unsub();
   });
 });

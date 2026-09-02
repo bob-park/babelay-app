@@ -1,26 +1,32 @@
 use crate::{
     overlay,
-    settings::{Settings, SettingsState},
+    settings::{self, Settings, SettingsState},
     windows,
 };
-use tauri::{AppHandle, Manager, State};
+use std::sync::atomic::Ordering;
+use tauri::{AppHandle, State};
 
 #[tauri::command]
 pub fn get_settings(state: State<'_, SettingsState>) -> Settings {
     state.get()
 }
 
+/// 부분 갱신. 전체 문서를 쓰면 동시 쓰기가 서로를 덮는다.
 #[tauri::command]
-pub fn set_settings(
+pub fn patch_settings(
     app: AppHandle,
     state: State<'_, SettingsState>,
-    settings: Settings,
+    patch: serde_json::Value,
 ) -> Result<(), String> {
     let before = state.get();
-    state.set(&app, settings.clone())?;
-    if before.overlay != settings.overlay {
-        overlay::apply_position(&app, &settings)?;
-        overlay::set_visible(&app, settings.overlay.enabled)?;
+    let mut merged = serde_json::to_value(&before).map_err(|e| e.to_string())?;
+    settings::merge(&mut merged, &patch);
+    let next: Settings = serde_json::from_value(merged).map_err(|e| e.to_string())?;
+    state.set(&app, next.clone())?;
+    // 조정 모드 중에는 창을 건드리지 않는다. 종료할 때 exit_adjust_mode가 다시 맞춘다.
+    if before.overlay != next.overlay && !overlay::ADJUST_MODE.load(Ordering::Relaxed) {
+        overlay::apply_position(&app, &next)?;
+        overlay::set_visible(&app, next.overlay.enabled)?;
     }
     Ok(())
 }
@@ -65,13 +71,8 @@ pub fn finish_onboarding(app: AppHandle, state: State<'_, SettingsState>) -> Res
 
 #[tauri::command]
 pub fn overlay_set_adjust_mode(app: AppHandle, enabled: bool) -> Result<(), String> {
-    overlay::set_adjust_mode(&app, enabled)?;
-    if !enabled {
-        let s = app.state::<SettingsState>().get();
-        overlay::apply_position(&app, &s)?; // 취소한 드래그를 저장된 비율로 되돌린다
-        overlay::set_visible(&app, s.overlay.enabled)?;
-    }
-    Ok(())
+    // false는 set_adjust_mode 안에서 exit_adjust_mode로 위임된다(유일한 종료 경로).
+    overlay::set_adjust_mode(&app, enabled)
 }
 
 #[tauri::command]

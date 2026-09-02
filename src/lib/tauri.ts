@@ -1,9 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { MonitorInfo, Settings } from "./types";
+import type { DeepPartial, MonitorInfo, Settings } from "./types";
 
 export const api = {
   getSettings: () => invoke<Settings>("get_settings"),
-  setSettings: (settings: Settings) => invoke<void>("set_settings", { settings }),
+  patchSettings: (patch: DeepPartial<Settings>) => invoke<void>("patch_settings", { patch }),
   getPlatform: () => invoke<string>("get_platform"),
   checkAudioPermission: () => invoke<"granted" | "denied" | "unknown">("check_audio_permission"),
   openPrivacySettings: () => invoke<void>("open_privacy_settings"),

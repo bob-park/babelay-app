@@ -42,36 +42,52 @@ export const mergeSettings = (base: Settings, patch: DeepPartial<Settings>): Set
 
 interface SettingsStore {
   settings: Settings | null;
+  error: string | null;
   load: () => Promise<void>;
   update: (patch: DeepPartial<Settings>) => Promise<void>;
+  setError: (e: unknown) => void;
+  clearError: () => void;
   subscribeBackend: () => () => void;
 }
 
-// 인플라이트 update 수. settings-changed는 호출자에게도 되돌아오므로
-// 저장이 끝나기 전에 도착한 에코는 낙관적 상태를 되돌릴 수 있다.
+const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+// 인플라이트 update 수와 그 패치의 합. settings-changed는 호출자에게도 되돌아오므로
+// 아직 디스크에 닿지 않은 필드는 에코 위에 다시 덮어야 낙관적 상태가 살아남는다.
+// 에코 자체를 버리면 그 사이 백엔드가 바꾼 필드(트레이 토글 등)를 놓친다.
 let pending = 0;
+let pendingPatch: DeepPartial<Settings> | null = null;
 
 export const useSettings = create<SettingsStore>((set, get) => ({
   settings: null,
-  load: async () => set({ settings: await api.getSettings() }),
-  update: async (patch) => {
-    const prev = get().settings;
-    const next = mergeSettings(prev ?? defaultSettings, patch);
-    set({ settings: next });
-    pending++;
+  error: null,
+  load: async () => {
     try {
-      await api.setSettings(next);
+      set({ settings: await api.getSettings() });
     } catch (e) {
-      set({ settings: prev });
-      throw e;
-    } finally {
-      pending--;
+      // 설정을 못 읽어도 셸은 띄운다. 기본값 + 오류 배너.
+      set({ settings: get().settings ?? defaultSettings, error: message(e) });
     }
   },
+  update: async (patch) => {
+    const prev = get().settings;
+    set({ settings: mergeSettings(prev ?? defaultSettings, patch) });
+    pending++;
+    pendingPatch = pendingPatch ? merge(pendingPatch, patch) : patch;
+    try {
+      await api.patchSettings(patch);
+    } catch (e) {
+      set({ settings: prev, error: message(e) });
+    } finally {
+      pending--;
+      if (pending === 0) pendingPatch = null;
+    }
+  },
+  setError: (e) => set({ error: message(e) }),
+  clearError: () => set({ error: null }),
   subscribeBackend: () => {
     const p = listen<Settings>("settings-changed", (e) => {
-      if (pending > 0) return;
-      set({ settings: e.payload });
+      set({ settings: pendingPatch ? mergeSettings(e.payload, pendingPatch) : e.payload });
     });
     return () => {
       p.then((un) => un());
