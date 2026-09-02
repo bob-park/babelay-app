@@ -21,7 +21,8 @@ use tauri::{AppHandle, Emitter, Manager};
 /// - 로드 실패: Starting(g) 일 때만 Idle + `engine-event Error{start_failed}`
 /// - 로드 중 `stop`: Starting(_) → Idle(시작 스레드가 갓 만든 핸들을 버린다)
 /// - `stop`: Running → Stopping(드레인 스레드) → 중계 루프가 `Stopped` 를 보면(아직 Stopping 일 때만) Idle
-/// - `stop_on_exit`: Running 은 동기로 세우고, Stopping 이면 드레인 스레드를 join 한다.
+/// - `stop`(Starting/Idle): 중계 루프가 없으므로 `Stopped` 를 직접 낸다(UI 의 stopping 해제).
+/// - `stop_on_exit`: 탭 해제는 동기, 드레인은 3초 상한.
 ///   Starting 이면 Idle 로 두고 나간다(시작 직후 종료 시 핸들 정리가 프로세스 종료와 경합).
 #[derive(Default)]
 pub enum Phase {
@@ -64,6 +65,7 @@ pub fn start(app: &AppHandle) -> Result<(), String> {
     }
     let cfg = EngineConfig {
         model_path: model_path(&dir, m),
+        model_id: settings.asr.model_id.clone(),
         use_gpu: settings.asr.gpu,
         source_lang: (settings.asr.source_lang != "auto").then(|| settings.asr.source_lang.clone()),
     };
@@ -151,32 +153,58 @@ pub fn stop(app: &AppHandle) {
     let mut phase = lock(app);
     match std::mem::replace(&mut *phase, Phase::Idle) {
         Phase::Running(h) => {
+            // 진짜 Stopped 는 드레인이 끝나면 중계 루프가 낸다. 여기서 내면 두 번이 된다.
             *phase = Phase::Stopping(std::thread::spawn(move || h.stop()));
             drop(phase);
         }
         // Starting 은 Idle 로 남긴다 — 시작 스레드가 자기 핸들을 알아서 버린다.
-        Phase::Starting(_) => drop(phase),
-        other => {
-            *phase = other;
+        // 중계 루프가 아예 없으니 UI 의 stopping 을 풀어줄 Stopped 도 여기서 낸다.
+        Phase::Starting(_) => {
+            drop(phase);
+            let _ = app.emit("engine-event", EngineEvent::Stopped);
+        }
+        // 이미 정지 중이면 곧 진짜 Stopped 가 온다. 아무것도 하지 않는다.
+        Phase::Stopping(s) => {
+            *phase = Phase::Stopping(s);
             return;
+        }
+        Phase::Idle => {
+            drop(phase);
+            let _ = app.emit("engine-event", EngineEvent::Stopped);
         }
     }
     crate::tray::relabel_capture(app, false);
 }
 
-/// 종료 경로. 오디오 탭이 살아 있는 채로 프로세스가 죽지 않도록 여기서는 기다린다.
-/// 이미 정지 중이면 드레인 스레드를 join 한다 — 대기 시간은 어차피 같은 큐 배수이고,
-/// 타임아웃을 두면 탭이 남은 채로 죽을 수 있어 그냥 기다린다.
+/// 종료 시 드레인 상한. 탭은 이미 풀렸으므로 넘겨도 잃는 것은 전사 꼬리뿐이다.
+const EXIT_DRAIN: std::time::Duration = std::time::Duration::from_secs(3);
+
+/// `f` 를 스레드에서 돌리고 최대 `EXIT_DRAIN` 만 기다린다.
+fn wait_bounded(f: impl FnOnce() + Send + 'static) {
+    let (done, rx) = mpsc::channel();
+    std::thread::spawn(move || {
+        f();
+        let _ = done.send(());
+    });
+    let _ = rx.recv_timeout(EXIT_DRAIN);
+}
+
+/// 종료 경로. 오디오 탭은 동기로 확실히 풀고(그래야 탭이 남은 채 죽지 않는다),
+/// 남은 큐 드레인은 3초까지만 기다린다 — 그 뒤에는 전사 꼬리를 포기하고 나간다.
 pub fn stop_on_exit(app: &AppHandle) {
     let mut phase = lock(app);
     match std::mem::replace(&mut *phase, Phase::Idle) {
-        Phase::Running(h) => {
+        Phase::Running(mut h) => {
             drop(phase);
-            h.stop();
+            h.stop_capture(); // 탭 해제는 동기로
+            wait_bounded(move || h.drain());
         }
+        // 이 경로의 드레인 스레드는 이미 stop_capture 를 지났다 — 탭은 풀려 있다.
         Phase::Stopping(drain) => {
             drop(phase);
-            let _ = drain.join();
+            wait_bounded(move || {
+                let _ = drain.join();
+            });
         }
         _ => return,
     }

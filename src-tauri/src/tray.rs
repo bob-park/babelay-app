@@ -16,12 +16,14 @@ pub const SHORTCUT_CAPTURE: &str = "CmdOrCtrl+Shift+S";
 pub const SHORTCUT_OVERLAY: &str = "CmdOrCtrl+Shift+O";
 
 pub fn toggle_capture(app: &AppHandle) {
-    if let Err(e) = session::toggle(app) {
+    if let Err(code) = session::toggle(app) {
+        // 코드를 그대로 넘겨야 프런트가 busy_stopping / model_missing / unknown_model 을
+        // 각각 번역한다. start_failed 는 비동기 로드 실패 경로 전용이다.
         let _ = app.emit(
             "engine-event",
             EngineEvent::Error {
-                code: "start_failed".into(),
-                message: e,
+                code,
+                message: String::new(),
             },
         );
     }
