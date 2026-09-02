@@ -24,9 +24,9 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     { to: "/settings/overlay", icon: "overlay", label: t("settings.overlay") },
   ];
   const cls = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-2 rounded-full px-3 py-2 text-sm ${isActive ? "bg-surface-2 font-semibold text-fg" : "text-fg-muted hover:text-fg"} ${collapsed ? "justify-center px-0" : ""}`;
+    `flex items-center gap-2 rounded-full py-2 text-sm ${isActive ? "bg-surface-2 font-semibold text-fg" : "text-fg-muted hover:text-fg"} ${collapsed ? "justify-center" : "px-3"}`;
   const render = (i: Item) => (
-    <NavLink key={i.to} to={i.to} className={cls} title={i.label}>
+    <NavLink key={i.to} to={i.to} className={cls} aria-label={i.label}>
       <Icon name={i.icon} />
       {!collapsed && <span>{i.label}</span>}
     </NavLink>
