@@ -4,7 +4,7 @@ use crate::{
     windows,
 };
 use std::sync::atomic::Ordering;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 
 #[tauri::command]
 pub fn get_settings(state: State<'_, SettingsState>) -> Settings {
@@ -114,6 +114,54 @@ pub fn cancel_download(app: AppHandle, id: String) -> Result<(), String> {
 #[tauri::command]
 pub fn delete_model(app: AppHandle, id: String) -> Result<(), String> {
     crate::models::delete(&app, &id)
+}
+
+#[tauri::command]
+pub fn history_sessions(
+    db: State<'_, crate::history::Db>,
+    limit: u32,
+) -> Result<Vec<crate::history::SessionSummary>, String> {
+    db.sessions(limit).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn history_segments(
+    db: State<'_, crate::history::Db>,
+    session_id: i64,
+) -> Result<Vec<crate::history::SegmentRow>, String> {
+    db.segments(session_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn history_search(
+    db: State<'_, crate::history::Db>,
+    q: String,
+) -> Result<Vec<crate::history::SegmentRow>, String> {
+    db.search(&q).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn history_delete(db: State<'_, crate::history::Db>, session_id: i64) -> Result<(), String> {
+    db.delete_session(session_id).map_err(|e| e.to_string())
+}
+
+/// 다운로드 폴더에 쓰고 저장 경로를 돌려준다.
+#[tauri::command]
+pub fn history_export(
+    app: AppHandle,
+    db: State<'_, crate::history::Db>,
+    session_id: i64,
+    format: String,
+) -> Result<String, String> {
+    let ext = if format == "srt" { "srt" } else { "txt" };
+    let body = db.export(session_id, ext).map_err(|e| e.to_string())?;
+    let path = app
+        .path()
+        .download_dir()
+        .map_err(|e| e.to_string())?
+        .join(format!("babelay-{session_id}.{ext}"));
+    std::fs::write(&path, body).map_err(|e| e.to_string())?;
+    Ok(path.to_string_lossy().into_owned())
 }
 
 #[tauri::command]

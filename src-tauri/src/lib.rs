@@ -22,6 +22,9 @@ pub fn run() {
             app.manage(SettingsState::new(path));
             app.manage(models::Downloads::default());
             app.manage(SessionState::default());
+            app.manage(history::open(
+                &app.path().app_local_data_dir()?.join("history.sqlite"),
+            )?);
             babelay_engine::transcribe::install_logging_hooks();
             let settings = app.state::<SettingsState>().get();
             let handle = app.handle().clone();
@@ -51,6 +54,11 @@ pub fn run() {
             commands::download_model,
             commands::cancel_download,
             commands::delete_model,
+            commands::history_sessions,
+            commands::history_segments,
+            commands::history_search,
+            commands::history_delete,
+            commands::history_export,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")

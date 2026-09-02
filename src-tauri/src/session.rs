@@ -36,6 +36,8 @@ pub enum Phase {
 pub struct SessionState {
     phase: Mutex<Phase>,
     next_gen: AtomicU64,
+    /// 기록 중인 히스토리 세션 행 id(`history`가 읽고 쓴다).
+    pub session_id: Mutex<Option<i64>>,
 }
 
 fn state(app: &AppHandle) -> &SessionState {
@@ -79,12 +81,17 @@ pub fn start(app: &AppHandle) -> Result<(), String> {
     };
     crate::tray::relabel_capture(app, true);
     let app2 = app.clone();
-    std::thread::spawn(move || run_session(app2, cfg, gen));
+    let log = (
+        settings.asr.source_lang.clone(),
+        settings.overlay.subtitle_lang.clone(),
+        settings.asr.model_id.clone(),
+    );
+    std::thread::spawn(move || run_session(app2, cfg, gen, log));
     Ok(())
 }
 
 /// 모델 로드부터 이벤트 중계까지 한 스레드에서 돈다.
-fn run_session(app: AppHandle, cfg: EngineConfig, gen: u64) {
+fn run_session(app: AppHandle, cfg: EngineConfig, gen: u64, log: (String, String, String)) {
     let (tx, rx) = mpsc::channel();
     let handle = match start_default(cfg, tx) {
         Ok(h) => h,
@@ -118,6 +125,7 @@ fn run_session(app: AppHandle, cfg: EngineConfig, gen: u64) {
         }
         *phase = Phase::Running(handle);
     }
+    crate::history::begin(&app, &log.0, &log.1, &log.2);
     // EngineHandle 이 tx 클론을 붙들고 있어 rx 는 스스로 닫히지 않는다. Stopped 에서 끊는다.
     for ev in rx {
         if let EngineEvent::Final { .. } = &ev {
@@ -126,6 +134,7 @@ fn run_session(app: AppHandle, cfg: EngineConfig, gen: u64) {
         let stopped = matches!(ev, EngineEvent::Stopped);
         let _ = app.emit("engine-event", &ev);
         if stopped {
+            crate::history::end(&app);
             break;
         }
     }
