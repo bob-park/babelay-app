@@ -166,12 +166,52 @@ mod tests {
     use super::*;
 
     #[test]
-    fn default_roundtrip() {
+    fn mutated_roundtrip() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("settings.json");
-        let s = Settings::default();
+        let mut s = Settings::default();
+        s.general.theme = "dark".into();
+        s.asr.gpu = false;
+        s.translation.cloud.base_url = "x".into();
+        s.overlay.font_size = 33;
         s.save(&path).unwrap();
         assert_eq!(Settings::load(&path), s);
+
+        // 필드가 스네이크 케이스 키로 실제 기록되는지 확인 (프론트 TS와 계약).
+        let text = fs::read_to_string(&path).unwrap();
+        assert!(text.contains("\"ui_language\""), "{text}");
+        assert!(text.contains("\"x_ratio\""), "{text}");
+        assert!(text.contains("\"base_url\""), "{text}");
+    }
+
+    #[test]
+    fn defaults_match_spec() {
+        let s = Settings::default();
+        assert_eq!(s.version, 1);
+
+        assert_eq!(s.general.theme, "system");
+        assert_eq!(s.general.ui_language, "system");
+        assert!(!s.general.onboarding_done);
+
+        assert_eq!(s.asr.model_id, "small");
+        assert!(s.asr.gpu);
+        assert_eq!(s.asr.source_lang, "auto");
+
+        assert_eq!(s.translation.backend, "local");
+        assert_eq!(s.translation.local_model, "qwen3.5-2b");
+        assert_eq!(s.translation.cloud.provider, "openai");
+        assert_eq!(s.translation.cloud.model, "gpt-4o-mini");
+        assert_eq!(s.translation.cloud.base_url, "");
+
+        assert!(s.overlay.enabled);
+        assert_eq!(s.overlay.monitor_id, "");
+        assert_eq!(s.overlay.x_ratio, 0.5);
+        assert_eq!(s.overlay.y_ratio, 0.85);
+        assert_eq!(s.overlay.w_ratio, 0.6);
+        assert_eq!(s.overlay.display_mode, "both");
+        assert_eq!(s.overlay.subtitle_lang, "system");
+        assert_eq!(s.overlay.font_size, 24);
+        assert_eq!(s.overlay.bg_opacity, 0.8);
     }
 
     #[test]
