@@ -33,6 +33,10 @@
     "sampleSource": "We buffer about two seconds of audio before running the model.",
     "sampleTarget": "The model runs after buffering about two seconds of audio."
   },
+  "errors": {
+    "busy": "Another download is in progress", "inUse": "The model in use cannot be deleted",
+    "notDownloading": "No download in progress", "unknownModel": "Unknown model"
+  },
   "onboarding": {
     "next": "Next", "back": "Back", "skip": "Skip", "finish": "Get started",
     "title": { "language": "Language", "permission": "Allow system audio capture", "asr": "Transcription model", "llm": "Translation model", "done": "All set" },

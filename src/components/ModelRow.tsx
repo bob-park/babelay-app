@@ -14,6 +14,8 @@ interface Props {
 export function ModelRow({ status, selected, onSelect }: Props) {
   const { t } = useTranslation();
   const { download, cancel, remove } = useModels();
+  // 슬롯은 하나뿐이라 다른 모델을 받는 중이면 백엔드가 "busy" 로 거절한다.
+  const busy = useModels((st) => st.models.some((m) => m.download));
   const action = rowAction(status);
   const { info } = status;
   const pct = status.download ? Math.round((status.download.received / Math.max(1, status.download.total)) * 100) : null;
@@ -23,7 +25,7 @@ export function ModelRow({ status, selected, onSelect }: Props) {
     : `${formatSize(info.size_bytes)} · ${t(info.desc_key)}`;
 
   const button = {
-    download: <PillButton size="sm" variant="primary" onClick={() => download(info.id)}>{t("models.download")}</PillButton>,
+    download: <PillButton size="sm" variant="primary" disabled={busy} onClick={() => download(info.id)}>{t("models.download")}</PillButton>,
     cancel: <PillButton size="sm" variant="ghost" onClick={() => cancel(info.id)}>{t("models.cancel")}</PillButton>,
     select: (
       <div className="flex gap-1">

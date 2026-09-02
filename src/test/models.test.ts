@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { rowAction, formatSize } from "../lib/models";
+import { rowAction, formatSize, ERROR_KEYS } from "../lib/models";
+import en from "../locales/en.json";
 import type { ModelStatus } from "../lib/types";
 
 const base: ModelStatus = {
@@ -20,5 +21,12 @@ describe("formatSize", () => {
   it("formats MB and GB", () => {
     expect(formatSize(75 * 1024 * 1024)).toBe("75 MB");
     expect(formatSize(1.5 * 1024 ** 3)).toBe("1.5 GB");
+  });
+});
+
+describe("ERROR_KEYS", () => {
+  it("maps every backend code to an existing locale key", () => {
+    const errors = (en as { errors: Record<string, string> }).errors;
+    for (const key of Object.values(ERROR_KEYS)) expect(errors[key.replace("errors.", "")]).toBeTruthy();
   });
 });

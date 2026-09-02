@@ -14,7 +14,7 @@ const ALL: Step[] = ["language", "permission", "asr", "llm", "done"];
 export default function Onboarding() {
   const { t } = useTranslation();
   const { settings, update, setError } = useSettings();
-  const { models, download, refresh } = useModels();
+  const { models, download, refresh, lastEvent } = useModels();
   const [steps, setSteps] = useState<Step[]>(ALL);
   const [idx, setIdx] = useState(0);
   const [perm, setPerm] = useState<"granted" | "denied" | "unknown" | null>(null);
@@ -39,12 +39,17 @@ export default function Onboarding() {
     if (waiting && waiting === chosenId && models.find((m) => m.info.id === waiting)?.installed) { setWaiting(null); next(); }
   }, [models, waiting, chosenId]);
 
+  // 취소·실패로 끝났으면 버튼을 다시 살린다. 안 그러면 영영 disabled.
+  useEffect(() => {
+    if (waiting && lastEvent && lastEvent.id === waiting && lastEvent.state !== "downloading" && lastEvent.state !== "done") setWaiting(null);
+  }, [lastEvent, waiting]);
+
   if (!settings) return null;
 
   const modelStep = (kind: ModelKind) => {
     const current = kind === "asr" ? settings.asr.model_id : settings.translation.local_model;
     const chosen = models.find((m) => m.info.id === current);
-    const select = (id: string) => (kind === "asr" ? update({ asr: { model_id: id } }) : update({ translation: { local_model: id } }));
+    const select = (id: string) => (kind === "asr" ? update({ asr: { model_id: id } }) : update({ translation: { local_model: id } })).then(() => refresh());
     const primary = !chosen ? null : chosen.installed
       ? <PillButton variant="primary" onClick={next}>{t("models.continue")}</PillButton>
       : chosen.download

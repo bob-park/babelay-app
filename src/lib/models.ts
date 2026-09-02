@@ -1,8 +1,9 @@
 import { create } from "zustand";
+import i18next from "i18next";
 import { listen } from "@tauri-apps/api/event";
 import { api } from "./tauri";
 import { useSettings } from "./settings";
-import type { DownloadEvent, ModelStatus } from "./types";
+import type { DownloadEvent, DownloadState, ModelStatus } from "./types";
 
 export type RowAction = "download" | "cancel" | "select" | "delete";
 
@@ -21,6 +22,7 @@ export function formatSize(bytes: number): string {
 
 interface ModelsStore {
   models: ModelStatus[];
+  lastEvent: { id: string; state: DownloadState } | null;
   refresh: () => Promise<void>;
   download: (id: string) => Promise<void>;
   cancel: (id: string) => Promise<void>;
@@ -28,10 +30,22 @@ interface ModelsStore {
   bind: () => () => void;
 }
 
-const report = (e: unknown) => useSettings.getState().setError(e);
+// 백엔드는 코드 문자열을 던진다. 아는 코드만 번역하고 나머지는 그대로 보여준다.
+export const ERROR_KEYS: Record<string, string> = {
+  busy: "errors.busy",
+  in_use: "errors.inUse",
+  "not downloading": "errors.notDownloading",
+  "unknown model": "errors.unknownModel",
+};
+
+const report = (e: unknown) => {
+  const key = ERROR_KEYS[e instanceof Error ? e.message : String(e)];
+  useSettings.getState().setError(key ? i18next.t(key) : e);
+};
 
 export const useModels = create<ModelsStore>((set, get) => ({
   models: [],
+  lastEvent: null,
   refresh: async () => {
     try { set({ models: await api.getModels() }); } catch (e) { report(e); }
   },
@@ -47,6 +61,7 @@ export const useModels = create<ModelsStore>((set, get) => ({
   bind: () => {
     const p = listen<DownloadEvent>("model-download", (e) => {
       const { id, received, total, state, message } = e.payload;
+      set({ lastEvent: { id, state } });
       if (state === "downloading") {
         set({ models: get().models.map((m) => (m.info.id === id ? { ...m, download: { received, total } } : m)) });
         return;

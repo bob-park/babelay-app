@@ -33,6 +33,10 @@
     "sampleSource": "We buffer about two seconds of audio before running the model.",
     "sampleTarget": "モデルを実行する前に約2秒分の音声をバッファします。"
   },
+  "errors": {
+    "busy": "別のモデルをダウンロード中です", "inUse": "使用中のモデルは削除できません",
+    "notDownloading": "進行中のダウンロードはありません", "unknownModel": "不明なモデルです"
+  },
   "onboarding": {
     "next": "次へ", "back": "戻る", "skip": "スキップ", "finish": "始める",
     "title": { "language": "言語", "permission": "システム音声のキャプチャを許可", "asr": "文字起こしモデル", "llm": "翻訳モデル", "done": "準備完了" },

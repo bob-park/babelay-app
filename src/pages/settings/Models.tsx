@@ -19,7 +19,8 @@ export default function Models() {
   if (!settings) return null;
 
   const current = kind === "asr" ? settings.asr.model_id : settings.translation.local_model;
-  const select = (id: string) => (kind === "asr" ? update({ asr: { model_id: id } }) : update({ translation: { local_model: id } }));
+  // 백엔드의 in_use 가 낡으면 배지와 버튼이 어긋난다. 저장 후 목록을 다시 읽는다.
+  const select = (id: string) => (kind === "asr" ? update({ asr: { model_id: id } }) : update({ translation: { local_model: id } })).then(() => refresh());
 
   return (
     <div className="flex max-w-3xl flex-col gap-4">
@@ -31,7 +32,7 @@ export default function Models() {
         ))}
       </div>
       <SettingGroup>
-        <SettingRow label={platform === "windows" ? t("models.gpuWin") : t("models.gpuMac")}>
+        <SettingRow as="div" label={platform === "windows" ? t("models.gpuWin") : t("models.gpuMac")}>
           <Toggle checked={settings.asr.gpu} onChange={(v) => update({ asr: { gpu: v } })} />
         </SettingRow>
       </SettingGroup>
