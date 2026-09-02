@@ -65,7 +65,7 @@ impl Drop for ClearActive {
 
 pub fn models_dir(app: &AppHandle) -> Result<PathBuf, String> {
     app.path()
-        .app_data_dir()
+        .app_local_data_dir()
         .map(|p| p.join("models"))
         .map_err(|e| e.to_string())
 }
@@ -167,8 +167,10 @@ pub fn start(app: &AppHandle, id: &str) -> Result<(), String> {
             Err(DownloadError::Cancelled) => ("cancelled", None),
             Err(e) => ("error", Some(e.to_string())),
         };
+        // 슬롯을 먼저 비우고 마지막 진행률을 꺼낸다. 종료 이벤트를 받은 UI 가
+        // 곧바로 다음 다운로드를 걸어도 "busy" 로 튕기지 않는다.
         let progress = lock(&app2.state::<Downloads>())
-            .as_ref()
+            .take()
             .map(|a| a.progress)
             .unwrap_or(DownloadProgress {
                 received: 0,
@@ -221,4 +223,27 @@ pub fn delete(app: &AppHandle, id: &str) -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn in_use_is_true_for_the_selected_asr_and_translation_models() {
+        let mut s = Settings::default();
+        s.asr.model_id = "small".into();
+        s.translation.local_model = "qwen3.5-2b".into();
+        assert!(in_use(&s, find("small").unwrap()));
+        assert!(in_use(&s, find("qwen3.5-2b").unwrap()));
+    }
+
+    #[test]
+    fn in_use_is_false_for_other_models() {
+        let mut s = Settings::default();
+        s.asr.model_id = "small".into();
+        s.translation.local_model = "qwen3.5-2b".into();
+        assert!(!in_use(&s, find("large-v3").unwrap()));
+        assert!(!in_use(&s, find("gemma3-4b").unwrap()));
+    }
 }
