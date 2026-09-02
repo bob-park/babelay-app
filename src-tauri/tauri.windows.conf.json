@@ -1,5 +1,7 @@
 {
   "bundle": {
-    "resources": ["resources/cuda/*.dll"]
+    "resources": {
+      "resources/cuda/*.dll": "./"
+    }
   }
 }
