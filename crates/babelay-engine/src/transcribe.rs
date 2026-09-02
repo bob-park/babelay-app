@@ -4,7 +4,8 @@ use whisper_rs::{
     FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters, WhisperState,
 };
 
-/// 16 kHz 기준 최소 입력 길이. whisper.cpp는 1초보다 짧은 버퍼를 거부한다.
+/// 16 kHz 기준 최소 입력 길이. whisper-rs는 빈 입력을 거부하고 whisper.cpp는 100ms
+/// 미만 버퍼를 건너뛴다. 경로를 단순하게 유지하려고 1초까지 패딩한다.
 const MIN_SAMPLES: usize = 16_000;
 
 #[derive(Clone, Debug, serde::Serialize)]

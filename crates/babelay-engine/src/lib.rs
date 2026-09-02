@@ -2,6 +2,7 @@
 pub mod audio;
 pub mod capture;
 pub mod download;
+pub mod engine;
 pub mod models;
 pub mod transcribe;
 
