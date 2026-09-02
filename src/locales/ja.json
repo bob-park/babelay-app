@@ -3,7 +3,7 @@
   "common": { "dismiss": "閉じる" },
   "nav": { "live": "ライブ", "history": "履歴", "settings": "設定", "collapse": "サイドバーを閉じる", "expand": "サイドバーを開く" },
   "status": { "idle": "待機中", "capturing": "キャプチャ中" },
-  "live": { "start": "開始", "stop": "停止", "overlayOn": "オーバーレイ オン", "overlayOff": "オーバーレイ オフ", "empty": "開始を押すとシステム音声のキャプチャが始まります。", "shortcutHint": "ショートカット: {{capture}} 開始/停止, {{overlay}} オーバーレイ切替" },
+  "live": { "start": "開始", "stop": "停止", "overlay": "オーバーレイ" },
   "history": { "empty": "まだセッションがありません。" },
   "settings": { "general": "一般", "models": "モデル", "translation": "翻訳", "overlay": "オーバーレイ" },
   "general": {
@@ -26,8 +26,7 @@
     "providerOpenai": "OpenAI", "providerAnthropic": "Anthropic", "providerGemini": "Google Gemini", "providerDeepl": "DeepL", "providerCustom": "カスタム (OpenAI 互換)"
   },
   "overlay": {
-    "monitor": "モニター", "primary": "メイン",
-    "adjust": "位置を調整", "adjustOn": "調整を終了", "adjustOff": "位置を調整",
+    "adjust": "位置を調整", "adjustDone": "完了",
     "adjustHint": "字幕をドラッグして移動します。角をドラッグするとサイズが変わります。",
     "displayMode": "表示", "modeBoth": "原文 + 翻訳", "modeSource": "原文のみ", "modeTarget": "翻訳のみ",
     "subtitleLang": "字幕の言語", "sourceLang": "音声の言語", "auto": "自動検出",

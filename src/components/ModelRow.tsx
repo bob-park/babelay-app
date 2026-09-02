@@ -25,8 +25,13 @@ export function ModelRow({ status, selected, onSelect }: Props) {
   const button = {
     download: <PillButton size="sm" variant="primary" onClick={() => download(info.id)}>{t("models.download")}</PillButton>,
     cancel: <PillButton size="sm" variant="ghost" onClick={() => cancel(info.id)}>{t("models.cancel")}</PillButton>,
-    select: <PillButton size="sm" onClick={onSelect}>{t("models.select")}</PillButton>,
-    delete: <PillButton size="sm" variant="ghost" disabled={status.in_use} onClick={() => remove(info.id)}>{t("models.delete")}</PillButton>,
+    select: (
+      <div className="flex gap-1">
+        <PillButton size="sm" variant="primary" onClick={onSelect}>{t("models.select")}</PillButton>
+        <PillButton size="sm" variant="ghost" onClick={() => remove(info.id)}>{t("models.delete")}</PillButton>
+      </div>
+    ),
+    delete: null, // 사용 중인 모델은 배지로 충분하다.
   }[action];
 
   return (
