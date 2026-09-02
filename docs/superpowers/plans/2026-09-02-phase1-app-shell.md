@@ -6,7 +6,7 @@
 
 **Architecture:** Tauri 2 단일 프로세스. Cargo 워크스페이스에 `src-tauri`(앱)와 `crates/babelay-engine`(2단계에서 채울 빈 라이브러리)을 둔다. 프론트엔드는 Vite 앱 하나이고, 창 라벨(`main`/`overlay`/`onboarding`)로 무엇을 렌더할지 정한다. 설정은 Rust가 `settings.json`으로 소유하고, 프론트는 `get_settings`/`set_settings` 커맨드와 `settings-changed` 이벤트로 동기화한다.
 
-**Tech Stack:** Rust 1.98, Tauri 2.11 (`tray-icon`, `macos-private-api`), tauri-plugin-global-shortcut 2, tauri-plugin-opener 2, serde/serde_json, sys-locale 0.3, yarn 1.22, Node 24, React 19, TypeScript 5.9, Vite, Tailwind 4 (`@tailwindcss/vite`), react-router 7, zustand 5, i18next 26 + react-i18next 17, vitest 4, sharp(아이콘 생성 전용 devDependency).
+**Tech Stack:** Rust 1.98, Tauri 2.11 (`tray-icon`, `macos-private-api`), tauri-plugin-global-shortcut 2, tauri-plugin-opener 2, serde/serde_json, sys-locale 0.3, yarn 4 (berry, corepack), Node 24, React 19, TypeScript 5.9, Vite, Tailwind 4 (`@tailwindcss/vite`), react-router 7, zustand 5, i18next 26 + react-i18next 17, vitest 4, sharp(아이콘 생성 전용 devDependency).
 
 **Spec:** `docs/superpowers/specs/2026-09-02-babelay-design.md` (섹션 3, 7, 9, 11의 1단계)
 
@@ -88,14 +88,27 @@ babelay-app/
 
 ```bash
 cd /tmp && rm -rf babelay-scaffold
-yarn create tauri-app babelay-scaffold --template react-ts --manager yarn --identifier com.babelay.app --yes
+npx --yes create-tauri-app@latest babelay-scaffold --template react-ts --manager yarn --identifier com.babelay.app --yes
 rsync -a --exclude .git /tmp/babelay-scaffold/ /Users/hwpark/Documents/rust-workspace/babelay-app/
 cd /Users/hwpark/Documents/rust-workspace/babelay-app && ls
 ```
 
 Expected: `package.json`, `src/`, `src-tauri/`, `vite.config.ts`가 루트에 생김.
 
-- [ ] **Step 2: 패키지 이름과 버전 고정**
+- [ ] **Step 2: yarn berry 활성화**
+
+Corepack으로 yarn 4를 프로젝트에 고정하고, PnP 대신 node_modules 링커를 쓴다(Vite·sharp 호환).
+
+```bash
+corepack enable
+yarn set version stable
+yarn config set nodeLinker node-modules
+yarn --version
+```
+
+Expected: `4.x`가 출력되고, `package.json`에 `"packageManager": "yarn@4.x.x"`, 루트에 `.yarnrc.yml`(`nodeLinker: node-modules`)이 생긴다. 템플릿이 만든 `yarn.lock`(v1 형식)이 있으면 지우고 다음 단계의 `yarn add`가 새로 만들게 둔다.
+
+- [ ] **Step 3: 패키지 이름과 버전 고정**
 
 `package.json`의 `name`을 `babelay`로, `src-tauri/Cargo.toml`의 `[package] name`을 `babelay`로, `[lib] name`을 `babelay_lib`로 맞춘다. `src-tauri/src/main.rs`가 `babelay_lib::run()`을 부르는지 확인한다.
 
@@ -104,7 +117,7 @@ yarn add react-router@^7 zustand@^5 i18next@^26 react-i18next@^17 @tauri-apps/pl
 yarn add -D tailwindcss@^4 @tailwindcss/vite@^4 vitest@^4 typescript@^5.9 sharp
 ```
 
-- [ ] **Step 3: 워크스페이스 Cargo.toml과 빈 엔진 크레이트**
+- [ ] **Step 4: 워크스페이스 Cargo.toml과 빈 엔진 크레이트**
 
 `Cargo.toml` (루트):
 
@@ -136,7 +149,7 @@ mod tests {
 }
 ```
 
-- [ ] **Step 4: Tailwind 4 연결**
+- [ ] **Step 5: Tailwind 4 연결**
 
 `vite.config.ts`:
 
@@ -210,17 +223,19 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 
 템플릿의 `src/App.tsx`, `src/App.css`, `src/assets/`는 삭제한다. `package.json`의 `scripts`에 `"test": "vitest run"`을 추가한다.
 
-- [ ] **Step 5: .gitignore 정리**
+- [ ] **Step 6: .gitignore 정리**
 
 루트 `.gitignore`에서 `Cargo.lock` 줄을 지우고(실행 파일이므로 잠금 파일을 커밋한다), 아래를 추가한다:
 
 ```
 node_modules/
+.yarn/
+.pnp.*
 dist/
 src-tauri/gen/
 ```
 
-- [ ] **Step 6: 빌드와 테스트 확인**
+- [ ] **Step 7: 빌드와 테스트 확인**
 
 ```bash
 yarn install
@@ -231,7 +246,7 @@ yarn tauri build --debug --no-bundle
 
 Expected: `cargo test`는 `version_is_not_empty` 통과, `yarn test`는 "No test files found"가 아닌 종료 코드 0(테스트 파일이 없어도 `vitest run --passWithNoTests`가 필요하면 `scripts.test`를 `"vitest run --passWithNoTests"`로 둔다), `tauri build --debug --no-bundle`은 컴파일 성공.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add -A
@@ -2823,12 +2838,13 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - run: corepack enable
       - uses: actions/setup-node@v4
         with: { node-version: 24, cache: yarn }
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with: { workspaces: ". -> target" }
-      - run: yarn install --frozen-lockfile
+      - run: yarn install --immutable
       - run: yarn tsc --noEmit
       - run: yarn test
       - run: cargo test --workspace
@@ -2856,13 +2872,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - run: corepack enable
       - uses: actions/setup-node@v4
         with: { node-version: 24, cache: yarn }
       - uses: dtolnay/rust-toolchain@stable
         with: { targets: aarch64-apple-darwin }
       - uses: Swatinem/rust-cache@v2
         with: { workspaces: ". -> target" }
-      - run: yarn install --frozen-lockfile
+      - run: yarn install --immutable
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
