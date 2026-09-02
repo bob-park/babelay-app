@@ -44,16 +44,16 @@ export default function OverlayWindow() {
         style={{ background: `rgba(18,18,18,${bg_opacity})`, backdropFilter: "blur(6px)" }}
       >
         {display_mode !== "target" && (
-          <div style={{ fontSize: font_size * 0.6 }} className="text-fg-muted">{source}</div>
+          <div style={{ fontSize: font_size * 0.6 }} className="text-white/70">{source}</div>
         )}
         {display_mode !== "source" && (
           <div style={{ fontSize: font_size, lineHeight: 1.3 }} className="font-bold">{target}</div>
         )}
         {adjust && (
           <>
-            <div className="absolute -top-6 left-0 text-xs font-bold text-accent">{t("overlay.adjustHint")}</div>
+            <div className="absolute -top-6 left-0 rounded bg-accent px-2 py-0.5 text-xs font-bold text-accent-fg">{t("overlay.adjustHint")}</div>
             <div
-              onMouseDown={(e) => { e.stopPropagation(); getCurrentWindow().startResizeDragging("SouthEast"); }}
+              onMouseDown={(e) => { e.stopPropagation(); if (e.button === 0) getCurrentWindow().startResizeDragging("SouthEast"); }}
               className="absolute -right-1.5 -bottom-1.5 h-3 w-3 cursor-nwse-resize rounded-[2px] bg-accent"
             />
           </>

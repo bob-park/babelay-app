@@ -42,10 +42,11 @@ export default function OverlaySettings() {
             <button
               key={m.id}
               onClick={() => update({ overlay: { monitor_id: m.primary ? "" : m.id } })}
-              className={`flex h-16 items-end justify-center rounded bg-surface px-2 pb-1 text-xs ${m.id === selectedId ? "ring-2 ring-accent text-fg" : "text-fg-muted"}`}
+              title={m.id}
+              className={`flex h-16 items-end justify-center overflow-hidden rounded bg-surface px-2 pb-1 text-xs ${m.id === selectedId ? "ring-2 ring-accent text-fg" : "text-fg-muted"}`}
               style={{ width: Math.round((m.width / m.height) * 64) }}
             >
-              {m.id}{m.primary ? ` (${t("overlay.primary")})` : ""}
+              <span className="truncate">{m.id}{m.primary ? ` (${t("overlay.primary")})` : ""}</span>
             </button>
           ))}
         </div>

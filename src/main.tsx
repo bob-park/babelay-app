@@ -12,11 +12,14 @@ const MainApp = React.lazy(() => import("./pages/MainApp"));
 const OverlayWindow = React.lazy(() => import("./pages/OverlayWindow"));
 const Onboarding = React.lazy(() => import("./pages/Onboarding"));
 
+// React 마운트 전에 붙여야 오버레이 창이 불투명하게 번쩍이지 않는다.
+const label = getCurrentWindow().label;
+if (label === "overlay") document.body.classList.add("overlay");
+
 function Root() {
   const { settings, load, subscribeBackend } = useSettings();
   const bindSession = useSession((s) => s.bind);
   const [ready, setReady] = useState(false);
-  const label = getCurrentWindow().label;
 
   useEffect(() => {
     const unsubSettings = subscribeBackend();
@@ -27,10 +30,6 @@ function Root() {
       unsubSession();
     };
   }, []);
-
-  useEffect(() => {
-    if (label === "overlay") document.body.classList.add("overlay");
-  }, [label]);
 
   useEffect(() => {
     if (!settings) return;
