@@ -58,7 +58,7 @@ pub fn download(
     if !status.is_success() {
         return Err(DownloadError::Http(format!("{status} for {url}")));
     }
-    let resuming = status.as_u16() == 206;
+    let resuming = status.as_u16() == 206 && have > 0;
     if !resuming {
         have = 0; // 서버가 Range 를 무시했으면 처음부터
     }
@@ -166,6 +166,28 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let dest = dir.path().join("m.bin");
         std::fs::write(dest.with_extension("bin.part"), &BODY[..6]).unwrap();
+        download(
+            &client(),
+            &server.url("/m.bin"),
+            &dest,
+            16,
+            None,
+            &AtomicBool::new(false),
+            &mut |_| {},
+        )
+        .unwrap();
+        assert_eq!(std::fs::read(&dest).unwrap(), BODY);
+    }
+
+    #[test]
+    fn unsolicited_206_without_part_restarts() {
+        let server = MockServer::start();
+        server.mock(|w, t| {
+            w.method(GET).path("/m.bin");
+            t.status(206).header("content-length", "16").body(BODY);
+        });
+        let dir = tempfile::tempdir().unwrap();
+        let dest = dir.path().join("m.bin");
         download(
             &client(),
             &server.url("/m.bin"),

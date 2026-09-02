@@ -76,11 +76,26 @@ pub fn overlay_set_adjust_mode(app: AppHandle, enabled: bool) -> Result<(), Stri
 }
 
 #[tauri::command]
-pub fn overlay_get_monitors(app: AppHandle) -> Result<Vec<overlay::MonitorInfo>, String> {
-    overlay::monitors(&app)
+pub fn overlay_commit_position(app: AppHandle) -> Result<(), String> {
+    overlay::commit_position(&app)
 }
 
 #[tauri::command]
-pub fn overlay_commit_position(app: AppHandle) -> Result<(), String> {
-    overlay::commit_position(&app)
+pub fn get_models(app: AppHandle) -> Result<Vec<crate::models::ModelStatus>, String> {
+    crate::models::list(&app)
+}
+
+#[tauri::command]
+pub fn download_model(app: AppHandle, id: String) -> Result<(), String> {
+    crate::models::start(&app, &id)
+}
+
+#[tauri::command]
+pub fn cancel_download(app: AppHandle, id: String) -> Result<(), String> {
+    crate::models::cancel(&app, &id)
+}
+
+#[tauri::command]
+pub fn delete_model(app: AppHandle, id: String) -> Result<(), String> {
+    crate::models::delete(&app, &id)
 }

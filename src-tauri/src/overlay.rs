@@ -1,5 +1,4 @@
 use crate::settings::{Overlay, Settings, SettingsState};
-use serde::Serialize;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{
     AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindowBuilder,
@@ -14,17 +13,6 @@ pub struct Rect {
     pub y: i32,
     pub w: u32,
     pub h: u32,
-}
-
-#[derive(Serialize, Clone, Debug)]
-pub struct MonitorInfo {
-    pub id: String,
-    pub x: i32,
-    pub y: i32,
-    pub width: u32,
-    pub height: u32,
-    pub scale: f64,
-    pub primary: bool,
 }
 
 /// 비율 → 물리 좌표. 높이는 모니터의 20%로 고정한다.
@@ -65,29 +53,6 @@ fn monitor_rect(m: &tauri::Monitor) -> Rect {
         w: m.size().width,
         h: m.size().height,
     }
-}
-
-pub fn monitors(app: &AppHandle) -> Result<Vec<MonitorInfo>, String> {
-    let primary = app
-        .primary_monitor()
-        .map_err(|e| e.to_string())?
-        .map(|m| monitor_id(&m));
-    let list = app.available_monitors().map_err(|e| e.to_string())?;
-    Ok(list
-        .iter()
-        .map(|m| {
-            let id = monitor_id(m);
-            MonitorInfo {
-                primary: Some(&id) == primary.as_ref(),
-                id,
-                x: m.position().x,
-                y: m.position().y,
-                width: m.size().width,
-                height: m.size().height,
-                scale: m.scale_factor(),
-            }
-        })
-        .collect())
 }
 
 /// 설정의 monitor_id에 해당하는 모니터. 없으면 주 모니터.

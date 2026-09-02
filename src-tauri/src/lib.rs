@@ -1,5 +1,6 @@
 mod commands;
 mod i18n;
+mod models;
 mod overlay;
 mod settings;
 mod tray;
@@ -16,6 +17,7 @@ pub fn run() {
         .setup(|app| {
             let path = app.path().app_config_dir()?.join("settings.json");
             app.manage(SettingsState::new(path));
+            app.manage(models::Downloads::default());
             let settings = app.state::<SettingsState>().get();
             let handle = app.handle().clone();
             if settings.general.onboarding_done {
@@ -35,8 +37,11 @@ pub fn run() {
             commands::open_privacy_settings,
             commands::finish_onboarding,
             commands::overlay_set_adjust_mode,
-            commands::overlay_get_monitors,
             commands::overlay_commit_position,
+            commands::get_models,
+            commands::download_model,
+            commands::cancel_download,
+            commands::delete_model,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
