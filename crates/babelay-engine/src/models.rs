@@ -151,17 +151,6 @@ pub const REGISTRY: &[ModelInfo] = &[
     ),
 ];
 
-pub struct Balanced {
-    pub asr: &'static str,
-    pub llm: &'static str,
-}
-
-// ponytail: 고정값. 2단계에서 sysinfo/nvml 기반 판정으로 교체한다.
-pub const BALANCED: Balanced = Balanced {
-    asr: "small",
-    llm: "qwen3.5-2b",
-};
-
 pub fn find(id: &str) -> Option<&'static ModelInfo> {
     REGISTRY.iter().find(|m| m.id == id)
 }
@@ -195,12 +184,6 @@ mod tests {
             assert!((1..=5).contains(&m.speed), "{}", m.id);
             assert!(m.desc_key.starts_with("models.desc."), "{}", m.id);
         }
-    }
-
-    #[test]
-    fn balanced_ids_exist_with_matching_kind() {
-        assert_eq!(find(BALANCED.asr).unwrap().kind, Kind::Asr);
-        assert_eq!(find(BALANCED.llm).unwrap().kind, Kind::Llm);
     }
 
     #[test]

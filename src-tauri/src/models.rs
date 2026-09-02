@@ -1,14 +1,15 @@
 use crate::settings::{Settings, SettingsState};
 use babelay_engine::{
     download::{download, DownloadError, Progress},
-    models::{find, installed, model_path, ModelInfo, BALANCED},
+    hardware::{self, HwInfo},
+    models::{find, installed, model_path, ModelInfo},
 };
 use serde::Serialize;
 use std::{
     path::PathBuf,
     sync::{
         atomic::{AtomicBool, Ordering},
-        Arc, Mutex,
+        Arc, Mutex, OnceLock,
     },
     time::{Duration, Instant},
 };
@@ -63,6 +64,12 @@ impl Drop for ClearActive {
     }
 }
 
+/// `detect()`는 `System::new_all()`이라 수십 ms 걸린다. 한 번만 잰다.
+pub fn hw() -> &'static HwInfo {
+    static HW: OnceLock<HwInfo> = OnceLock::new();
+    HW.get_or_init(hardware::detect)
+}
+
 pub fn models_dir(app: &AppHandle) -> Result<PathBuf, String> {
     app.path()
         .app_local_data_dir()
@@ -79,13 +86,14 @@ pub fn list(app: &AppHandle) -> Result<Vec<ModelStatus>, String> {
     let settings = app.state::<SettingsState>().get();
     let downloads = app.state::<Downloads>();
     let active = lock(&downloads);
+    let balanced = hardware::balanced(hw());
     Ok(babelay_engine::models::REGISTRY
         .iter()
         .map(|m| ModelStatus {
             info: m.clone(),
             installed: installed(&dir, m),
             in_use: in_use(&settings, m),
-            balanced: m.id == BALANCED.asr || m.id == BALANCED.llm,
+            balanced: m.id == balanced.asr || m.id == balanced.llm,
             download: active
                 .as_ref()
                 .filter(|a| a.id == m.id)

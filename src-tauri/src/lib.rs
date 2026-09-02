@@ -39,6 +39,7 @@ pub fn run() {
             commands::overlay_set_adjust_mode,
             commands::overlay_commit_position,
             commands::get_models,
+            commands::get_hw_info,
             commands::download_model,
             commands::cancel_download,
             commands::delete_model,

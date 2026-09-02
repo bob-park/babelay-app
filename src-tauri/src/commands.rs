@@ -99,3 +99,8 @@ pub fn cancel_download(app: AppHandle, id: String) -> Result<(), String> {
 pub fn delete_model(app: AppHandle, id: String) -> Result<(), String> {
     crate::models::delete(&app, &id)
 }
+
+#[tauri::command]
+pub fn get_hw_info() -> babelay_engine::hardware::HwInfo {
+    crate::models::hw().clone()
+}
