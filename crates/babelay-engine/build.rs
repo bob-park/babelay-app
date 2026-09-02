@@ -4,6 +4,7 @@ fn main() {
             .file("csrc/tap.m")
             .flag("-fobjc-arc")
             .flag("-fmodules")
+            .flag("-mmacosx-version-min=14.2")
             .compile("babelay_tap");
         println!("cargo:rustc-link-lib=framework=CoreAudio");
         println!("cargo:rustc-link-lib=framework=Foundation");
