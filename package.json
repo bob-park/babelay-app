@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
+    "icons": "tauri icon assets/icon.svg && node scripts/gen-icons.mjs",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
