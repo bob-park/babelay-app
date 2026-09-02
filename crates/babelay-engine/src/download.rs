@@ -48,12 +48,26 @@ pub fn download(
     }
     let part = part_path(dest);
     let mut have = fs::metadata(&part).map(|m| m.len()).unwrap_or(0);
-
-    let mut req = client.get(url);
-    if have > 0 {
-        req = req.header("Range", format!("bytes={have}-"));
+    // 예상 크기 이상으로 자란 .part 는 이어받기가 416으로 막힌다. 버리고 처음부터.
+    if have >= expected_size {
+        let _ = fs::remove_file(&part);
+        have = 0;
     }
-    let mut resp = req.send().map_err(|e| DownloadError::Http(e.to_string()))?;
+
+    let get = |from: u64| {
+        let mut req = client.get(url);
+        if from > 0 {
+            req = req.header("Range", format!("bytes={from}-"));
+        }
+        req.send().map_err(|e| DownloadError::Http(e.to_string()))
+    };
+    let mut resp = get(have)?;
+    if resp.status() == reqwest::StatusCode::RANGE_NOT_SATISFIABLE {
+        // 서버가 이어받기를 거부하면 .part 를 버리고 한 번만 처음부터 다시.
+        let _ = fs::remove_file(&part);
+        have = 0;
+        resp = get(0)?;
+    }
     let status = resp.status();
     if !status.is_success() {
         return Err(DownloadError::Http(format!("{status} for {url}")));
@@ -199,6 +213,63 @@ mod tests {
         )
         .unwrap();
         assert_eq!(std::fs::read(&dest).unwrap(), BODY);
+    }
+
+    #[test]
+    fn oversized_part_restarts_from_scratch() {
+        let server = MockServer::start();
+        let ranged = server.mock(|w, t| {
+            w.method(GET).path("/m.bin").header_exists("range");
+            t.status(416);
+        });
+        server.mock(|w, t| {
+            w.method(GET).path("/m.bin");
+            t.status(200).header("content-length", "16").body(BODY);
+        });
+        let dir = tempfile::tempdir().unwrap();
+        let dest = dir.path().join("m.bin");
+        std::fs::write(dest.with_extension("bin.part"), vec![7u8; 20]).unwrap();
+        download(
+            &client(),
+            &server.url("/m.bin"),
+            &dest,
+            16,
+            None,
+            &AtomicBool::new(false),
+            &mut |_| {},
+        )
+        .unwrap();
+        assert_eq!(std::fs::read(&dest).unwrap(), BODY);
+        assert!(!dest.with_extension("bin.part").exists());
+        ranged.assert_hits(0);
+    }
+
+    #[test]
+    fn range_not_satisfiable_restarts_without_range() {
+        let server = MockServer::start();
+        server.mock(|w, t| {
+            w.method(GET).path("/m.bin").header_exists("range");
+            t.status(416);
+        });
+        server.mock(|w, t| {
+            w.method(GET).path("/m.bin");
+            t.status(200).header("content-length", "16").body(BODY);
+        });
+        let dir = tempfile::tempdir().unwrap();
+        let dest = dir.path().join("m.bin");
+        std::fs::write(dest.with_extension("bin.part"), &BODY[..6]).unwrap();
+        download(
+            &client(),
+            &server.url("/m.bin"),
+            &dest,
+            16,
+            None,
+            &AtomicBool::new(false),
+            &mut |_| {},
+        )
+        .unwrap();
+        assert_eq!(std::fs::read(&dest).unwrap(), BODY);
+        assert!(!dest.with_extension("bin.part").exists());
     }
 
     #[test]
