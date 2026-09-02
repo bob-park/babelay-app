@@ -1,4 +1,4 @@
-import { NavLink } from "react-router";
+import { NavLink, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useSession } from "../lib/session";
 import { useSettings } from "../lib/settings";
@@ -10,6 +10,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
   const { t } = useTranslation();
   const capturing = useSession((s) => s.capturing);
   const model = useSettings((s) => s.settings?.asr.model_id);
+  const inSettings = useLocation().pathname.startsWith("/settings");
   const w = collapsed ? "w-14" : "w-52";
 
   return (
@@ -26,7 +27,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       </div>
       <NavLink to="/live" className={item} title={t("nav.live")}>{collapsed ? "▶" : t("nav.live")}</NavLink>
       <NavLink to="/history" className={item} title={t("nav.history")}>{collapsed ? "≡" : t("nav.history")}</NavLink>
-      <NavLink to="/settings/general" className={item} title={t("nav.settings")}>{collapsed ? "⚙" : t("nav.settings")}</NavLink>
+      <NavLink to="/settings/general" className={item({ isActive: collapsed && inSettings })} title={t("nav.settings")}>{collapsed ? "⚙" : t("nav.settings")}</NavLink>
       {!collapsed && (
         <div className="ml-3 flex flex-col gap-0.5 text-xs">
           <NavLink to="/settings/general" className={item}>{t("settings.general")}</NavLink>

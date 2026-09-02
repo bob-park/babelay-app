@@ -33,6 +33,7 @@ export default function MainApp() {
             <Route path="/settings/transcription" element={<Transcription />} />
             <Route path="/settings/translation" element={<Translation />} />
             <Route path="/settings/overlay" element={<Overlay />} />
+            <Route path="*" element={<Navigate to="/live" replace />} />
           </Routes>
         </main>
       </div>
