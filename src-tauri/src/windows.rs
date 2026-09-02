@@ -1,3 +1,4 @@
+use crate::overlay;
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 
 pub const MAIN: &str = "main";
@@ -15,10 +16,13 @@ pub fn show_main(app: &AppHandle) -> Result<(), String> {
         .build()
         .map_err(|e| e.to_string())?;
     // 닫기 = 숨기기. 앱은 트레이에 남는다.
+    // 웹뷰는 살아있으므로 React 언마운트 정리가 돌지 않는다. 조정 모드는 여기서 끈다.
     let handle = w.clone();
+    let app_handle = app.clone();
     w.on_window_event(move |e| {
         if let WindowEvent::CloseRequested { api, .. } = e {
             api.prevent_close();
+            let _ = overlay::exit_adjust_mode(&app_handle);
             let _ = handle.hide();
         }
     });

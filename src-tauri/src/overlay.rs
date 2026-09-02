@@ -151,20 +151,36 @@ pub fn set_visible(app: &AppHandle, visible: bool) -> Result<(), String> {
     if visible { win.show() } else { win.hide() }.map_err(|e| e.to_string())
 }
 
+/// 조정 모드 진입. 종료는 반드시 exit_adjust_mode를 쓴다.
 pub fn set_adjust_mode(app: &AppHandle, enabled: bool) -> Result<(), String> {
+    if !enabled {
+        return exit_adjust_mode(app);
+    }
     // 창이 없으면 플래그를 세우지 않는다. 세워두면 지울 방법이 없다.
     let Some(win) = app.get_webview_window(LABEL) else {
         return Ok(());
     };
-    ADJUST_MODE.store(enabled, Ordering::Relaxed);
-    win.set_ignore_cursor_events(!enabled)
+    ADJUST_MODE.store(true, Ordering::Relaxed);
+    win.set_ignore_cursor_events(false)
         .map_err(|e| e.to_string())?;
-    if enabled {
-        win.show().map_err(|e| e.to_string())?;
-        win.set_focus().map_err(|e| e.to_string())?;
-    }
-    app.emit_to(LABEL, "overlay-adjust-mode", enabled)
+    win.show().map_err(|e| e.to_string())?;
+    win.set_focus().map_err(|e| e.to_string())?;
+    app.emit("overlay-adjust-mode", true)
         .map_err(|e| e.to_string())
+}
+
+/// 조정 모드를 끄는 유일한 경로. 창이 없어도 플래그는 반드시 내린다.
+pub fn exit_adjust_mode(app: &AppHandle) -> Result<(), String> {
+    ADJUST_MODE.store(false, Ordering::Relaxed);
+    if let Some(win) = app.get_webview_window(LABEL) {
+        win.set_ignore_cursor_events(true)
+            .map_err(|e| e.to_string())?;
+    }
+    app.emit("overlay-adjust-mode", false)
+        .map_err(|e| e.to_string())?;
+    let s = app.state::<SettingsState>().get();
+    apply_position(app, &s)?; // 취소한 드래그를 저장된 비율로 되돌린다
+    set_visible(app, s.overlay.enabled)
 }
 
 /// 현재 창 위치·크기를 비율로 환산해 설정에 저장한다.
