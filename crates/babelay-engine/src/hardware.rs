@@ -14,6 +14,11 @@ pub struct Balanced {
     pub llm: &'static str,
 }
 
+/// 실제 하드웨어는 16 GiB를 15.9 GiB로 보고한다. 가장 가까운 GiB로 반올림한다.
+fn to_gb(bytes: u64) -> u32 {
+    ((bytes + (1u64 << 29)) >> 30) as u32
+}
+
 /// `System::new_all()`은 수십 ms 걸린다. 호출부에서 캐시할 것.
 pub fn detect() -> HwInfo {
     let sys = System::new_all();
@@ -22,7 +27,7 @@ pub fn detect() -> HwInfo {
         .first()
         .map(|c| c.brand().trim().to_string())
         .unwrap_or_default();
-    let mem_gb = (sys.total_memory() / (1 << 30)) as u32;
+    let mem_gb = to_gb(sys.total_memory());
     let (gpu, gpu_mem_gb) = gpu_info();
     HwInfo {
         chip,
@@ -50,8 +55,9 @@ fn gpu_info() -> (Option<String>, Option<u32>) {
     let Ok(dev) = nvml.device_by_index(0) else {
         return (None, None);
     };
+    // ponytail: NVIDIA만 본다. AMD/Intel GPU는 CPU 행으로 떨어진다.
     let name = dev.name().ok();
-    let vram = dev.memory_info().ok().map(|m| (m.total / (1 << 30)) as u32);
+    let vram = dev.memory_info().ok().map(|m| to_gb(m.total));
     (name, vram)
 }
 
@@ -111,8 +117,20 @@ mod tests {
         assert_eq!(b.asr, "base");
     }
     #[test]
-    fn balanced_ids_exist() {
-        let b = balanced(&hw(true, 16, None));
-        assert!(crate::models::find(b.asr).is_some() && crate::models::find(b.llm).is_some());
+    fn balanced_ids_exist_with_matching_kind() {
+        use crate::models::{find, Kind};
+        for h in [hw(true, 16, None), hw(true, 8, None), hw(false, 4, None)] {
+            let b = balanced(&h);
+            assert_eq!(find(b.asr).unwrap().kind, Kind::Asr, "{}", b.asr);
+            assert_eq!(find(b.llm).unwrap().kind, Kind::Llm, "{}", b.llm);
+        }
+    }
+
+    #[test]
+    fn to_gb_rounds_to_nearest() {
+        assert_eq!(to_gb(17_179_869_184), 16);
+        assert_eq!(to_gb(17_070_000_000), 16);
+        assert_eq!(to_gb(8_514_043_904), 8);
+        assert_eq!(to_gb(4_294_967_296), 4);
     }
 }
