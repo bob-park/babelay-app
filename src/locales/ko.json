@@ -2,7 +2,7 @@
   "app": { "name": "Babelay" },
   "common": { "dismiss": "닫기" },
   "nav": { "live": "라이브", "history": "히스토리", "settings": "설정", "collapse": "사이드바 접기", "expand": "사이드바 펼치기" },
-  "live": { "start": "시작", "stop": "정지", "overlay": "오버레이", "cpuFallback": "CPU", "lagging": "지연" },
+  "live": { "start": "시작", "stop": "정지", "overlay": "오버레이", "stopping": "정지 중…", "cpuFallback": "CPU", "lagging": "지연" },
   "history": { "empty": "아직 세션이 없습니다.", "search": "검색", "exportTxt": "TXT", "exportSrt": "SRT", "delete": "삭제", "saved": "저장됨: {{path}}", "segments": "{{count}}개 조각" },
   "settings": { "general": "일반", "models": "모델", "translation": "번역", "overlay": "오버레이" },
   "general": {

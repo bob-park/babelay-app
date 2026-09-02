@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PillButton } from "../../components/PillButton";
 import { clock } from "../../lib/session";
@@ -15,6 +15,7 @@ export default function History() {
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<SegmentRow[] | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+  const toastTimer = useRef<number | undefined>(undefined);
 
   // history 커맨드는 DB 상태가 없으면 "state not managed"로 거절한다. 원문 대신 사람 말로.
   const fail = (e: unknown) => {
@@ -24,7 +25,15 @@ export default function History() {
 
   const load = () => api.historySessions(100).then(setSessions).catch(fail);
   useEffect(() => { load(); }, []);
-  useEffect(() => { if (sel !== null) api.historySegments(sel).then(setSegments).catch(fail); }, [sel]);
+  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
+
+  // 늦게 온 이전 세션의 조각이 지금 화면을 덮지 않게 한다.
+  useEffect(() => {
+    if (sel === null) { setSegments([]); return; }
+    let alive = true;
+    api.historySegments(sel).then((r) => { if (alive) setSegments(r); }).catch(fail);
+    return () => { alive = false; };
+  }, [sel]);
 
   // 타이핑마다 쿼리를 던지면 DB가 앓는다.
   useEffect(() => {
@@ -34,13 +43,22 @@ export default function History() {
     return () => window.clearTimeout(id);
   }, [q]);
 
-  const toast = (path: string) => { setSaved(path); window.setTimeout(() => setSaved(null), 2000); };
+  const toast = (path: string) => {
+    setSaved(path);
+    window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setSaved(null), 2000);
+  };
   const exportAs = (id: number, format: "txt" | "srt") => api.historyExport(id, format).then(toast).catch(fail);
   const remove = (id: number) => api.historyDelete(id).then(() => { setSel(null); load(); }).catch(fail);
 
   const when = (epoch: number) => new Date(epoch * 1000).toLocaleString();
   const duration = (s: SessionSummary) => (s.ended_at ? clock((s.ended_at - s.started_at) * 1000) : "—");
+  // 검색 결과의 세션이 최근 100개 밖일 수 있다. 요약이 없어도 상세는 연다.
   const current = sessions.find((s) => s.id === sel);
+  const sessionLabel = (id: number) => { const s = sessions.find((x) => x.id === id); return s ? when(s.started_at) : `#${id}`; };
+  const head = current
+    ? `${when(current.started_at)} · ${duration(current)} · ${current.src_lang.toUpperCase()} → ${current.tgt_lang.toUpperCase()} · ${t("history.segments", { count: current.segments })}`
+    : `#${sel} · ${clock(segments[segments.length - 1]?.t1_ms ?? 0)} · ${t("history.segments", { count: segments.length })}`;
 
   return (
     <div className="flex max-w-3xl flex-col gap-4">
@@ -61,24 +79,22 @@ export default function History() {
         <div className="flex flex-col gap-1">
           {hits.map((r) => (
             <button key={r.id} type="button" onClick={() => { setQ(""); setSel(r.session_id); }} className="flex gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-surface">
-              <span className="shrink-0 tabular-nums text-fg-muted">{clock(r.t0_ms)}</span>
+              <span className="shrink-0 tabular-nums text-fg-muted">{sessionLabel(r.session_id)} · {clock(r.t0_ms)}</span>
               <span className="min-w-0 break-words">{r.src_text}</span>
             </button>
           ))}
         </div>
-      ) : sel !== null && current ? (
+      ) : sel !== null ? (
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <PillButton variant="ghost" onClick={() => setSel(null)}>{`← ${t("nav.history")}`}</PillButton>
             <div className="flex gap-2">
-              <PillButton onClick={() => exportAs(current.id, "txt")}>{t("history.exportTxt")}</PillButton>
-              <PillButton onClick={() => exportAs(current.id, "srt")}>{t("history.exportSrt")}</PillButton>
-              <PillButton variant="outline" onClick={() => remove(current.id)}>{t("history.delete")}</PillButton>
+              <PillButton onClick={() => exportAs(sel, "txt")}>{t("history.exportTxt")}</PillButton>
+              <PillButton onClick={() => exportAs(sel, "srt")}>{t("history.exportSrt")}</PillButton>
+              <PillButton variant="outline" onClick={() => remove(sel)}>{t("history.delete")}</PillButton>
             </div>
           </div>
-          <div className="text-xs text-fg-muted">
-            {when(current.started_at)} · {duration(current)} · {current.src_lang.toUpperCase()} → {current.tgt_lang.toUpperCase()} · {t("history.segments", { count: current.segments })}
-          </div>
+          <div className="text-xs text-fg-muted">{head}</div>
           <div className="flex flex-col gap-2 rounded-[var(--radius-card)] bg-base-2 p-4 text-sm">
             {segments.map((s) => (
               <div key={s.id} className="flex gap-3">

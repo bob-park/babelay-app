@@ -6,7 +6,7 @@ describe("session reducer", () => {
     let v = reduce(initialView, { type: "started", gpu_active: false, gpu_fallback: true });
     expect(v.capturing).toBe(true); expect(v.gpuFallback).toBe(true);
     v = reduce(v, { type: "stopped" });
-    expect(v.capturing).toBe(false); expect(v.partial).toBeNull();
+    expect(v.capturing).toBe(false); expect(v.partial).toBeNull(); expect(v.gpuFallback).toBe(false); expect(v.lagging).toBe(false);
   });
   it("partial is replaced by final and finals are capped", () => {
     let v = reduce(initialView, { type: "partial", text: "hel", lang: "en", start_ms: 0 });

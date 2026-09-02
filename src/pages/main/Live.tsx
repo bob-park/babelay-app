@@ -14,7 +14,7 @@ export default function Live() {
   const end = useRef<HTMLDivElement>(null);
 
   // 새 줄이 들어오면 바닥에 붙인다. 안 그러면 말이 화면 밖에서 흐른다.
-  useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [view.finals.length, view.partial?.text]);
+  useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [view.finals[view.finals.length - 1]?.id, view.partial?.text]);
 
   if (!settings) return null;
   const name = (id: string) => models.find((m) => m.info.id === id)?.info.name ?? id;
@@ -26,7 +26,9 @@ export default function Live() {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">{t("nav.live")}</h2>
         <div className="flex gap-2">
-          <PillButton variant="primary" onClick={() => (view.capturing ? stop() : start())}>{view.capturing ? `■ ${t("live.stop")}` : `● ${t("live.start")}`}</PillButton>
+          <PillButton variant="primary" disabled={view.stopping} onClick={() => (view.capturing ? stop() : start())}>
+            {view.stopping ? t("live.stopping") : view.capturing ? `■ ${t("live.stop")}` : `● ${t("live.start")}`}
+          </PillButton>
           <PillButton variant={settings.overlay.enabled ? "default" : "ghost"} onClick={() => update({ overlay: { enabled: !settings.overlay.enabled } })}>{t("live.overlay")}</PillButton>
         </div>
       </div>

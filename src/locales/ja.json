@@ -2,7 +2,7 @@
   "app": { "name": "Babelay" },
   "common": { "dismiss": "閉じる" },
   "nav": { "live": "ライブ", "history": "履歴", "settings": "設定", "collapse": "サイドバーを閉じる", "expand": "サイドバーを開く" },
-  "live": { "start": "開始", "stop": "停止", "overlay": "オーバーレイ", "cpuFallback": "CPU", "lagging": "遅延" },
+  "live": { "start": "開始", "stop": "停止", "overlay": "オーバーレイ", "stopping": "停止中…", "cpuFallback": "CPU", "lagging": "遅延" },
   "history": { "empty": "まだセッションがありません。", "search": "検索", "exportTxt": "TXT", "exportSrt": "SRT", "delete": "削除", "saved": "保存済み: {{path}}", "segments": "{{count}} セグメント" },
   "settings": { "general": "一般", "models": "モデル", "translation": "翻訳", "overlay": "オーバーレイ" },
   "general": {

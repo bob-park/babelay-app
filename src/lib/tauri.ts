@@ -19,8 +19,8 @@ export const api = {
   captureState: () => invoke<boolean>("capture_state"),
   getHwInfo: () => invoke<HwInfo>("get_hw_info"),
   historySessions: (limit: number) => invoke<SessionSummary[]>("history_sessions", { limit }),
-  historySegments: (id: number) => invoke<SegmentRow[]>("history_segments", { session_id: id }),
+  historySegments: (id: number) => invoke<SegmentRow[]>("history_segments", { sessionId: id }),
   historySearch: (q: string) => invoke<SegmentRow[]>("history_search", { q }),
-  historyDelete: (id: number) => invoke<void>("history_delete", { session_id: id }),
-  historyExport: (id: number, format: "txt" | "srt") => invoke<string>("history_export", { session_id: id, format }),
+  historyDelete: (id: number) => invoke<void>("history_delete", { sessionId: id }),
+  historyExport: (id: number, format: "txt" | "srt") => invoke<string>("history_export", { sessionId: id, format }),
 };

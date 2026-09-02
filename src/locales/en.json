@@ -2,7 +2,7 @@
   "app": { "name": "Babelay" },
   "common": { "dismiss": "Dismiss" },
   "nav": { "live": "Live", "history": "History", "settings": "Settings", "collapse": "Collapse sidebar", "expand": "Expand sidebar" },
-  "live": { "start": "Start", "stop": "Stop", "overlay": "Overlay", "cpuFallback": "CPU", "lagging": "Lagging" },
+  "live": { "start": "Start", "stop": "Stop", "overlay": "Overlay", "stopping": "Stopping…", "cpuFallback": "CPU", "lagging": "Lagging" },
   "history": { "empty": "No sessions yet.", "search": "Search", "exportTxt": "TXT", "exportSrt": "SRT", "delete": "Delete", "saved": "Saved: {{path}}", "segments": "{{count}} segments" },
   "settings": { "general": "General", "models": "Models", "translation": "Translation", "overlay": "Overlay" },
   "general": {

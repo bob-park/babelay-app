@@ -9,6 +9,7 @@ export interface Partial { text: string; lang: string; start_ms: number }
 
 export interface SessionView {
   capturing: boolean;
+  stopping: boolean;
   gpuFallback: boolean;
   lagging: boolean;
   partial: Partial | null;
@@ -24,6 +25,7 @@ export function clock(ms: number): string {
 
 export const initialView: SessionView = {
   capturing: false,
+  stopping: false,
   gpuFallback: false,
   lagging: false,
   partial: null,
@@ -39,7 +41,7 @@ export function reduce(v: SessionView, ev: EngineEvent): SessionView {
   switch (ev.type) {
     case "started":
       // 새 세션은 빈 타임라인에서 시작한다. 지난 세션의 줄이 섞이면 시간축이 거짓말을 한다.
-      return { ...next, capturing: true, gpuFallback: ev.gpu_fallback, lagging: false, partial: null, finals: [] };
+      return { ...next, capturing: true, stopping: false, gpuFallback: ev.gpu_fallback, lagging: false, partial: null, finals: [] };
     case "partial":
       return { ...next, partial: { text: ev.text, lang: ev.lang, start_ms: ev.start_ms } };
     case "final": {
@@ -49,7 +51,7 @@ export function reduce(v: SessionView, ev: EngineEvent): SessionView {
     case "lagging":
       return { ...next, lagging: true };
     case "stopped":
-      return { ...next, capturing: false, lagging: false, partial: null };
+      return { ...next, capturing: false, stopping: false, gpuFallback: false, lagging: false, partial: null };
     case "error":
       // 배너는 bind가 띄운다. 뷰는 이벤트 시각만 갱신한다.
       return next;
@@ -69,17 +71,23 @@ export const useSession = create<SessionStore>((set, get) => ({
     try { await api.startCapture(); } catch (e) { report(e); }
   },
   stop: async () => {
-    try { await api.stopCapture(); } catch (e) { report(e); }
+    // stopped가 올 때까지 버튼을 잠근다. 드레인 중 다시 누르면 busy_stopping이 난다.
+    set({ view: { ...get().view, stopping: true } });
+    try { await api.stopCapture(); } catch (e) { report(e); set({ view: { ...get().view, stopping: false } }); }
   },
   bind: () => {
     // 창이 늦게 붙으면 started를 놓친다. 현재 상태를 한 번 읽어 점을 맞춘다.
-    api.captureState().then((capturing) => set({ view: { ...get().view, capturing } })).catch(() => {});
+    // 그 사이 진짜 이벤트가 왔거나(lastEventAt) 언바인드됐으면 낡은 값이므로 버린다.
+    let disposed = false;
+    api.captureState().then((capturing) => {
+      if (!disposed && get().view.lastEventAt === 0) set({ view: { ...get().view, capturing } });
+    }).catch(() => {});
     const p = listen<EngineEvent>("engine-event", (e) => {
       const ev = e.payload;
       // code가 아는 코드면 code를, 아니면 message를 번역한다(둘 다 모르면 원문).
       if (ev.type === "error") report(ERROR_KEYS[ev.code] ? ev.code : ev.message);
       set({ view: reduce(get().view, ev) });
     });
-    return () => { p.then((un) => un()); };
+    return () => { disposed = true; p.then((un) => un()); };
   },
 }));
