@@ -36,9 +36,13 @@ export const ERROR_KEYS: Record<string, string> = {
   in_use: "errors.inUse",
   "not downloading": "errors.notDownloading",
   "unknown model": "errors.unknownModel",
+  unknown_model: "errors.unknownModel",
+  model_missing: "errors.modelMissing",
+  start_failed: "errors.startFailed",
+  busy_stopping: "errors.busyStopping",
 };
 
-const report = (e: unknown) => {
+export const report = (e: unknown) => {
   const key = ERROR_KEYS[e instanceof Error ? e.message : String(e)];
   useSettings.getState().setError(key ? i18next.t(key) : e);
 };

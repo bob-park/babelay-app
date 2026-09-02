@@ -2,8 +2,8 @@
   "app": { "name": "Babelay" },
   "common": { "dismiss": "닫기" },
   "nav": { "live": "라이브", "history": "히스토리", "settings": "설정", "collapse": "사이드바 접기", "expand": "사이드바 펼치기" },
-  "live": { "start": "시작", "stop": "정지", "overlay": "오버레이" },
-  "history": { "empty": "아직 세션이 없습니다." },
+  "live": { "start": "시작", "stop": "정지", "overlay": "오버레이", "cpuFallback": "CPU", "lagging": "지연" },
+  "history": { "empty": "아직 세션이 없습니다.", "search": "검색", "exportTxt": "TXT", "exportSrt": "SRT", "delete": "삭제", "saved": "저장됨: {{path}}", "segments": "{{count}}개 조각" },
   "settings": { "general": "일반", "models": "모델", "translation": "번역", "overlay": "오버레이" },
   "general": {
     "theme": "테마", "themeSystem": "시스템", "themeDark": "다크", "themeLight": "라이트",
@@ -30,12 +30,14 @@
     "displayMode": "표시 모드", "modeBoth": "원문 + 번역", "modeSource": "원문만", "modeTarget": "번역만",
     "subtitleLang": "자막 언어", "sourceLang": "원어", "auto": "자동 감지",
     "fontSize": "글자 크기", "bgOpacity": "배경 투명도",
-    "sampleSource": "We buffer about two seconds of audio before running the model.",
-    "sampleTarget": "모델을 돌리기 전에 약 2초 분량의 오디오를 버퍼링합니다."
+    "previewSource": "We buffer about two seconds of audio before running the model.",
+    "previewTarget": "모델을 돌리기 전에 약 2초 분량의 오디오를 버퍼링합니다."
   },
   "errors": {
     "busy": "다른 모델을 내려받는 중입니다", "inUse": "사용 중인 모델은 삭제할 수 없습니다",
-    "notDownloading": "진행 중인 다운로드가 없습니다", "unknownModel": "알 수 없는 모델입니다"
+    "notDownloading": "진행 중인 다운로드가 없습니다", "unknownModel": "알 수 없는 모델입니다",
+    "modelMissing": "선택한 전사 모델이 설치되어 있지 않습니다", "startFailed": "캡처를 시작할 수 없습니다",
+    "busyStopping": "정지 중입니다. 잠시 후 다시 시도하세요", "historyUnavailable": "히스토리를 사용할 수 없습니다"
   },
   "onboarding": {
     "next": "다음", "back": "이전", "skip": "건너뛰기", "finish": "시작하기",

@@ -36,8 +36,8 @@ export default function OverlaySettings() {
 
       <div className="relative h-28 rounded-[var(--radius-card)] bg-[linear-gradient(#1b2230,#0e1218)]">
         <div className="absolute bottom-3 left-1/2 max-w-[90%] -translate-x-1/2 rounded-[10px] px-4 py-2 text-center text-white" style={{ background: `rgba(18,18,18,${o.bg_opacity})` }}>
-          {o.display_mode !== "target" && <div className="text-white/70" style={{ fontSize: o.font_size * 0.6 * 0.5 }}>{t("overlay.sampleSource")}</div>}
-          {o.display_mode !== "source" && <div className="font-semibold" style={{ fontSize: o.font_size * 0.5 }}>{t("overlay.sampleTarget")}</div>}
+          {o.display_mode !== "target" && <div className="text-white/70" style={{ fontSize: o.font_size * 0.6 * 0.5 }}>{t("overlay.previewSource")}</div>}
+          {o.display_mode !== "source" && <div className="font-semibold" style={{ fontSize: o.font_size * 0.5 }}>{t("overlay.previewTarget")}</div>}
         </div>
       </div>
 

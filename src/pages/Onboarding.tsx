@@ -22,6 +22,7 @@ export default function Onboarding() {
 
   useEffect(() => {
     api.getPlatform().then((p) => { if (p !== "macos") setSteps((s) => s.filter((x) => x !== "permission")); }).catch(() => {});
+    api.checkAudioPermission().then(setPerm).catch(() => {});
     refresh();
   }, []);
 
@@ -76,8 +77,8 @@ export default function Onboarding() {
         {step === "permission" && (
           <div className="flex flex-col gap-3">
             <div className="flex gap-2">
-              <PillButton variant="primary" onClick={() => api.checkAudioPermission().then(setPerm).catch(setError)}>{t("onboarding.permissionCheck")}</PillButton>
-              <PillButton variant="outline" onClick={() => api.openPrivacySettings().catch(setError)}>{t("onboarding.openSettings")}</PillButton>
+              <PillButton variant={perm === "denied" ? "default" : "primary"} onClick={() => api.checkAudioPermission().then(setPerm).catch(setError)}>{t("onboarding.permissionCheck")}</PillButton>
+              <PillButton variant={perm === "denied" ? "primary" : "outline"} onClick={() => api.openPrivacySettings().catch(setError)}>{t("onboarding.openSettings")}</PillButton>
             </div>
             {perm && <p className="text-sm text-fg-muted">{t(`onboarding.permission${perm[0].toUpperCase()}${perm.slice(1)}`)}</p>}
           </div>

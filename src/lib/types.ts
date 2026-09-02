@@ -35,3 +35,15 @@ export interface DownloadProgress { received: number; total: number }
 export interface ModelStatus { info: ModelInfo; installed: boolean; in_use: boolean; balanced: boolean; download: DownloadProgress | null }
 export type DownloadState = "downloading" | "done" | "error" | "cancelled";
 export interface DownloadEvent { id: string; received: number; total: number; state: DownloadState; message: string | null }
+
+export type EngineEvent =
+  | { type: "started"; gpu_active: boolean; gpu_fallback: boolean }
+  | { type: "partial"; text: string; lang: string; start_ms: number }
+  | { type: "final"; id: number; text: string; lang: string; start_ms: number; end_ms: number }
+  | { type: "lagging"; queued_ms: number }
+  | { type: "error"; code: string; message: string }
+  | { type: "stopped" };
+
+export interface SessionSummary { id: number; started_at: number; ended_at: number | null; src_lang: string; tgt_lang: string; asr_model: string; segments: number }
+export interface SegmentRow { id: number; session_id: number; t0_ms: number; t1_ms: number; lang: string; src_text: string; tgt_text: string | null }
+export interface HwInfo { chip: string; mem_gb: number; gpu: string | null; gpu_mem_gb: number | null }

@@ -2,8 +2,8 @@
   "app": { "name": "Babelay" },
   "common": { "dismiss": "Dismiss" },
   "nav": { "live": "Live", "history": "History", "settings": "Settings", "collapse": "Collapse sidebar", "expand": "Expand sidebar" },
-  "live": { "start": "Start", "stop": "Stop", "overlay": "Overlay" },
-  "history": { "empty": "No sessions yet." },
+  "live": { "start": "Start", "stop": "Stop", "overlay": "Overlay", "cpuFallback": "CPU", "lagging": "Lagging" },
+  "history": { "empty": "No sessions yet.", "search": "Search", "exportTxt": "TXT", "exportSrt": "SRT", "delete": "Delete", "saved": "Saved: {{path}}", "segments": "{{count}} segments" },
   "settings": { "general": "General", "models": "Models", "translation": "Translation", "overlay": "Overlay" },
   "general": {
     "theme": "Theme", "themeSystem": "System", "themeDark": "Dark", "themeLight": "Light",
@@ -30,12 +30,14 @@
     "displayMode": "Display", "modeBoth": "Source + translation", "modeSource": "Source only", "modeTarget": "Translation only",
     "subtitleLang": "Subtitle language", "sourceLang": "Source language", "auto": "Auto detect",
     "fontSize": "Font size", "bgOpacity": "Background opacity",
-    "sampleSource": "We buffer about two seconds of audio before running the model.",
-    "sampleTarget": "The model runs after buffering about two seconds of audio."
+    "previewSource": "We buffer about two seconds of audio before running the model.",
+    "previewTarget": "The model runs after buffering about two seconds of audio."
   },
   "errors": {
     "busy": "Another download is in progress", "inUse": "The model in use cannot be deleted",
-    "notDownloading": "No download in progress", "unknownModel": "Unknown model"
+    "notDownloading": "No download in progress", "unknownModel": "Unknown model",
+    "modelMissing": "The selected transcription model is not installed", "startFailed": "Could not start capture",
+    "busyStopping": "Stopping — try again in a moment", "historyUnavailable": "History is unavailable"
   },
   "onboarding": {
     "next": "Next", "back": "Back", "skip": "Skip", "finish": "Get started",

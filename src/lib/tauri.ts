@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { DeepPartial, ModelStatus, Settings } from "./types";
+import type { DeepPartial, HwInfo, ModelStatus, SegmentRow, SessionSummary, Settings } from "./types";
 
 export const api = {
   getSettings: () => invoke<Settings>("get_settings"),
@@ -14,4 +14,13 @@ export const api = {
   downloadModel: (id: string) => invoke<void>("download_model", { id }),
   cancelDownload: (id: string) => invoke<void>("cancel_download", { id }),
   deleteModel: (id: string) => invoke<void>("delete_model", { id }),
+  startCapture: () => invoke<void>("start_capture"),
+  stopCapture: () => invoke<void>("stop_capture"),
+  captureState: () => invoke<boolean>("capture_state"),
+  getHwInfo: () => invoke<HwInfo>("get_hw_info"),
+  historySessions: (limit: number) => invoke<SessionSummary[]>("history_sessions", { limit }),
+  historySegments: (id: number) => invoke<SegmentRow[]>("history_segments", { session_id: id }),
+  historySearch: (q: string) => invoke<SegmentRow[]>("history_search", { q }),
+  historyDelete: (id: number) => invoke<void>("history_delete", { session_id: id }),
+  historyExport: (id: number, format: "txt" | "srt") => invoke<string>("history_export", { session_id: id, format }),
 };

@@ -9,7 +9,7 @@ interface Item { to: string; icon: IconName; label: string }
 
 export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const { t } = useTranslation();
-  const capturing = useSession((s) => s.capturing);
+  const capturing = useSession((s) => s.view.capturing);
   const modelId = useSettings((s) => s.settings?.asr.model_id);
   const modelName = useModels((s) => s.models.find((m) => m.info.id === modelId)?.info.name ?? modelId);
 

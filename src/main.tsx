@@ -8,7 +8,7 @@ import { useModels } from "./lib/models";
 import { applyTheme } from "./lib/theme";
 import { initI18n, resolveLang } from "./lib/i18n";
 
-// 페이지 컴포넌트는 Task 7~9에서 만든다. 그때까지는 임시 플레이스홀더.
+// 세션 스토어는 세 창 모두가 붙는다(오버레이도 자막을 그린다).
 const MainApp = React.lazy(() => import("./pages/MainApp"));
 const OverlayWindow = React.lazy(() => import("./pages/OverlayWindow"));
 const Onboarding = React.lazy(() => import("./pages/Onboarding"));

@@ -7,7 +7,7 @@ import { Toggle } from "../../components/Toggle";
 import { useModels } from "../../lib/models";
 import { useSettings } from "../../lib/settings";
 import { api } from "../../lib/tauri";
-import type { ModelKind } from "../../lib/types";
+import type { HwInfo, ModelKind } from "../../lib/types";
 
 export default function Models() {
   const { t } = useTranslation();
@@ -15,7 +15,8 @@ export default function Models() {
   const { models, refresh } = useModels();
   const [kind, setKind] = useState<ModelKind>("asr");
   const [platform, setPlatform] = useState("macos");
-  useEffect(() => { refresh(); api.getPlatform().then(setPlatform).catch(() => {}); }, []);
+  const [hw, setHw] = useState<HwInfo | null>(null);
+  useEffect(() => { refresh(); api.getPlatform().then(setPlatform).catch(() => {}); api.getHwInfo().then(setHw).catch(() => {}); }, []);
   if (!settings) return null;
 
   const current = kind === "asr" ? settings.asr.model_id : settings.translation.local_model;
@@ -25,6 +26,11 @@ export default function Models() {
   return (
     <div className="flex max-w-3xl flex-col gap-4">
       <h2 className="text-2xl font-bold">{t("settings.models")}</h2>
+      {hw && (
+        <div className="text-xs text-fg-muted">
+          {[hw.chip, `${hw.mem_gb} GB`, hw.gpu && `${hw.gpu}${hw.gpu_mem_gb ? ` ${hw.gpu_mem_gb} GB` : ""}`].filter(Boolean).join(" · ")}
+        </div>
+      )}
       <SegmentedControl value={kind} onChange={setKind} options={[{ value: "asr", label: t("models.asr") }, { value: "llm", label: t("models.llm") }]} />
       <div className="flex flex-col gap-2">
         {models.filter((m) => m.info.kind === kind).map((m) => (
