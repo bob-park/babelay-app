@@ -47,16 +47,32 @@ interface SettingsStore {
   subscribeBackend: () => () => void;
 }
 
+// 인플라이트 update 수. settings-changed는 호출자에게도 되돌아오므로
+// 저장이 끝나기 전에 도착한 에코는 낙관적 상태를 되돌릴 수 있다.
+let pending = 0;
+
 export const useSettings = create<SettingsStore>((set, get) => ({
   settings: null,
   load: async () => set({ settings: await api.getSettings() }),
   update: async (patch) => {
-    const next = mergeSettings(get().settings ?? defaultSettings, patch);
+    const prev = get().settings;
+    const next = mergeSettings(prev ?? defaultSettings, patch);
     set({ settings: next });
-    await api.setSettings(next);
+    pending++;
+    try {
+      await api.setSettings(next);
+    } catch (e) {
+      set({ settings: prev });
+      throw e;
+    } finally {
+      pending--;
+    }
   },
   subscribeBackend: () => {
-    const p = listen<Settings>("settings-changed", (e) => set({ settings: e.payload }));
+    const p = listen<Settings>("settings-changed", (e) => {
+      if (pending > 0) return;
+      set({ settings: e.payload });
+    });
     return () => {
       p.then((un) => un());
     };
