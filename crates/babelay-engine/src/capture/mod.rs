@@ -11,6 +11,9 @@ pub type Sink = Box<dyn FnMut(Frame) + Send + 'static>;
 
 pub trait AudioSource: Send {
     fn start(&mut self, sink: Sink) -> Result<(), CaptureError>;
+    /// 프레임 전달을 멈추고 `Sink` 를 드롭한다 — 반환 전에, 혹은 반환 직후에.
+    /// 엔진은 sink 가 드롭되어야 프레임 채널이 닫힌다고 보고 스레드를 join 하므로,
+    /// sink 를 계속 붙들고 있으면 `EngineHandle::stop()` 이 매달린다.
     fn stop(&mut self);
 }
 
