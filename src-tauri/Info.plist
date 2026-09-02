@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSAudioCaptureUsageDescription</key>
+  <string>Babelay listens to system audio to show live subtitles. Nothing is saved to disk.</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>14.2</string>
+</dict>
+</plist>
