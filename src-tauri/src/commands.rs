@@ -36,14 +36,30 @@ pub fn get_platform() -> String {
     std::env::consts::OS.to_string()
 }
 
-// ponytail: 2단계에서 Core Audio 탭 생성 시도로 교체한다.
 #[tauri::command]
 pub fn check_audio_permission() -> String {
-    if cfg!(target_os = "windows") {
-        "granted".into()
-    } else {
-        "unknown".into()
+    use babelay_engine::capture::Permission;
+    match babelay_engine::capture::probe_permission() {
+        Permission::Granted => "granted",
+        Permission::Denied => "denied",
+        Permission::Unknown => "unknown",
     }
+    .to_string()
+}
+
+#[tauri::command]
+pub fn start_capture(app: AppHandle) -> Result<(), String> {
+    crate::session::start(&app)
+}
+
+#[tauri::command]
+pub fn stop_capture(app: AppHandle) {
+    crate::session::stop(&app)
+}
+
+#[tauri::command]
+pub fn capture_state(app: AppHandle) -> bool {
+    crate::session::is_capturing(&app)
 }
 
 #[tauri::command]

@@ -1,11 +1,14 @@
 mod commands;
+mod history;
 mod i18n;
 mod models;
 mod overlay;
+mod session;
 mod settings;
 mod tray;
 mod windows;
 
+use session::SessionState;
 use settings::SettingsState;
 use tauri::Manager;
 
@@ -18,6 +21,8 @@ pub fn run() {
             let path = app.path().app_config_dir()?.join("settings.json");
             app.manage(SettingsState::new(path));
             app.manage(models::Downloads::default());
+            app.manage(SessionState::default());
+            babelay_engine::transcribe::install_logging_hooks();
             let settings = app.state::<SettingsState>().get();
             let handle = app.handle().clone();
             if settings.general.onboarding_done {
@@ -40,10 +45,19 @@ pub fn run() {
             commands::overlay_commit_position,
             commands::get_models,
             commands::get_hw_info,
+            commands::start_capture,
+            commands::stop_capture,
+            commands::capture_state,
             commands::download_model,
             commands::cancel_download,
             commands::delete_model,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        // 종료 시 엔진을 세운다. 오디오 탭이 살아 있는 채로 프로세스가 죽으면 안 된다.
+        .run(|app, event| {
+            if let tauri::RunEvent::Exit = event {
+                session::stop_on_exit(app);
+            }
+        });
 }

@@ -1,8 +1,9 @@
 use crate::{
-    i18n, overlay,
+    i18n, overlay, session,
     settings::{Settings, SettingsState},
     windows,
 };
+use babelay_engine::engine::EngineEvent;
 use tauri::{
     image::Image,
     menu::{MenuBuilder, MenuItem},
@@ -15,8 +16,15 @@ pub const SHORTCUT_CAPTURE: &str = "CmdOrCtrl+Shift+S";
 pub const SHORTCUT_OVERLAY: &str = "CmdOrCtrl+Shift+O";
 
 pub fn toggle_capture(app: &AppHandle) {
-    // 엔진은 2단계. 지금은 프론트가 이 이벤트로 capturing 플래그를 뒤집는다.
-    let _ = app.emit("capture-toggle", ());
+    if let Err(e) = session::toggle(app) {
+        let _ = app.emit(
+            "engine-event",
+            EngineEvent::Error {
+                code: "start_failed".into(),
+                message: e,
+            },
+        );
+    }
 }
 
 pub fn toggle_overlay(app: &AppHandle) -> Result<(), String> {
@@ -45,7 +53,10 @@ pub fn relabel(app: &AppHandle, settings: &Settings) {
         return;
     };
     let l = i18n::tray_labels(i18n::resolve(&settings.general.ui_language));
-    let _ = items.capture.set_text(l.start);
+    // 언어만 바뀐 경우에도 캡처 라벨은 현재 상태를 따라간다.
+    let _ = items
+        .capture
+        .set_text(capture_label(&l, session::is_capturing(app)));
     let _ = items.overlay.set_text(if settings.overlay.enabled {
         l.overlay_off
     } else {
@@ -53,6 +64,25 @@ pub fn relabel(app: &AppHandle, settings: &Settings) {
     });
     let _ = items.open.set_text(l.open);
     let _ = items.quit.set_text(l.quit);
+}
+
+/// 캡처 시작/정지 시 트레이 라벨만 갱신한다. 트레이가 아직 없으면 무시된다.
+pub fn relabel_capture(app: &AppHandle, capturing: bool) {
+    let Some(items) = app.try_state::<TrayItems>() else {
+        return;
+    };
+    let lang = i18n::resolve(&app.state::<SettingsState>().get().general.ui_language);
+    let _ = items
+        .capture
+        .set_text(capture_label(&i18n::tray_labels(lang), capturing));
+}
+
+fn capture_label(l: &i18n::TrayLabels, capturing: bool) -> &'static str {
+    if capturing {
+        l.stop
+    } else {
+        l.start
+    }
 }
 
 pub fn build(app: &AppHandle) -> tauri::Result<()> {

@@ -8,6 +8,12 @@ use whisper_rs::{
 /// 미만 버퍼를 건너뛴다. 경로를 단순하게 유지하려고 1초까지 패딩한다.
 const MIN_SAMPLES: usize = 16_000;
 
+/// whisper.cpp 로그를 러스트 로그 훅으로 돌린다. 프로세스당 한 번만 호출한다.
+/// (호스트가 whisper-rs 에 직접 의존하지 않도록 감싼다.)
+pub fn install_logging_hooks() {
+    whisper_rs::install_logging_hooks();
+}
+
 #[derive(Clone, Debug, serde::Serialize)]
 pub struct Segment {
     pub text: String,

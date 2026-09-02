@@ -32,6 +32,7 @@ macOS 서명 빌드에는 아래 환경변수가 필요하다.
     yarn tauri build
 
 빌드는 로컬에서만 한다(CI 없음). Windows 빌드는 Windows 머신에서 `yarn tauri build`로 만들며 서명하지 않는다.
+Windows: CUDA Toolkit 설치 후 `cudart64_12.dll`, `cublas64_12.dll`, `cublasLt64_12.dll`을 `src-tauri/resources/cuda/`에 복사하고 `yarn tauri build`.
 
 ## 문서
 

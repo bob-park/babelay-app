@@ -24,8 +24,14 @@ tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sys-locale = "0.3"
-babelay-engine = { path = "../crates/babelay-engine" }
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
+
+# Linux는 지원 밖 — 백엔드 feature 없이는 붙이지 않는다.
+[target.'cfg(target_os = "macos")'.dependencies]
+babelay-engine = { path = "../crates/babelay-engine", features = ["metal"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+babelay-engine = { path = "../crates/babelay-engine", features = ["cuda"] }
 
 [dev-dependencies]
 tempfile = "3"
