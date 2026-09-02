@@ -83,7 +83,9 @@ babelay-app/
 공통 출력은 `f32` 인터리브 PCM과 샘플레이트다. OS별 모듈 둘.
 
 - **macOS**: Core Audio Process Tap. 탭 생성과 집계 장치 구성은 `cc`로 컴파일하는 ObjC 심(`crates/babelay-engine/csrc/tap.m`)이 맡고, Rust에는 C ABI 세 개(`babelay_tap_start` / `babelay_tap_stop` / `babelay_tap_probe`)로만 노출한다(objc2 바인딩 크레이트는 쓰지 않는다). 전역 탭(모든 프로세스 출력)을 만들고, 비공개 집계 장치에 기본 출력 장치를 서브 장치 겸 메인 서브 장치로, 탭을 탭 목록에 넣어 IOProc으로 읽는다(탭 자동 시작은 쓰지 않는다). Info.plist의 `NSAudioCaptureUsageDescription`으로 첫 탭 생성 시 TCC 프롬프트가 뜬다.
-- **Windows**: `wasapi` 크레이트로 기본 출력 장치 루프백. 기본 장치가 바뀌면 스트림을 재시작한다.
+- **Windows**: `wasapi` 크레이트로 기본 출력 장치 루프백.
+
+기본 출력 장치가 세션 중에 바뀌면(헤드폰 연결·해제 등) 캡처가 멈출 수 있다 — 2단계 제한이다. 장치 변경 감지와 스트림 재시작은 3단계 백로그로 넘긴다. 그때까지는 정지 후 다시 시작하면 새 장치로 붙는다.
 
 권한 확인 API `check_audio_permission()`은 실제로 탭 생성을 시도해 결과를 돌려준다. 거부 시 프론트는 `x-apple.systempreferences:com.apple.preference.security?Privacy_AudioCapture` 딥링크 버튼을 보여준다.
 
@@ -105,6 +107,8 @@ babelay-app/
 오디오 콜백 → 청커 스레드 → 전사 스레드 → 번역 워커(로컬은 스레드, 클라우드는 tokio 태스크). 프레임 채널은 unbounded라 과부하에서도 프레임을 버리지 않는다. 전사가 밀리면 `Partial` 실행은 건너뛰고 `Final` 조각은 버리지 않는다. 큐에 오래 머문 조각이 기준을 넘으면 `Lagging`을 한 번 발행하고 회복되면 해제한다 — 경고일 뿐 부하를 덜지는 않는다(load shedding 없음).
 
 전사 루프는 패닉에 안전하다. `catch_unwind`로 감싸 whisper 쪽이 패닉해도 세션은 `Error{code:"panic"}`을 발행하고 정상적으로 멈춘다.
+
+세션 중 기본 출력 장치가 바뀌면 프레임이 끊길 수 있고 엔진은 이를 감지하지 않는다(2단계 제한, §4.1). 앱 종료 시 드레인은 3초까지만 기다린다 — 오디오 탭은 그 전에 동기로 풀고, 넘기면 전사 꼬리만 잃는다.
 
 ### 4.5 오류
 
