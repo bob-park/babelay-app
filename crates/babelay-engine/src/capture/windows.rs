@@ -56,20 +56,15 @@ impl AudioSource for LoopbackSource {
                 let _ = ready_tx.send(Ok(()));
 
                 let mut bytes: VecDeque<u8> = VecDeque::new();
-                // ponytail: wasapi's wait_for_event reports a plain timeout as an error
-                // (api.rs:2029, WasapiError::EventTimeout), so a long silence looks the same as a
-                // broken handle. Bail after 5 in a row rather than spin; if idle systems start
-                // dropping capture, distinguish the two by checking WaitForSingleObject directly.
-                let mut wait_failures = 0u32;
                 while !stop2.load(Ordering::Relaxed) {
                     if event.wait_for_event(1000).is_err() {
-                        wait_failures += 1;
-                        if wait_failures >= 5 {
-                            return Err("no audio event for 5 consecutive waits".into());
-                        }
+                        // An idle loopback endpoint stops signalling, and wait_for_event reports
+                        // that timeout as an error, so this is normal: back off and keep waiting.
+                        // ponytail: a truly failed handle spins at ~100 Hz until stop; fix = call
+                        // WaitForSingleObject directly and branch on WAIT_FAILED.
+                        std::thread::sleep(std::time::Duration::from_millis(10));
                         continue;
                     }
-                    wait_failures = 0;
                     let info = capture
                         .read_from_device_to_deque(&mut bytes)
                         .map_err(|e| e.to_string())?;
