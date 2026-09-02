@@ -1,0 +1,48 @@
+{
+  "app": { "name": "Babelay" },
+  "nav": { "live": "라이브", "history": "히스토리", "settings": "설정", "collapse": "사이드바 접기", "expand": "사이드바 펼치기" },
+  "status": { "idle": "대기", "capturing": "캡처 중" },
+  "live": { "start": "시작", "stop": "정지", "overlayOn": "오버레이 켬", "overlayOff": "오버레이 끔", "empty": "시작을 누르면 시스템 오디오 캡처를 시작합니다.", "shortcutHint": "단축키: {{capture}} 시작/정지, {{overlay}} 오버레이 토글" },
+  "history": { "empty": "아직 세션이 없습니다." },
+  "settings": { "general": "일반", "transcription": "전사 모델", "translation": "번역", "overlay": "오버레이" },
+  "general": {
+    "theme": "테마", "themeSystem": "시스템", "themeDark": "다크", "themeLight": "라이트",
+    "language": "언어", "langSystem": "시스템 기본", "langKo": "한국어", "langEn": "영어", "langJa": "일본어",
+    "shortcuts": "단축키", "shortcutCapture": "캡처 시작 / 정지", "shortcutOverlay": "오버레이 표시 / 숨김"
+  },
+  "models": {
+    "badgeBalanced": "balanced", "badgeInstalled": "설치됨", "badgeInUse": "사용 중",
+    "size": "용량", "speed": "속도",
+    "speed1": "매우 느림", "speed2": "느림", "speed3": "보통", "speed4": "빠름", "speed5": "매우 빠름",
+    "gpuMac": "Apple Silicon 가속", "gpuWin": "NVIDIA GPU 가속",
+    "asrTitle": "전사 모델", "llmTitle": "번역 모델",
+    "download": "다운로드", "select": "선택", "delete": "삭제"
+  },
+  "translation": {
+    "backend": "방식", "local": "로컬 모델", "cloud": "클라우드 API",
+    "provider": "프로바이더", "model": "모델", "baseUrl": "Base URL",
+    "providerOpenai": "OpenAI", "providerAnthropic": "Anthropic", "providerGemini": "Google Gemini", "providerDeepl": "DeepL", "providerCustom": "커스텀 (OpenAI 호환)"
+  },
+  "overlay": {
+    "monitor": "모니터", "primary": "주",
+    "adjust": "위치 조정", "adjustOn": "조정 완료", "adjustOff": "위치 조정",
+    "adjustHint": "자막을 드래그해 옮기세요. 모서리를 드래그하면 크기가 바뀝니다.",
+    "displayMode": "표시 모드", "modeBoth": "원문 + 번역", "modeSource": "원문만", "modeTarget": "번역만",
+    "subtitleLang": "자막 언어", "sourceLang": "원어", "auto": "자동 감지",
+    "fontSize": "글자 크기", "bgOpacity": "배경 투명도",
+    "sampleSource": "We buffer about two seconds of audio before running the model.",
+    "sampleTarget": "모델을 돌리기 전에 약 2초 분량의 오디오를 버퍼링합니다."
+  },
+  "onboarding": {
+    "stepLanguage": "언어", "stepPermission": "권한", "stepAsr": "전사 모델", "stepLlm": "번역 모델", "stepDone": "완료",
+    "next": "다음", "back": "이전", "skip": "건너뛰기", "finish": "시작하기",
+    "languageTitle": "언어를 선택하세요",
+    "permissionTitle": "시스템 오디오 캡처 허용",
+    "permissionDesc": "Babelay가 Mac에서 재생 중인 소리를 들으려면 권한이 필요합니다. 디스크에 녹음하지 않습니다.",
+    "permissionCheck": "권한 확인", "permissionGranted": "권한이 허용되었습니다", "permissionDenied": "권한이 거부되었습니다", "permissionUnknown": "권한은 캡처를 시작할 때 확인합니다.",
+    "openSettings": "시스템 설정 열기",
+    "asrTitle": "전사 모델을 선택하세요", "asrDesc": "이 기기에 맞는 추천 모델에 balanced 배지를 표시했습니다.",
+    "llmTitle": "번역 모델을 선택하세요", "llmDesc": "건너뛰고 나중에 클라우드 API를 쓸 수도 있습니다.",
+    "doneTitle": "준비 완료", "doneDesc": "라이브 페이지에서 시작을 누르세요."
+  }
+}
