@@ -6,7 +6,7 @@
 
 **Architecture:** Tauri 2 단일 프로세스. Cargo 워크스페이스에 `src-tauri`(앱)와 `crates/babelay-engine`(2단계에서 채울 빈 라이브러리)을 둔다. 프론트엔드는 Vite 앱 하나이고, 창 라벨(`main`/`overlay`/`onboarding`)로 무엇을 렌더할지 정한다. 설정은 Rust가 `settings.json`으로 소유하고, 프론트는 `get_settings`/`set_settings` 커맨드와 `settings-changed` 이벤트로 동기화한다.
 
-**Tech Stack:** Rust 1.98, Tauri 2.11 (`tray-icon`, `macos-private-api`), tauri-plugin-global-shortcut 2, tauri-plugin-opener 2, serde/serde_json, sys-locale 0.3, yarn 4 (berry, corepack), Node 24, React 19, TypeScript 5.9, Vite, Tailwind 4 (`@tailwindcss/vite`), react-router 7, zustand 5, i18next 26 + react-i18next 17, vitest 4, sharp(아이콘 생성 전용 devDependency).
+**Tech Stack:** Rust 1.98, Tauri 2.11 (`tray-icon`, `macos-private-api`), tauri-plugin-global-shortcut 2, tauri-plugin-opener 2, serde/serde_json, sys-locale 0.3, yarn 4.18.1 + Node 24 (`.mise.toml`로 고정), React 19, TypeScript 5.9, Vite, Tailwind 4 (`@tailwindcss/vite`), react-router 7, zustand 5, i18next 26 + react-i18next 17, vitest 4, sharp(아이콘 생성 전용 devDependency).
 
 **Spec:** `docs/superpowers/specs/2026-09-02-babelay-design.md` (섹션 3, 7, 9, 11의 1단계)
 
@@ -22,6 +22,7 @@
 - 전역 단축키 고정값: `CmdOrCtrl+Shift+S` 캡처 토글, `CmdOrCtrl+Shift+O` 오버레이 토글.
 - 커밋 메시지는 `feat:`/`chore:`/`test:`/`ci:` 접두어를 쓰고, 끝에 `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>` 줄을 붙인다.
 - 각 태스크의 검증 명령은 저장소 루트에서 실행한다.
+- Node/yarn 버전은 `.mise.toml`(node 24, yarn 4.18.1)이 결정한다. 셸에 mise가 활성화되어 있지 않으면 `mise exec -- yarn …`로 실행한다. `yarn --version`이 `4.18.1`이 아니면 진행하지 않는다.
 
 ---
 
@@ -95,18 +96,19 @@ cd /Users/hwpark/Documents/rust-workspace/babelay-app && ls
 
 Expected: `package.json`, `src/`, `src-tauri/`, `vite.config.ts`가 루트에 생김.
 
-- [ ] **Step 2: yarn berry 활성화**
+- [ ] **Step 2: yarn 4 확인과 node_modules 링커 설정**
 
-Corepack으로 yarn 4를 프로젝트에 고정하고, PnP 대신 node_modules 링커를 쓴다(Vite·sharp 호환).
+yarn은 `.mise.toml`이 4.18.1로 고정한다. PnP 대신 node_modules 링커를 쓴다(Vite·sharp 호환).
 
 ```bash
-corepack enable
-yarn set version stable
-yarn config set nodeLinker node-modules
+npm pkg set packageManager=yarn@4.18.1
 yarn --version
+yarn config set nodeLinker node-modules
 ```
 
-Expected: `4.x`가 출력되고, `package.json`에 `"packageManager": "yarn@4.x.x"`, 루트에 `.yarnrc.yml`(`nodeLinker: node-modules`)이 생긴다. 템플릿이 만든 `yarn.lock`(v1 형식)이 있으면 지우고 다음 단계의 `yarn add`가 새로 만들게 둔다.
+`packageManager` 필드는 corepack 셸이 남아 있는 환경에서도 yarn 1이 아닌 4.18.1을 고르게 한다.
+
+Expected: `4.18.1`이 출력되고, 루트에 `.yarnrc.yml`(`nodeLinker: node-modules`)이 생긴다. 템플릿이 만든 `yarn.lock`(v1 형식)이 있으면 지우고 다음 단계의 `yarn add`가 새로 만들게 둔다.
 
 - [ ] **Step 3: 패키지 이름과 버전 고정**
 
@@ -2838,9 +2840,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - run: corepack enable
-      - uses: actions/setup-node@v4
-        with: { node-version: 24, cache: yarn }
+      - uses: jdx/mise-action@v2
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with: { workspaces: ". -> target" }
@@ -2872,9 +2872,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - run: corepack enable
-      - uses: actions/setup-node@v4
-        with: { node-version: 24, cache: yarn }
+      - uses: jdx/mise-action@v2
       - uses: dtolnay/rust-toolchain@stable
         with: { targets: aarch64-apple-darwin }
       - uses: Swatinem/rust-cache@v2
