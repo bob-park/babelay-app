@@ -137,8 +137,9 @@ pub fn set_visible(app: &AppHandle, visible: bool) -> Result<(), String> {
 }
 
 pub fn set_adjust_mode(app: &AppHandle, enabled: bool) -> Result<(), String> {
-    ADJUST_MODE.store(enabled, Ordering::Relaxed);
+    // 창이 없으면 플래그를 세우지 않는다. 세워두면 지울 방법이 없다.
     let Some(win) = app.get_webview_window(LABEL) else { return Ok(()) };
+    ADJUST_MODE.store(enabled, Ordering::Relaxed);
     win.set_ignore_cursor_events(!enabled).map_err(|e| e.to_string())?;
     if enabled {
         win.show().map_err(|e| e.to_string())?;
@@ -151,7 +152,7 @@ pub fn set_adjust_mode(app: &AppHandle, enabled: bool) -> Result<(), String> {
 pub fn commit_position(app: &AppHandle) -> Result<(), String> {
     let Some(win) = app.get_webview_window(LABEL) else { return Ok(()) };
     let pos = win.outer_position().map_err(|e| e.to_string())?;
-    let size = win.outer_size().map_err(|e| e.to_string())?;
+    let size = win.inner_size().map_err(|e| e.to_string())?;
     let mon = win
         .current_monitor()
         .map_err(|e| e.to_string())?

@@ -19,6 +19,10 @@ pub fn toggle_overlay(app: &AppHandle) -> Result<(), String> {
     let state = app.state::<SettingsState>();
     let mut s = state.get();
     s.overlay.enabled = !s.overlay.enabled;
+    overlay::set_adjust_mode(app, false)?; // 조정 모드 중 숨기면 플래그가 남는다
+    if s.overlay.enabled {
+        overlay::apply_position(app, &s)?;
+    }
     overlay::set_visible(app, s.overlay.enabled)?;
     state.set(app, s)
 }

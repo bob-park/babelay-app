@@ -62,6 +62,7 @@ pub fn overlay_set_adjust_mode(app: AppHandle, enabled: bool) -> Result<(), Stri
     overlay::set_adjust_mode(&app, enabled)?;
     if !enabled {
         let s = app.state::<SettingsState>().get();
+        overlay::apply_position(&app, &s)?; // 취소한 드래그를 저장된 비율로 되돌린다
         overlay::set_visible(&app, s.overlay.enabled)?;
     }
     Ok(())
