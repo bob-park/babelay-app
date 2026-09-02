@@ -12,9 +12,16 @@
     yarn install
     yarn tauri dev
 
-## 테스트
+## 검증
 
-    yarn test && cargo test --workspace
+머지 전에 아래 네 가지가 모두 통과해야 한다(로컬 게이트, CI 없음).
+
+    yarn tsc --noEmit
+    yarn test
+    cargo test --workspace
+    cargo clippy --workspace --all-targets -- -D warnings
+
+포매팅은 `cargo fmt --all`로 맞추고 `cargo fmt --all -- --check`로 확인한다.
 
 ## 빌드
 
