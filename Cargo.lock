@@ -325,6 +325,7 @@ dependencies = [
 name = "babelay-engine"
 version = "0.1.0"
 dependencies = [
+ "cc",
  "httpmock",
  "reqwest 0.12.28",
  "serde",

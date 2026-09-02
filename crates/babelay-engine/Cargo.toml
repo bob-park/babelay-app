@@ -3,6 +3,9 @@ name = "babelay-engine"
 version = "0.1.0"
 edition = "2021"
 
+[build-dependencies]
+cc = "1"
+
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
