@@ -28,10 +28,10 @@ pub fn resolve_with(pref: &str, system: Option<&str>) -> Lang {
     }
 }
 
-// stop, overlay_on은 트레이 라벨 토글(2단계)에서 쓴다.
-#[allow(dead_code)]
 pub struct TrayLabels {
     pub start: &'static str,
+    /// 캡처 상태 토글은 2단계.
+    #[allow(dead_code)]
     pub stop: &'static str,
     pub overlay_on: &'static str,
     pub overlay_off: &'static str,

@@ -1,9 +1,13 @@
-use crate::{i18n, overlay, settings::SettingsState, windows};
+use crate::{
+    i18n, overlay,
+    settings::{Settings, SettingsState},
+    windows,
+};
 use tauri::{
     image::Image,
     menu::{MenuBuilder, MenuItem},
     tray::TrayIconBuilder,
-    AppHandle, Emitter, Manager,
+    AppHandle, Emitter, Manager, Wry,
 };
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
@@ -16,10 +20,10 @@ pub fn toggle_capture(app: &AppHandle) {
 }
 
 pub fn toggle_overlay(app: &AppHandle) -> Result<(), String> {
+    overlay::exit_adjust_mode(app)?; // 조정 모드 중 숨기면 플래그가 남는다
     let state = app.state::<SettingsState>();
     let mut s = state.get();
     s.overlay.enabled = !s.overlay.enabled;
-    overlay::set_adjust_mode(app, false)?; // 조정 모드 중 숨기면 플래그가 남는다
     if s.overlay.enabled {
         overlay::apply_position(app, &s)?;
     }
@@ -27,12 +31,41 @@ pub fn toggle_overlay(app: &AppHandle) -> Result<(), String> {
     state.set(app, s)
 }
 
+/// 트레이 메뉴 항목 핸들. UI 언어가 바뀌면 라벨을 다시 쓴다.
+pub struct TrayItems {
+    pub capture: MenuItem<Wry>,
+    pub overlay: MenuItem<Wry>,
+    pub open: MenuItem<Wry>,
+    pub quit: MenuItem<Wry>,
+}
+
+/// 설정이 저장될 때마다 호출된다. 트레이가 아직 없으면 아무것도 하지 않는다.
+pub fn relabel(app: &AppHandle, settings: &Settings) {
+    let Some(items) = app.try_state::<TrayItems>() else {
+        return;
+    };
+    let l = i18n::tray_labels(i18n::resolve(&settings.general.ui_language));
+    let _ = items.capture.set_text(l.start);
+    let _ = items.overlay.set_text(if settings.overlay.enabled {
+        l.overlay_off
+    } else {
+        l.overlay_on
+    });
+    let _ = items.open.set_text(l.open);
+    let _ = items.quit.set_text(l.quit);
+}
+
 pub fn build(app: &AppHandle) -> tauri::Result<()> {
     let settings = app.state::<SettingsState>().get();
     let labels = i18n::tray_labels(i18n::resolve(&settings.general.ui_language));
 
     let capture = MenuItem::with_id(app, "capture", labels.start, true, None::<&str>)?;
-    let overlay_item = MenuItem::with_id(app, "overlay", labels.overlay_off, true, None::<&str>)?;
+    let overlay_label = if settings.overlay.enabled {
+        labels.overlay_off
+    } else {
+        labels.overlay_on
+    };
+    let overlay_item = MenuItem::with_id(app, "overlay", overlay_label, true, None::<&str>)?;
     let open = MenuItem::with_id(app, "open", labels.open, true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", labels.quit, true, None::<&str>)?;
     let menu = MenuBuilder::new(app)
@@ -65,6 +98,13 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
             _ => {}
         })
         .build(app)?;
+
+    app.manage(TrayItems {
+        capture,
+        overlay: overlay_item,
+        open,
+        quit,
+    });
 
     let capture_sc: Shortcut = SHORTCUT_CAPTURE.parse().expect("valid shortcut");
     let overlay_sc: Shortcut = SHORTCUT_OVERLAY.parse().expect("valid shortcut");
