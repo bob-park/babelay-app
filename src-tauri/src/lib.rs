@@ -1,3 +1,4 @@
+mod i18n;
 mod settings;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
