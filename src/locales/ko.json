@@ -5,7 +5,7 @@
   "status": { "idle": "대기", "capturing": "캡처 중" },
   "live": { "start": "시작", "stop": "정지", "overlayOn": "오버레이 켬", "overlayOff": "오버레이 끔", "empty": "시작을 누르면 시스템 오디오 캡처를 시작합니다.", "shortcutHint": "단축키: {{capture}} 시작/정지, {{overlay}} 오버레이 토글" },
   "history": { "empty": "아직 세션이 없습니다." },
-  "settings": { "general": "일반", "models": "모델", "transcription": "전사 모델", "translation": "번역", "overlay": "오버레이" },
+  "settings": { "general": "일반", "models": "모델", "translation": "번역", "overlay": "오버레이" },
   "general": {
     "theme": "테마", "themeSystem": "시스템", "themeDark": "다크", "themeLight": "라이트",
     "language": "언어", "langSystem": "시스템 기본", "langKo": "한국어", "langEn": "영어", "langJa": "일본어",
@@ -13,15 +13,15 @@
   },
   "models": {
     "desc": { "tiny": "가장 빠름 · 정확도 낮음", "base": "빠름 · 짧은 문장에 적합", "small": "속도·정확도 균형", "medium": "높은 정확도", "large_v3_turbo": "높은 정확도 · 다국어 강함", "large_v3": "최고 정확도", "gemma3_1b": "가장 빠름 · 단순 문장", "qwen3_5_2b": "속도·품질 균형", "gemma3_4b": "더 자연스러운 문장", "qwen3_5_4b": "최고 품질 · 한·일 강함" },
-    "badgeBalanced": "balanced", "badgeInstalled": "설치됨", "badgeInUse": "사용 중",
-    "size": "용량", "speed": "속도",
+    "badgeInstalled": "설치됨", "badgeInUse": "사용 중", "badgeRecommended": "추천",
+    "asr": "전사", "llm": "번역", "downloading": "다운로드 중", "cancel": "취소", "continue": "계속", "continueWith": "{{size}} 받고 계속",
     "speed1": "매우 느림", "speed2": "느림", "speed3": "보통", "speed4": "빠름", "speed5": "매우 빠름",
     "gpuMac": "Apple Silicon 가속", "gpuWin": "NVIDIA GPU 가속",
-    "asrTitle": "전사 모델", "llmTitle": "번역 모델",
     "download": "다운로드", "select": "선택", "delete": "삭제"
   },
   "translation": {
     "backend": "방식", "local": "로컬 모델", "cloud": "클라우드 API",
+    "currentModel": "현재 모델", "changeInModels": "모델 페이지에서 변경",
     "provider": "프로바이더", "model": "모델", "baseUrl": "Base URL",
     "providerOpenai": "OpenAI", "providerAnthropic": "Anthropic", "providerGemini": "Google Gemini", "providerDeepl": "DeepL", "providerCustom": "커스텀 (OpenAI 호환)"
   },

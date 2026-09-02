@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { PillButton } from "../../components/PillButton";
 import { api } from "../../lib/tauri";
 import { useSettings } from "../../lib/settings";
-import type { DisplayMode, MonitorInfo, SourceLang, UiLang } from "../../lib/types";
+import type { DisplayMode, SourceLang, UiLang } from "../../lib/types";
 
 const label = "text-[10px] font-bold uppercase tracking-[1.2px] text-fg-muted";
 const select = "rounded-md bg-surface px-3 py-2 text-sm text-fg";
@@ -12,10 +12,8 @@ const select = "rounded-md bg-surface px-3 py-2 text-sm text-fg";
 export default function OverlaySettings() {
   const { t } = useTranslation();
   const { settings, update, setError } = useSettings();
-  const [monitors, setMonitors] = useState<MonitorInfo[]>([]);
   const [adjust, setAdjust] = useState(false);
 
-  useEffect(() => { api.overlayGetMonitors().then(setMonitors).catch(setError); }, []);
   // 트레이·단축키로도 조정 모드가 꺼지므로 백엔드가 진실이다.
   useEffect(() => {
     const un = listen<boolean>("overlay-adjust-mode", (e) => setAdjust(e.payload));
@@ -26,7 +24,6 @@ export default function OverlaySettings() {
 
   if (!settings) return null;
   const o = settings.overlay;
-  const selectedId = o.monitor_id || monitors.find((m) => m.primary)?.id || "";
 
   const toggleAdjust = () => {
     const next = !adjust;
@@ -40,23 +37,6 @@ export default function OverlaySettings() {
   return (
     <div className="flex max-w-xl flex-col gap-6">
       <h2 className="text-2xl font-bold">{t("settings.overlay")}</h2>
-
-      <div className="flex flex-col gap-2">
-        <span className={label}>{t("overlay.monitor")}</span>
-        <div className="flex flex-wrap gap-3">
-          {monitors.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => update({ overlay: { monitor_id: m.primary ? "" : m.id } })}
-              title={m.id}
-              className={`flex h-16 items-end justify-center overflow-hidden rounded bg-surface px-2 pb-1 text-xs ${m.id === selectedId ? "ring-2 ring-accent text-fg" : "text-fg-muted"}`}
-              style={{ width: Math.round((m.width / m.height) * 64) }}
-            >
-              <span className="truncate">{m.id}{m.primary ? ` (${t("overlay.primary")})` : ""}</span>
-            </button>
-          ))}
-        </div>
-      </div>
 
       <div className="flex items-center justify-between">
         <span className={label}>{t("overlay.adjust")}</span>

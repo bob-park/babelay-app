@@ -5,7 +5,7 @@
   "status": { "idle": "待機中", "capturing": "キャプチャ中" },
   "live": { "start": "開始", "stop": "停止", "overlayOn": "オーバーレイ オン", "overlayOff": "オーバーレイ オフ", "empty": "開始を押すとシステム音声のキャプチャが始まります。", "shortcutHint": "ショートカット: {{capture}} 開始/停止, {{overlay}} オーバーレイ切替" },
   "history": { "empty": "まだセッションがありません。" },
-  "settings": { "general": "一般", "models": "モデル", "transcription": "文字起こしモデル", "translation": "翻訳", "overlay": "オーバーレイ" },
+  "settings": { "general": "一般", "models": "モデル", "translation": "翻訳", "overlay": "オーバーレイ" },
   "general": {
     "theme": "テーマ", "themeSystem": "システム", "themeDark": "ダーク", "themeLight": "ライト",
     "language": "言語", "langSystem": "システム既定", "langKo": "韓国語", "langEn": "英語", "langJa": "日本語",
@@ -13,15 +13,15 @@
   },
   "models": {
     "desc": { "tiny": "最速・精度は低い", "base": "速い・短い文向け", "small": "速度と精度のバランス", "medium": "高精度", "large_v3_turbo": "高精度・多言語に強い", "large_v3": "最高精度", "gemma3_1b": "最速・単純な文向け", "qwen3_5_2b": "バランス良好", "gemma3_4b": "より自然な文", "qwen3_5_4b": "最高品質・日中韓に強い" },
-    "badgeBalanced": "balanced", "badgeInstalled": "インストール済み", "badgeInUse": "使用中",
-    "size": "サイズ", "speed": "速度",
+    "badgeInstalled": "インストール済み", "badgeInUse": "使用中", "badgeRecommended": "おすすめ",
+    "asr": "文字起こし", "llm": "翻訳", "downloading": "ダウンロード中", "cancel": "キャンセル", "continue": "続ける", "continueWith": "{{size}} を取得して続ける",
     "speed1": "とても遅い", "speed2": "遅い", "speed3": "普通", "speed4": "速い", "speed5": "とても速い",
     "gpuMac": "Apple Silicon アクセラレーション", "gpuWin": "NVIDIA GPU アクセラレーション",
-    "asrTitle": "文字起こしモデル", "llmTitle": "翻訳モデル",
     "download": "ダウンロード", "select": "選択", "delete": "削除"
   },
   "translation": {
     "backend": "方式", "local": "ローカルモデル", "cloud": "クラウド API",
+    "currentModel": "現在のモデル", "changeInModels": "モデルページで変更",
     "provider": "プロバイダー", "model": "モデル", "baseUrl": "Base URL",
     "providerOpenai": "OpenAI", "providerAnthropic": "Anthropic", "providerGemini": "Google Gemini", "providerDeepl": "DeepL", "providerCustom": "カスタム (OpenAI 互換)"
   },

@@ -29,16 +29,6 @@ export interface Settings {
 
 export type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] };
 
-export interface MonitorInfo {
-  id: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  scale: number;
-  primary: boolean;
-}
-
 export type ModelKind = "asr" | "llm";
 export interface ModelInfo { id: string; kind: ModelKind; name: string; desc_key: string; size_bytes: number; speed: 1 | 2 | 3 | 4 | 5; url: string; filename: string; sha256: string | null }
 export interface DownloadProgress { received: number; total: number }

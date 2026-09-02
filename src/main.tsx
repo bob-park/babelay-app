@@ -4,6 +4,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import "./index.css";
 import { useSettings } from "./lib/settings";
 import { useSession } from "./lib/session";
+import { useModels } from "./lib/models";
 import { applyTheme } from "./lib/theme";
 import { initI18n, resolveLang } from "./lib/i18n";
 
@@ -24,10 +25,15 @@ function Root() {
   useEffect(() => {
     const unsubSettings = subscribeBackend();
     const unsubSession = bindSession();
-    load().then(() => setReady(true));
+    const unsubModels = label === "overlay" ? () => {} : useModels.getState().bind();
+    load().then(() => {
+      setReady(true);
+      if (label !== "overlay") useModels.getState().refresh();
+    });
     return () => {
       unsubSettings();
       unsubSession();
+      unsubModels();
     };
   }, []);
 

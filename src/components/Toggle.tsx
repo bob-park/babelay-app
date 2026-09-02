@@ -1,7 +1,7 @@
-export function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+export function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label?: string }) {
   return (
     <label className="flex cursor-pointer items-center justify-between gap-4">
-      <span>{label}</span>
+      {label && <span>{label}</span>}
       <input
         type="checkbox"
         role="switch"

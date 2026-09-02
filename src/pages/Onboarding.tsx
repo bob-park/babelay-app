@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ErrorBar } from "../components/ErrorBar";
 import { ModelRow } from "../components/ModelRow";
 import { PillButton } from "../components/PillButton";
-import { ASR_MODELS, BALANCED, LLM_MODELS } from "../lib/models.fixture";
+import { useModels } from "../lib/models";
 import { api } from "../lib/tauri";
 import { useSettings } from "../lib/settings";
 import type { UiLang } from "../lib/types";
@@ -13,6 +13,7 @@ type Step = "language" | "permission" | "asr" | "llm" | "done";
 export default function Onboarding() {
   const { t } = useTranslation();
   const { settings, update } = useSettings();
+  const models = useModels((s) => s.models);
   const [steps, setSteps] = useState<Step[]>(["language", "permission", "asr", "llm", "done"]);
   const [idx, setIdx] = useState(0);
   const [perm, setPerm] = useState<"granted" | "denied" | "unknown" | null>(null);
@@ -70,8 +71,8 @@ export default function Onboarding() {
           <>
             <h2 className="text-2xl font-bold">{t("onboarding.asrTitle")}</h2>
             <p className="text-fg-muted">{t("onboarding.asrDesc")}</p>
-            {ASR_MODELS.map((m) => (
-              <ModelRow key={m.id} model={m} selected={settings.asr.model_id === m.id} badges={{ balanced: m.id === BALANCED.asr }} onSelect={() => update({ asr: { model_id: m.id } })} />
+            {models.filter((m) => m.info.kind === "asr").map((m) => (
+              <ModelRow key={m.info.id} status={m} selected={settings.asr.model_id === m.info.id} onSelect={() => update({ asr: { model_id: m.info.id } })} />
             ))}
           </>
         )}
@@ -79,8 +80,8 @@ export default function Onboarding() {
           <>
             <h2 className="text-2xl font-bold">{t("onboarding.llmTitle")}</h2>
             <p className="text-fg-muted">{t("onboarding.llmDesc")}</p>
-            {LLM_MODELS.map((m) => (
-              <ModelRow key={m.id} model={m} selected={settings.translation.local_model === m.id} badges={{ balanced: m.id === BALANCED.llm }} onSelect={() => update({ translation: { local_model: m.id } })} />
+            {models.filter((m) => m.info.kind === "llm").map((m) => (
+              <ModelRow key={m.info.id} status={m} selected={settings.translation.local_model === m.info.id} onSelect={() => update({ translation: { local_model: m.info.id } })} />
             ))}
           </>
         )}

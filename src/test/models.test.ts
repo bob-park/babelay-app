@@ -1,34 +1,23 @@
 import { describe, it, expect } from "vitest";
-import { ASR_MODELS, BALANCED, LLM_MODELS, formatSize } from "../lib/models.fixture";
-import en from "../locales/en.json";
+import { rowAction, formatSize } from "../lib/models";
+import type { ModelStatus } from "../lib/types";
 
-const MB = 1024 * 1024;
-const GB = 1024 * MB;
+const base: ModelStatus = {
+  info: { id: "small", kind: "asr", name: "Whisper Small", desc_key: "models.desc.small", size_bytes: 466 * 1024 * 1024, speed: 3, url: "https://x", filename: "s.bin", sha256: null },
+  installed: false, in_use: false, balanced: true, download: null,
+};
 
-describe("formatSize", () => {
-  it("formats MB below 1 GB", () => {
-    expect(formatSize(75 * MB)).toBe("75 MB");
-    expect(formatSize(466 * MB)).toBe("466 MB");
-  });
-  it("formats GB with one decimal", () => {
-    expect(formatSize(1.5 * GB)).toBe("1.5 GB");
-    expect(formatSize(GB)).toBe("1.0 GB");
-  });
+describe("rowAction", () => {
+  it("not installed → download", () => expect(rowAction(base)).toBe("download"));
+  it("downloading → cancel", () => expect(rowAction({ ...base, download: { received: 1, total: 2 } })).toBe("cancel"));
+  it("installed → select", () => expect(rowAction({ ...base, installed: true })).toBe("select"));
+  it("in use → delete (disabled by UI)", () => expect(rowAction({ ...base, installed: true, in_use: true })).toBe("delete"));
+  it("downloading wins over installed flag", () => expect(rowAction({ ...base, installed: true, download: { received: 1, total: 2 } })).toBe("cancel"));
 });
 
-describe("model fixtures", () => {
-  const all = [...ASR_MODELS, ...LLM_MODELS];
-  it("have unique ids", () => {
-    expect(new Set(all.map((m) => m.id)).size).toBe(all.length);
-  });
-  it("have a BALANCED pick that exists", () => {
-    expect(ASR_MODELS.map((m) => m.id)).toContain(BALANCED.asr);
-    expect(LLM_MODELS.map((m) => m.id)).toContain(BALANCED.llm);
-  });
-  it("have a desc_key present in the locale files", () => {
-    for (const m of all) {
-      const value = m.desc_key.split(".").reduce<unknown>((o, k) => (o as Record<string, unknown>)?.[k], en);
-      expect(value, m.desc_key).toBeTypeOf("string");
-    }
+describe("formatSize", () => {
+  it("formats MB and GB", () => {
+    expect(formatSize(75 * 1024 * 1024)).toBe("75 MB");
+    expect(formatSize(1.5 * 1024 ** 3)).toBe("1.5 GB");
   });
 });

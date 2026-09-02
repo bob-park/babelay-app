@@ -5,7 +5,7 @@
   "status": { "idle": "Idle", "capturing": "Capturing" },
   "live": { "start": "Start", "stop": "Stop", "overlayOn": "Overlay on", "overlayOff": "Overlay off", "empty": "Press Start to begin capturing system audio.", "shortcutHint": "Shortcut: {{capture}} to start/stop, {{overlay}} to toggle overlay" },
   "history": { "empty": "No sessions yet." },
-  "settings": { "general": "General", "models": "Models", "transcription": "Transcription Model", "translation": "Translation", "overlay": "Overlay" },
+  "settings": { "general": "General", "models": "Models", "translation": "Translation", "overlay": "Overlay" },
   "general": {
     "theme": "Theme", "themeSystem": "System", "themeDark": "Dark", "themeLight": "Light",
     "language": "Language", "langSystem": "System default", "langKo": "Korean", "langEn": "English", "langJa": "Japanese",
@@ -13,15 +13,15 @@
   },
   "models": {
     "desc": { "tiny": "fastest, low accuracy", "base": "fast, short sentences", "small": "balanced speed and accuracy", "medium": "high accuracy", "large_v3_turbo": "high accuracy, strong multilingual", "large_v3": "best accuracy", "gemma3_1b": "fastest, simple sentences", "qwen3_5_2b": "good balance", "gemma3_4b": "better fluency", "qwen3_5_4b": "best quality, strong CJK" },
-    "badgeBalanced": "balanced", "badgeInstalled": "installed", "badgeInUse": "in use",
-    "size": "Size", "speed": "Speed",
+    "badgeInstalled": "installed", "badgeInUse": "in use", "badgeRecommended": "recommended",
+    "asr": "Transcription", "llm": "Translation", "downloading": "downloading", "cancel": "Cancel", "continue": "Continue", "continueWith": "Download {{size}} and continue",
     "speed1": "Very slow", "speed2": "Slow", "speed3": "Medium", "speed4": "Fast", "speed5": "Very fast",
     "gpuMac": "Apple Silicon acceleration", "gpuWin": "NVIDIA GPU acceleration",
-    "asrTitle": "Transcription model", "llmTitle": "Translation model",
     "download": "Download", "select": "Select", "delete": "Delete"
   },
   "translation": {
     "backend": "Backend", "local": "Local model", "cloud": "Cloud API",
+    "currentModel": "Current model", "changeInModels": "Change in Models",
     "provider": "Provider", "model": "Model", "baseUrl": "Base URL",
     "providerOpenai": "OpenAI", "providerAnthropic": "Anthropic", "providerGemini": "Google Gemini", "providerDeepl": "DeepL", "providerCustom": "Custom (OpenAI compatible)"
   },
