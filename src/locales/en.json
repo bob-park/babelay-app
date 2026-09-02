@@ -11,6 +11,7 @@
     "shortcuts": "Shortcuts", "shortcutCapture": "Start / stop capture", "shortcutOverlay": "Show / hide overlay"
   },
   "models": {
+    "desc": { "tiny": "fastest, low accuracy", "base": "fast, short sentences", "small": "balanced speed and accuracy", "medium": "high accuracy", "large_v3_turbo": "high accuracy, strong multilingual", "large_v3": "best accuracy", "gemma3_1b": "fastest, simple sentences", "qwen3_5_2b": "good balance", "gemma3_4b": "better fluency", "qwen3_5_4b": "best quality, strong CJK" },
     "badgeBalanced": "balanced", "badgeInstalled": "installed", "badgeInUse": "in use",
     "size": "Size", "speed": "Speed",
     "speed1": "Very slow", "speed2": "Slow", "speed3": "Medium", "speed4": "Fast", "speed5": "Very fast",

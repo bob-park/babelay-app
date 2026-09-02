@@ -37,8 +37,9 @@ export default function Onboarding() {
     <div className="flex h-full flex-col p-6">
       <div className="mb-4 flex gap-4 text-[11px] font-bold uppercase tracking-[1.2px]">
         {steps.map((s, i) => (
-          <span key={s} className={i < idx ? "text-accent" : i === idx ? "text-fg" : "text-fg-muted"}>
-            {i < idx ? "✓ " : `${i + 1} `}{stepLabel[s]}
+          <span key={s} className={`flex items-center gap-1 ${i > idx ? "text-fg-muted" : "text-fg"}`}>
+            {i < idx ? <span className="rounded-full bg-accent px-1.5 text-accent-fg">✓</span> : `${i + 1} `}
+            {stepLabel[s]}
           </span>
         ))}
       </div>

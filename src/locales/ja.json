@@ -11,6 +11,7 @@
     "shortcuts": "ショートカット", "shortcutCapture": "キャプチャ開始 / 停止", "shortcutOverlay": "オーバーレイ表示 / 非表示"
   },
   "models": {
+    "desc": { "tiny": "最速・精度は低い", "base": "速い・短い文向け", "small": "速度と精度のバランス", "medium": "高精度", "large_v3_turbo": "高精度・多言語に強い", "large_v3": "最高精度", "gemma3_1b": "最速・単純な文向け", "qwen3_5_2b": "バランス良好", "gemma3_4b": "より自然な文", "qwen3_5_4b": "最高品質・日中韓に強い" },
     "badgeBalanced": "balanced", "badgeInstalled": "インストール済み", "badgeInUse": "使用中",
     "size": "サイズ", "speed": "速度",
     "speed1": "とても遅い", "speed2": "遅い", "speed3": "普通", "speed4": "速い", "speed5": "とても速い",

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { ASR_MODELS, BALANCED, LLM_MODELS, formatSize } from "../lib/models.fixture";
+import en from "../locales/en.json";
 
 const MB = 1024 * 1024;
 const GB = 1024 * MB;
@@ -23,5 +24,11 @@ describe("model fixtures", () => {
   it("have a BALANCED pick that exists", () => {
     expect(ASR_MODELS.map((m) => m.id)).toContain(BALANCED.asr);
     expect(LLM_MODELS.map((m) => m.id)).toContain(BALANCED.llm);
+  });
+  it("have a desc_key present in the locale files", () => {
+    for (const m of all) {
+      const value = m.desc_key.split(".").reduce<unknown>((o, k) => (o as Record<string, unknown>)?.[k], en);
+      expect(value, m.desc_key).toBeTypeOf("string");
+    }
   });
 });
