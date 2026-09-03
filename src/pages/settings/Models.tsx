@@ -15,7 +15,7 @@ export default function Models() {
   const [kind, setKind] = useState<ModelKind>("asr");
   const [platform, setPlatform] = useState<string | null>(null);
   const [hw, setHw] = useState<HwInfo | null>(null);
-  useEffect(() => { refresh(); api.getPlatform().then(setPlatform).catch(() => {}); api.getHwInfo().then(setHw).catch(() => {}); }, []);
+  useEffect(() => { refresh(); api.getPlatform().then(setPlatform).catch(() => setPlatform("macos")); api.getHwInfo().then(setHw).catch(() => {}); }, []);
   if (!settings) return null;
 
   const current = kind === "asr" ? settings.asr.model_id : settings.translation.local_model;
