@@ -9,7 +9,7 @@ import { useSettings } from "../lib/settings";
 
 // 마지막 이벤트 후 이만큼 지나면 자막을 지운다.
 const IDLE_MS = 6000;
-// 물리 픽셀. 이보다 좁으면 글자 한 줄도 안 들어간다.
+// CSS 픽셀. 이보다 좁으면 글자 한 줄도 안 들어간다(쓸 때 배율을 곱한다).
 const MIN_WIDTH = 240;
 
 /**
@@ -26,9 +26,15 @@ function startWidthResize(e: ReactPointerEvent<HTMLDivElement>) {
   const scale = window.devicePixelRatio || 1;
   let raf = 0;
   let pending: number | null = null;
+  // innerSize 는 IPC 라 늦게 온다. 그 전에 손을 떼면 아예 시작하지 않는다(리스너 누수 방지).
+  let released = false;
+  const abort = () => { released = true; };
+  handle.addEventListener("pointerup", abort, { once: true });
+  handle.addEventListener("pointercancel", abort, { once: true });
   win.innerSize().then(({ width: w0, height: h0 }) => {
+    if (released) return;
     const move = (ev: PointerEvent) => {
-      pending = Math.max(MIN_WIDTH, Math.round(w0 + (ev.screenX - startX) * scale));
+      pending = Math.max(MIN_WIDTH * scale, Math.round(w0 + (ev.screenX - startX) * scale));
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
@@ -39,7 +45,12 @@ function startWidthResize(e: ReactPointerEvent<HTMLDivElement>) {
       handle.removeEventListener("pointermove", move);
       handle.removeEventListener("pointerup", up);
       handle.removeEventListener("pointercancel", up);
-      api.overlayCommitPosition().catch(useSettings.getState().setError);
+      // 마지막 프레임이 밀렸을 수 있다. 커밋 전에 최종 폭을 확정한다.
+      cancelAnimationFrame(raf);
+      raf = 0;
+      const commit = () => api.overlayCommitPosition().catch(useSettings.getState().setError);
+      if (pending !== null) win.setSize(new PhysicalSize(pending, h0)).then(commit, commit);
+      else commit();
     };
     handle.addEventListener("pointermove", move);
     handle.addEventListener("pointerup", up);
