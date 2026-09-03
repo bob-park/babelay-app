@@ -20,7 +20,9 @@ export default function Live() {
   const srcLang = (view.capturing ? view.sourceLang ?? "auto" : settings.asr.source_lang);
   const asrModel = (view.capturing ? view.modelId : null) ?? settings.asr.model_id;
   const src = srcLang === "auto" ? t("translation.auto") : srcLang.toUpperCase();
-  const tgt = settings.overlay.subtitle_lang === "system" ? t("general.langSystem") : settings.overlay.subtitle_lang.toUpperCase();
+  // 캡처 중에는 엔진이 실제로 쓰는 목표 언어(started.target_lang)를 보여준다. 정지 중엔 설정값.
+  const tgtCode = view.capturing ? view.targetLang : null;
+  const tgt = tgtCode ? tgtCode.toUpperCase() : settings.overlay.subtitle_lang === "system" ? t("general.langSystem") : settings.overlay.subtitle_lang.toUpperCase();
 
   return (
     <div className="flex h-full flex-col gap-3">
