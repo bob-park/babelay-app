@@ -12,7 +12,7 @@ describe("rowAction", () => {
   it("not installed → download", () => expect(rowAction(base)).toBe("download"));
   it("downloading → cancel", () => expect(rowAction({ ...base, download: { received: 1, total: 2 } })).toBe("cancel"));
   it("installed → select", () => expect(rowAction({ ...base, installed: true })).toBe("select"));
-  it("in use → delete (disabled by UI)", () => expect(rowAction({ ...base, installed: true, in_use: true })).toBe("delete"));
+  it("in use → delete", () => expect(rowAction({ ...base, installed: true, in_use: true })).toBe("delete"));
   it("in use but not installed → download", () => expect(rowAction({ ...base, in_use: true })).toBe("download"));
   it("downloading wins over installed flag", () => expect(rowAction({ ...base, installed: true, download: { received: 1, total: 2 } })).toBe("cancel"));
 });

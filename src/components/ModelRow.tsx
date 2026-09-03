@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatSize, rowAction, useModels } from "../lib/models";
 import type { ModelStatus } from "../lib/types";
+import { ConfirmModal } from "./ConfirmModal";
+import { Icon } from "./icons";
 
 interface Props {
   status: ModelStatus;
@@ -14,6 +17,7 @@ export function ModelRow({ status, selected, onSelect }: Props) {
   // 슬롯은 하나뿐이라 다른 모델을 받는 중이면 백엔드가 "busy" 로 거절한다.
   const busy = useModels((st) => st.models.some((m) => m.download));
   const action = rowAction(status);
+  const [confirm, setConfirm] = useState(false);
   const { info } = status;
   const pct = status.download ? Math.round((status.download.received / Math.max(1, status.download.total)) * 100) : null;
 
@@ -21,16 +25,21 @@ export function ModelRow({ status, selected, onSelect }: Props) {
     ? `${formatSize(info.size_bytes)} · ${t("models.downloading")} · ${pct}% · ${formatSize(status.download.received)} / ${formatSize(status.download.total)}`
     : `${formatSize(info.size_bytes)} · ${t(info.desc_key)}`;
 
+  const deleteBtn = (
+    <button type="button" className="btn btn-ghost btn-sm gap-1" aria-label={t("models.delete")} onClick={() => setConfirm(true)}>
+      <Icon name="trash" />{t("models.delete")}
+    </button>
+  );
   const button = {
     download: <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => download(info.id)}>{t("models.download")}</button>,
     cancel: <button type="button" className="btn btn-ghost btn-sm" onClick={() => cancel(info.id)}>{t("models.cancel")}</button>,
     select: (
       <div className="flex flex-wrap gap-1">
         <button type="button" className="btn btn-primary btn-sm" onClick={onSelect}>{t("models.select")}</button>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={() => remove(info.id)}>{t("models.delete")}</button>
+        {deleteBtn}
       </div>
     ),
-    delete: null, // 사용 중인 모델은 배지로 충분하다.
+    delete: deleteBtn,
   }[action];
 
   return (
@@ -59,7 +68,15 @@ export function ModelRow({ status, selected, onSelect }: Props) {
         </div>
         {status.download && <progress className="progress progress-primary mt-2 h-1 w-full" value={status.download.received} max={Math.max(1, status.download.total)} />}
       </div>
-      <div onClick={(e) => e.stopPropagation()}>{button}</div>
+      <div onClick={(e) => e.stopPropagation()}>
+        {button}
+        <ConfirmModal
+          open={confirm}
+          message={t("models.confirmDelete", { name: info.name, size: formatSize(info.size_bytes) })}
+          onCancel={() => setConfirm(false)}
+          onConfirm={() => { setConfirm(false); remove(info.id); }}
+        />
+      </div>
     </div>
   );
 }
