@@ -36,6 +36,10 @@ whisper 전사(`ggml-*.bin` 모델 파일 필요):
 
     BABELAY_TEST_MODEL=<ggml-*.bin 경로> mise exec -- cargo test -p babelay-engine --features metal transcribes_synthetic -- --ignored
 
+엔드투엔드(실제 탭 + Whisper, GUI 없음): 음악 대신 `say`가 문장을 읽고 자막 이벤트가 출력된다.
+
+    BABELAY_TEST_MODEL=<path to ggml-*.bin> mise exec -- cargo run -p babelay-engine --features metal --example e2e
+
 ## 빌드
 
 macOS 서명 빌드에는 아래 환경변수가 필요하다.

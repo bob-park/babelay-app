@@ -104,6 +104,7 @@ impl Transcriber for WhisperTranscriber {
         params.set_print_realtime(false);
         params.set_print_special(false);
         params.set_print_timestamps(false);
+        params.set_no_timestamps(true); // 조각 오프셋을 쓰므로 내부 타임스탬프 불필요; "single timestamp ending" 폐기 회피
 
         // 1초 미만이면 0으로 채워 준다 (whisper.cpp가 짧은 버퍼에서 실패한다).
         let padded;
