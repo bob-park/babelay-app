@@ -40,6 +40,10 @@ whisper 전사(`ggml-*.bin` 모델 파일 필요):
 
     BABELAY_TEST_MODEL=<path to ggml-*.bin> mise exec -- cargo run -p babelay-engine --features metal --example e2e
 
+### macOS 개발 실행과 시스템 오디오 권한
+
+`yarn tauri dev`로 띄운 앱은 그 터미널을 실행한 앱(Terminal, iTerm, RustRover 등) 기준으로 시스템 오디오 녹음 권한을 판단한다. 권한이 없으면 프롬프트 없이 무음이 들어와 자막이 나오지 않는다. 시스템 설정 → 개인정보 보호 및 보안 → 화면 및 시스템 오디오 녹음에서 해당 터미널/IDE를 허용한 뒤 다시 실행한다. 배포 빌드(.app)는 앱 자체에 권한을 묻는다.
+
 ## 빌드
 
 macOS 서명 빌드에는 아래 환경변수가 필요하다.
