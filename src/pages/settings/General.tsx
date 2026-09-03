@@ -14,16 +14,17 @@ const LANG_KEY = { ko: "general.langKo", en: "general.langEn", ja: "general.lang
 export default function General() {
   const { t } = useTranslation();
   const { settings, update } = useSettings();
-  const [platform, setPlatform] = useState("macos");
+  const [platform, setPlatform] = useState<string | null>(null);
   useEffect(() => { api.getPlatform().then(setPlatform).catch(() => {}); }, []);
   if (!settings) return null;
   const systemLang = t(LANG_KEY[resolveLang("system", navigator.language)]);
+  const shortcuts = `${t("general.shortcutCapture")}: ⌘/Ctrl+Shift+S · ${t("general.shortcutOverlay")}: ⌘/Ctrl+Shift+O`;
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
-        <div className="tooltip tooltip-left" data-tip={`${t("general.shortcutCapture")}: ⌘/Ctrl+Shift+S · ${t("general.shortcutOverlay")}: ⌘/Ctrl+Shift+O`}>
-          <button type="button" className="btn btn-circle btn-ghost btn-sm" aria-label={t("general.shortcuts")}><Icon name="help" /></button>
+        <div className="tooltip tooltip-left" data-tip={shortcuts}>
+          <button type="button" className="btn btn-circle btn-ghost btn-sm" aria-label={t("general.shortcuts")}><Icon name="help" /><span className="sr-only">{shortcuts}</span></button>
         </div>
       </div>
 

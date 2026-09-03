@@ -10,9 +10,9 @@ export type Perm = "granted" | "denied" | "unknown";
 /** 상태 아이콘. 온보딩 완료 단계도 같은 표시를 쓴다. */
 export function PermissionIcon({ perm }: { perm: Perm | null }) {
   const { t } = useTranslation();
-  if (perm === "granted") return <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-content" aria-label={t("permission.granted")}><Icon name="check" /></span>;
-  if (perm === "denied") return <span className="flex h-6 w-6 items-center justify-center rounded-full bg-error text-error-content" aria-label={t("permission.denied")}><Icon name="x" /></span>;
-  return <span className="flex h-6 w-6 items-center justify-center rounded-full bg-neutral text-neutral-content" aria-label={t("permission.unknown")}><Icon name="help" /></span>;
+  if (perm === "granted") return <span role="img" className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-content" aria-label={t("permission.granted")}><Icon name="check" /></span>;
+  if (perm === "denied") return <span role="img" className="flex h-6 w-6 items-center justify-center rounded-full bg-error text-error-content" aria-label={t("permission.denied")}><Icon name="x" /></span>;
+  return <span role="img" className="flex h-6 w-6 items-center justify-center rounded-full bg-neutral text-neutral-content" aria-label={t("permission.unknown")}><Icon name="help" /></span>;
 }
 
 // 권한 조회는 실제 탭을 만들어 TCC 프롬프트를 띄운다. 마운트당 한 번만.
