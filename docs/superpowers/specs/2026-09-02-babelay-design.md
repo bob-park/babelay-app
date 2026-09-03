@@ -34,6 +34,7 @@ Babelay는 현재 재생 중인 시스템 오디오를 캡처해 실시간으로
 | 모델 행(리디자인) | 행 안 진행 바 + 받은 용량, 상태별 버튼(설치됨은 선택+삭제)(목업 06-02, A) |
 | 모니터 선택 | 제거. 조정 모드에서 다른 모니터로 드래그하면 `monitor_id` 자동 저장(목업 06-03) |
 | 설정 화면 형식 | 그룹 리스트(라벨 왼쪽, 컨트롤 오른쪽) + 오버레이 미리보기 카드(목업 06-03) |
+| 메인 창 구조(2.5) | 고정 사이드바 + 하단 시작·설정·정보, 설정은 탭 4개, daisyUI 5 (2026-09-03 스펙 참조) |
 
 ## 3. 전체 구조
 
@@ -183,7 +184,7 @@ struct TranslateRequest { text: String, src: Lang, tgt: Lang, context: Vec<Strin
 
 - 하나의 Vite 앱. 창 라벨에 따라 `#/main/*`, `#/overlay`, `#/onboarding`을 렌더한다. 라우팅은 react-router.
 - 상태는 zustand 스토어 둘. `settings`는 커맨드 `get_settings/set_settings`와 이벤트 `settings-changed`로 동기화. `session`은 `engine-event`로 라이브 로그와 오버레이 텍스트를 채운다.
-- UI 라이브러리 없음. Tailwind + 네이티브 요소(`<select>`, `<dialog>`, `<input type=range>`). 아이콘은 인라인 SVG 7개(`src/components/icons.tsx`).
+- daisyUI 5(CSS 플러그인)만 사용, 아이콘 라이브러리 없음. Tailwind + 네이티브 요소(`<select>`, `<dialog>`, `<input type=range>`). 아이콘은 인라인 SVG 7개(`src/components/icons.tsx`).
 - 공용 컴포넌트: `Sidebar`(떠 있는 패널, 접기 상태 저장), `ModelRow`, `Badge`, `PillButton`, `Toggle`, `SegmentedControl`, `SettingGroup`/`SettingRow`, `ProgressBar`, `ErrorBar`.
 - 디자인 토큰: 카드 반경 12px, 사이드바 패널 14px, 컨트롤은 pill. 필 버튼은 대문자·자간 없이 굵기 600. 보조 텍스트 `#8a8a8a`(다크) / `#6a6a6a`(라이트). 안내 문장·힌트 문구는 두지 않는다(제목과 컨트롤만).
 
@@ -279,6 +280,7 @@ NSIS 인스톨러, 서명 없음. cudart/cublas/cublasLt DLL을 `bundle.resource
 1.5. **모델 다운로드 + UI 리디자인**: 엔진 모델 레지스트리·다운로드(진행률·이어받기·취소·삭제), 설치/사용 중 배지, 모니터 선택 제거, 떠 있는 패널 사이드바·그룹 리스트 설정·모델 페이지·온보딩 리디자인, 문구 정리
 2. **전사 엔진**: 오디오 캡처(mac/win), 청커, whisper, 사양 기반 balanced, GPU 토글, 라이브 페이지, SQLite·히스토리 — 완료(2026-09-03), 런타임 캡처 검증은 coreaudiod 재시작 후 보류
    - Windows 캡처는 캡처 모듈만 크로스 타깃 `cargo check`로 확인했다(워크스페이스 전체 check는 `ring`이 막는다). 런타임 검증은 Windows 머신에서.
+2.5. **UI 리디자인 + 백그라운드 온보딩 + 오버레이 수정**: 스펙 docs/superpowers/specs/2026-09-03-phase2.5-ui-onboarding-design.md — 완료(2026-09-03)
 3. **번역**: 로컬 llama, 클라우드 어댑터 5종, keyring, 설정 > 번역, 표시 모드
 
 ## 12. 범위 밖 (1차)
