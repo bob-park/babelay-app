@@ -43,6 +43,13 @@ export const ERROR_KEYS: Record<string, string> = {
   model_missing: "errors.modelMissing",
   start_failed: "errors.startFailed",
   busy_stopping: "errors.busyStopping",
+  translation_model_missing: "errors.translationModelMissing",
+  api_key_missing: "errors.apiKeyMissing",
+  base_url_missing: "errors.baseUrlMissing",
+  translate: "errors.translateFailed",
+  display_mode_source: "errors.displayModeSource",
+  unknown_provider: "errors.unknownProvider",
+  timeout: "errors.timeout",
 };
 
 export const report = (e: unknown) => {

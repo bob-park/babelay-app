@@ -1,21 +1,71 @@
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { SegmentedControl } from "../../components/SegmentedControl";
 import { SettingGroup, SettingRow } from "../../components/SettingGroup";
-import { useModels } from "../../lib/models";
+import { ERROR_KEYS, report, useModels } from "../../lib/models";
 import { useSettings } from "../../lib/settings";
-import type { Provider, SourceLang, UiLang } from "../../lib/types";
+import { api } from "../../lib/tauri";
+import type { Provider, SourceLang, TestTranslationResult, UiLang } from "../../lib/types";
 
 const input = "input input-sm w-56";
 const PROVIDERS: Provider[] = ["openai", "anthropic", "gemini", "deepl", "custom"];
+// 테스트 결과 배너는 잠시만 보여준다.
+const RESULT_MS = 5000;
 
 export default function Translation() {
   const { t } = useTranslation();
   const { settings, update } = useSettings();
   const models = useModels((s) => s.models);
+  const provider = settings?.translation.cloud.provider ?? "openai";
+  const backend = settings?.translation.backend;
+  const [key, setKey] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+
+  // 프로바이더마다 키가 따로 있다. 바뀌면 다시 묻고, 입력 중이던 키는 버린다.
+  useEffect(() => {
+    if (backend !== "cloud") return;
+    setKey("");
+    let alive = true;
+    api.hasApiKey(provider).then((v) => { if (alive) setSaved(v); }).catch(() => {});
+    return () => { alive = false; };
+  }, [provider, backend]);
+
+  useEffect(() => {
+    if (!result) return;
+    const id = window.setTimeout(() => setResult(null), RESULT_MS);
+    return () => window.clearTimeout(id);
+  }, [result]);
+
   if (!settings) return null;
   const tr = settings.translation;
   const localName = tr.local_model ? models.find((m) => m.info.id === tr.local_model)?.info.name ?? tr.local_model : "—";
+
+  const saveKey = () => {
+    api.setApiKey(provider, key)
+      .then(() => { setKey(""); return api.hasApiKey(provider); })
+      .then(setSaved)
+      .catch(report);
+  };
+  const deleteKey = () => api.deleteApiKey(provider).then(() => setSaved(false)).catch(report);
+
+  // 코드는 번역하고, 상세가 있으면 뒤에 붙인다.
+  const failText = (code: string | null, detail: string) => {
+    const k = code ? ERROR_KEYS[code] : undefined;
+    const head = k ? t(k) : code ?? "";
+    return detail && detail !== head ? (head ? `${head} · ${detail}` : detail) : head;
+  };
+  const test = () => {
+    setTesting(true);
+    api.testTranslation()
+      .then((r: TestTranslationResult) => setResult(r.ok
+        ? { ok: true, text: t("translation.testResult", { ms: r.ms, text: r.text }) }
+        : { ok: false, text: failText(r.error, r.text) }))
+      .catch((e: unknown) => { const m = e instanceof Error ? e.message : String(e); setResult({ ok: false, text: failText(m, "") }); })
+      .finally(() => setTesting(false));
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -49,6 +99,27 @@ export default function Translation() {
               <input className={input} placeholder="https://api.example.com/v1" value={tr.cloud.base_url} onChange={(e) => update({ translation: { cloud: { base_url: e.target.value } } })} />
             </SettingRow>
           )}
+          <SettingRow as="div" label={t("translation.apiKey")}>
+            {saved ? (
+              <>
+                <span className="badge badge-neutral">{t("translation.saved")}</span>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={deleteKey}>{t("translation.deleteKey")}</button>
+              </>
+            ) : (
+              <>
+                <input
+                  type="password"
+                  autoComplete="off"
+                  aria-label={t("translation.apiKey")}
+                  className={input}
+                  value={key}
+                  onChange={(e) => setKey(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && key.trim()) saveKey(); }}
+                />
+                <button type="button" className="btn btn-sm btn-primary" disabled={!key.trim()} onClick={saveKey}>{t("translation.save")}</button>
+              </>
+            )}
+          </SettingRow>
         </SettingGroup>
       )}
 
@@ -64,6 +135,16 @@ export default function Translation() {
           </select>
         </SettingRow>
       </SettingGroup>
+
+      <div className="flex items-center gap-3">
+        <button type="button" className="btn btn-outline btn-sm" disabled={testing} onClick={test}>
+          {testing && <span className="loading loading-spinner loading-xs" />}
+          {t("translation.test")}
+        </button>
+        {result && (
+          <div role="status" className={`alert py-1 text-sm ${result.ok ? "alert-success" : "alert-error"}`}>{result.text}</div>
+        )}
+      </div>
     </div>
   );
 }

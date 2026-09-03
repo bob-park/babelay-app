@@ -4,7 +4,7 @@ import { api } from "./tauri";
 import { ERROR_KEYS, report } from "./models";
 import type { EngineEvent } from "./types";
 
-export interface Final { id: number; text: string; lang: string; start_ms: number; end_ms: number }
+export interface Final { id: number; text: string; lang: string; start_ms: number; end_ms: number; tgt?: string }
 export interface Partial { text: string; lang: string; start_ms: number }
 
 export interface SessionView {
@@ -18,6 +18,8 @@ export interface SessionView {
   modelId: string | null;
   sourceLang: string | null;
   lastEventAt: number;
+  /// 마지막 final 이 도착한 시각. 오버레이가 번역을 기다리는 기준점.
+  lastFinalAt: number;
 }
 
 /** mm:ss — 타임라인과 히스토리가 같은 시간 표기를 쓴다. */
@@ -36,6 +38,7 @@ export const initialView: SessionView = {
   modelId: null,
   sourceLang: null,
   lastEventAt: 0,
+  lastFinalAt: 0,
 };
 
 // 오래된 조각은 화면에도 안 남고 히스토리 DB가 진실이다. 메모리는 500줄에서 끊는다.
@@ -51,7 +54,15 @@ export function reduce(v: SessionView, ev: EngineEvent): SessionView {
       return { ...next, partial: { text: ev.text, lang: ev.lang, start_ms: ev.start_ms } };
     case "final": {
       const { type, ...f } = ev;
-      return { ...next, partial: null, lagging: false, finals: [...v.finals, f].slice(-MAX_FINALS) };
+      return { ...next, partial: null, lagging: false, lastFinalAt: next.lastEventAt, finals: [...v.finals, f].slice(-MAX_FINALS) };
+    }
+    case "translated": {
+      // 번역은 같은 id 의 final 에 붙는다. 이미 잘려 나간 오래된 id 면 버린다.
+      const i = v.finals.findIndex((f) => f.id === ev.id);
+      if (i < 0) return next;
+      const finals = v.finals.slice();
+      finals[i] = { ...finals[i], tgt: ev.text };
+      return { ...next, finals };
     }
     case "lagging":
       return { ...next, lagging: true };

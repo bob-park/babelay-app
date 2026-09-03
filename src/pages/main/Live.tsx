@@ -44,7 +44,10 @@ export default function Live() {
           {view.finals.map((f) => (
             <div key={f.id} className="flex gap-3">
               <span className="shrink-0 tabular-nums text-fg-muted">{clock(f.start_ms)}</span>
-              <span className="min-w-0 break-words">{f.text}</span>
+              <div className="min-w-0 break-words">
+                <div>{f.text}</div>
+                {f.tgt && <div className="font-bold">{f.tgt}</div>}
+              </div>
             </div>
           ))}
           {view.partial && (

@@ -40,10 +40,13 @@ export type EngineEvent =
   | { type: "started"; gpu_active: boolean; gpu_fallback: boolean; model_id: string; source_lang: string | null }
   | { type: "partial"; text: string; lang: string; start_ms: number }
   | { type: "final"; id: number; text: string; lang: string; start_ms: number; end_ms: number }
+  | { type: "translated"; id: number; text: string; lang: string }
   | { type: "lagging"; queued_ms: number }
   | { type: "error"; code: string; message: string }
   | { type: "stopped" };
 
 export interface SessionSummary { id: number; started_at: number; ended_at: number | null; src_lang: string; tgt_lang: string; asr_model: string; segments: number }
 export interface SegmentRow { id: number; session_id: number; t0_ms: number; t1_ms: number; lang: string; src_text: string; tgt_text: string | null }
+/** 연결 테스트 결과. 실패면 error 에 코드(ERROR_KEYS), text 에 상세. */
+export interface TestTranslationResult { ok: boolean; ms: number; text: string; error: string | null }
 export interface HwInfo { chip: string; mem_gb: number; gpu: string | null; gpu_mem_gb: number | null }

@@ -3,7 +3,7 @@ import { currentMonitor, getCurrentWindow, PhysicalSize } from "@tauri-apps/api/
 import { listen } from "@tauri-apps/api/event";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/tauri";
-import { overlayLines } from "../lib/overlay";
+import { awaitingTranslation, overlayLines, pairForOverlay } from "../lib/overlay";
 import { useSession } from "../lib/session";
 import { useSettings } from "../lib/settings";
 
@@ -61,12 +61,27 @@ function startWidthResize(e: ReactPointerEvent<HTMLDivElement>) {
 }
 
 export default function OverlayWindow() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const settings = useSettings((s) => s.settings);
   const view = useSession((s) => s.view);
   const [adjust, setAdjust] = useState(false);
   const [fresh, setFresh] = useState(false);
+  const [, setTick] = useState(0);
   const timer = useRef<number | undefined>(undefined);
+
+  // 번역 타겟 코드. 표시 모드가 원문만이면 번역이 오지 않는다(null). system 은 UI 언어와 같다.
+  const tgt = !settings || settings.overlay.display_mode === "source"
+    ? null
+    : settings.overlay.subtitle_lang === "system" ? i18n.language.split("-")[0] : settings.overlay.subtitle_lang;
+  const now = Date.now();
+  const waiting = awaitingTranslation(view.finals, tgt, now, view.lastFinalAt);
+
+  // 번역을 기다리는 동안만 100ms 마다 다시 그려 3초 상한이 화면에 반영되게 한다.
+  useEffect(() => {
+    if (!waiting) return;
+    const id = window.setInterval(() => setTick((n) => n + 1), 100);
+    return () => window.clearInterval(id);
+  }, [waiting]);
 
   useEffect(() => {
     const un = listen<boolean>("overlay-adjust-mode", (e) => setAdjust(e.payload));
@@ -99,13 +114,14 @@ export default function OverlayWindow() {
 
   if (!settings) return null;
   const { font_size, bg_opacity, display_mode } = settings.overlay;
-  const last = view.finals[view.finals.length - 1]?.text ?? "";
+  // 원문과 번역은 한 세트. 번역이 늦으면 직전 세트를 잠시 유지한다.
+  const pair = pairForOverlay(view.finals, tgt, now, view.lastFinalAt);
   const partial = view.partial?.text ?? "";
   // 조정 모드에서 자막이 없으면 예시 문구로 상자를 채운다. 캡처 중이면 실제 자막이 우선.
   const sample = adjust && !view.capturing;
   const lines = sample
     ? overlayLines(display_mode, t("overlay.previewSource"), "", t("overlay.previewTarget"))
-    : overlayLines(display_mode, last, partial);
+    : overlayLines(display_mode, pair.source, partial, pair.translated);
   // 정지 뒤에는 마지막 자막이 다시 뜨면 안 된다(캡처 중일 때만 보인다).
   const visible = adjust || (view.capturing && fresh && Boolean(lines.primary || lines.secondary));
 

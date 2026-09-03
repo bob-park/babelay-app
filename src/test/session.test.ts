@@ -21,6 +21,16 @@ describe("session reducer", () => {
     const v = reduce({ ...initialView, stopping: true }, { type: "error", code: "busy_stopping", message: "" });
     expect(v.stopping).toBe(false);
   });
+  it("translated attaches tgt to the matching final and ignores unknown ids", () => {
+    let v = reduce(initialView, { type: "final", id: 1, text: "hello", lang: "en", start_ms: 0, end_ms: 900 });
+    expect(v.lastFinalAt).toBeGreaterThan(0);
+    v = reduce(v, { type: "final", id: 2, text: "world", lang: "en", start_ms: 900, end_ms: 1800 });
+    v = reduce(v, { type: "translated", id: 1, text: "안녕", lang: "ko" });
+    expect(v.finals[0].tgt).toBe("안녕"); expect(v.finals[1].tgt).toBeUndefined();
+    const before = v.finals;
+    v = reduce(v, { type: "translated", id: 99, text: "x", lang: "ko" });
+    expect(v.finals).toEqual(before);
+  });
   it("lagging sets and a later final clears it", () => {
     let v = reduce(initialView, { type: "lagging", queued_ms: 12000 });
     expect(v.lagging).toBe(true);

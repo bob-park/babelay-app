@@ -31,7 +31,9 @@
     "currentModel": "Current model", "changeInModels": "Change in Models",
     "provider": "Provider", "model": "Model", "baseUrl": "Base URL",
     "providerOpenai": "OpenAI", "providerAnthropic": "Anthropic", "providerGemini": "Google Gemini", "providerDeepl": "DeepL", "providerCustom": "Custom (OpenAI compatible)",
-    "sourceLang": "Source language", "targetLang": "Target language", "auto": "Auto detect"
+    "sourceLang": "Source language", "targetLang": "Target language", "auto": "Auto detect",
+    "apiKey": "API key", "save": "Save", "saved": "Saved ●●●●", "deleteKey": "Delete",
+    "test": "Test connection", "testResult": "{{ms}} ms · {{text}}"
   },
   "overlay": {
     "adjust": "Adjust position", "adjustDone": "Done", "preview": "Preview",
@@ -45,7 +47,11 @@
     "busy": "Another download is in progress", "capturing": "Models cannot be deleted while capturing",
     "notDownloading": "No download in progress", "unknownModel": "Unknown model",
     "modelMissing": "The selected Transcript model is not installed", "startFailed": "Could not start capture",
-    "busyStopping": "Stopping — try again in a moment", "historyUnavailable": "History is unavailable"
+    "busyStopping": "Stopping — try again in a moment", "historyUnavailable": "History is unavailable",
+    "translationModelMissing": "The translation model is not installed", "apiKeyMissing": "Enter an API key",
+    "baseUrlMissing": "Enter a base URL", "translateFailed": "Translation failed",
+    "displayModeSource": "Display mode is source only, so nothing is translated", "unknownProvider": "Unknown provider",
+    "timeout": "Timed out"
   },
   "onboarding": {
     "next": "Next", "back": "Back", "skip": "Skip", "finish": "Get started", "skipped": "Skipped",

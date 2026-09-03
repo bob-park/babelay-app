@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { DeepPartial, HwInfo, ModelStatus, SegmentRow, SessionSummary, Settings } from "./types";
+import type { DeepPartial, HwInfo, ModelStatus, Provider, SegmentRow, SessionSummary, Settings, TestTranslationResult } from "./types";
 
 export const api = {
   getSettings: () => invoke<Settings>("get_settings"),
@@ -23,4 +23,8 @@ export const api = {
   historySearch: (q: string) => invoke<SegmentRow[]>("history_search", { q }),
   historyDelete: (id: number) => invoke<void>("history_delete", { sessionId: id }),
   historyExport: (id: number, format: "txt" | "srt") => invoke<string>("history_export", { sessionId: id, format }),
+  setApiKey: (provider: Provider, key: string) => invoke<void>("set_api_key", { provider, key }),
+  hasApiKey: (provider: Provider) => invoke<boolean>("has_api_key", { provider }),
+  deleteApiKey: (provider: Provider) => invoke<void>("delete_api_key", { provider }),
+  testTranslation: () => invoke<TestTranslationResult>("test_translation"),
 };

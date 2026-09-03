@@ -83,7 +83,10 @@ export default function History() {
           {hits.map((r) => (
             <button key={r.id} type="button" onClick={() => { setQ(""); setSel(r.session_id); }} className="flex gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-base-300">
               <span className="shrink-0 tabular-nums text-fg-muted">{sessionLabel(r.session_id)} · {clock(r.t0_ms)}</span>
-              <span className="min-w-0 break-words">{r.src_text}</span>
+              <span className="min-w-0 break-words">
+                <span>{r.src_text}</span>
+                {r.tgt_text && <span className="block font-bold">{r.tgt_text}</span>}
+              </span>
             </button>
           ))}
         </div>
@@ -102,7 +105,10 @@ export default function History() {
             {segments.map((s) => (
               <div key={s.id} className="flex gap-3">
                 <span className="shrink-0 tabular-nums text-fg-muted">{clock(s.t0_ms)}</span>
-                <span className="min-w-0 break-words">{s.src_text}</span>
+                <div className="min-w-0 break-words">
+                  <div>{s.src_text}</div>
+                  {s.tgt_text && <div className="font-bold">{s.tgt_text}</div>}
+                </div>
               </div>
             ))}
           </div>

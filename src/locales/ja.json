@@ -31,7 +31,9 @@
     "currentModel": "現在のモデル", "changeInModels": "モデルタブで変更",
     "provider": "プロバイダー", "model": "モデル", "baseUrl": "Base URL",
     "providerOpenai": "OpenAI", "providerAnthropic": "Anthropic", "providerGemini": "Google Gemini", "providerDeepl": "DeepL", "providerCustom": "カスタム (OpenAI 互換)",
-    "sourceLang": "音声の言語", "targetLang": "翻訳先の言語", "auto": "自動検出"
+    "sourceLang": "音声の言語", "targetLang": "翻訳先の言語", "auto": "自動検出",
+    "apiKey": "API キー", "save": "保存", "saved": "保存済み ●●●●", "deleteKey": "削除",
+    "test": "接続テスト", "testResult": "{{ms}} ms · {{text}}"
   },
   "overlay": {
     "adjust": "位置を調整", "adjustDone": "完了", "preview": "プレビュー",
@@ -45,7 +47,11 @@
     "busy": "別のモデルをダウンロード中です", "capturing": "キャプチャ中はモデルを削除できません",
     "notDownloading": "進行中のダウンロードはありません", "unknownModel": "不明なモデルです",
     "modelMissing": "選択した Transcript モデルがインストールされていません", "startFailed": "キャプチャを開始できません",
-    "busyStopping": "停止中です。しばらくしてからもう一度お試しください", "historyUnavailable": "履歴を利用できません"
+    "busyStopping": "停止中です。しばらくしてからもう一度お試しください", "historyUnavailable": "履歴を利用できません",
+    "translationModelMissing": "翻訳モデルがインストールされていません", "apiKeyMissing": "API キーを入力してください",
+    "baseUrlMissing": "Base URL を入力してください", "translateFailed": "翻訳に失敗しました",
+    "displayModeSource": "表示モードが原文のみのため翻訳しません", "unknownProvider": "不明なプロバイダー",
+    "timeout": "タイムアウト"
   },
   "onboarding": {
     "next": "次へ", "back": "戻る", "skip": "スキップ", "finish": "始める", "skipped": "スキップ済み",
