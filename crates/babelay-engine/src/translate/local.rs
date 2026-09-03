@@ -18,7 +18,7 @@ fn backend() -> &'static LlamaBackend {
     BACKEND.get_or_init(|| LlamaBackend::init().expect("llama backend"))
 }
 
-/// Qwen3 계열은 thinking 을 끄기 위해 `/no_think` 를 붙인다. 파일명으로 판별한다.
+/// Qwen3 계열은 thinking 을 끄기 위해 어시스턴트 턴을 빈 think 블록으로 미리 채운다. 파일명으로 판별한다.
 pub(crate) fn is_qwen3(p: &Path) -> bool {
     p.file_name()
         .and_then(|s| s.to_str())
@@ -68,11 +68,10 @@ impl LocalLlm {
     }
 
     /// 모델 채팅 템플릿으로 system+user 를 렌더한다. 템플릿이 없으면 ChatML.
+    /// Qwen3 계열은 `/no_think` 를 무시하고(Qwen3.5 실측) 사고 블록 안에서 생성 예산을 다 써 버리므로,
+    /// 어시스턴트 턴을 빈 `<think></think>` 로 미리 채워 사고를 끈다(템플릿의 enable_thinking=false 와 같은 효과).
     fn render(&self, req: &TranslateRequest) -> Result<String, TranslateError> {
-        let mut user = user_prompt(req);
-        if self.qwen3 {
-            user.push_str(" /no_think");
-        }
+        let user = user_prompt(req);
         let sys = system_prompt(&req.tgt);
         let msgs = vec![
             LlamaChatMessage::new("system".into(), sys.clone())
@@ -80,15 +79,19 @@ impl LocalLlm {
             LlamaChatMessage::new("user".into(), user.clone())
                 .map_err(|e| TranslateError::Request(e.to_string()))?,
         ];
-        match self.model.chat_template(None) {
+        let mut prompt = match self.model.chat_template(None) {
             Ok(tmpl) => self
                 .model
                 .apply_chat_template(&tmpl, &msgs, true)
-                .map_err(|e| TranslateError::Request(e.to_string())),
-            Err(_) => Ok(format!(
+                .map_err(|e| TranslateError::Request(e.to_string()))?,
+            Err(_) => format!(
                 "<|im_start|>system\n{sys}<|im_end|>\n<|im_start|>user\n{user}<|im_end|>\n<|im_start|>assistant\n"
-            )),
+            ),
+        };
+        if self.qwen3 && !prompt.trim_end().ends_with("</think>") {
+            prompt.push_str("<think>\n\n</think>\n\n");
         }
+        Ok(prompt)
     }
 }
 

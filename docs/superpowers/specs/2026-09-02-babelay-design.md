@@ -101,7 +101,7 @@ babelay-app/
 
 - `llama-cpp-2`(`default-features = false, features = ["common"]`; `openmp`는 macOS clang 빌드를 깨뜨려 끈다), 같은 feature 규칙. GPU 토글은 `n_gpu_layers`를 1000 또는 0으로 바꾸고, GPU 로드가 실패하면 0으로 한 번 더 시도한다(폴백은 stderr 로그).
 - 모델은 첫 번역 시점에 로드하고, 모델이 바뀌기 전까지 세션 종료 후에도 유지한다. 프로세스 전역 캐시(`src-tauri/src/llm.rs`, `LlmCache = Arc<Mutex<Option<{path, gpu, LocalLlm}>>>`, `app.manage`)에 최대 하나를 담고, `translator::build`는 로드 없이 `SharedLlm{cache, path, gpu}`만 만들어 돌려준다 — 그래서 캡처는 GGUF 로드를 기다리지 않고 즉시 시작하고, stop→start 나 연결 테스트는 같은 모델을 다시 읽지 않는다. 경로나 GPU 토글이 다르면 첫 번역에서 갈아 끼운다. 모델 삭제는 파일을 지우기 전에 캐시를 비운다(`llm::evict`; Windows 는 mmap 된 파일을 못 지운다). 시작 전 동기 검사(`precheck`)는 키·파일 존재만 본다.
-- 요청마다 새 컨텍스트(`n_ctx` = 입력 + 최대 생성 + 8, 512~4096), 스레드 수 = min(코어, 8). 프롬프트는 모델 채팅 템플릿으로 system("You are a subtitle translator… Output only the translation, one line") + user(직전 원문 2줄 컨텍스트 + 번역 대상)를 렌더하고, 템플릿이 없으면 ChatML. Qwen3 계열(파일명 판별)은 유저 메시지 끝에 ` /no_think`. 샘플러 greedy, 최대 토큰 = max(32, 입력 토큰 × 3), EOG에서 중단.
+- 요청마다 새 컨텍스트(`n_ctx` = 입력 + 최대 생성 + 8, 512~4096), 스레드 수 = min(코어, 8). 프롬프트는 모델 채팅 템플릿으로 system("You are a subtitle translator… Output only the translation, one line") + user(직전 원문 2줄 컨텍스트 + 번역 대상)를 렌더하고, 템플릿이 없으면 ChatML. Qwen3 계열(파일명 판별)은 어시스턴트 턴을 빈 `<think></think>` 블록으로 미리 채워 사고를 끈다(Qwen3.5는 `/no_think`를 무시하고 사고 블록 안에서 생성 예산을 다 쓴다 — 2026-09-04 실측). 샘플러 greedy, 최대 토큰 = max(32, 입력 토큰 × 3), EOG에서 중단.
 - 출력 후처리(`postprocess`, 클라우드와 공용): `<think>…</think>` 제거, 앞뒤 따옴표·공백 제거, 줄바꿈→공백. 빈 결과는 `Empty` 오류.
 
 ### 4.4 스레드와 백프레셔
