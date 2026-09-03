@@ -1,48 +1,56 @@
 {
   "app": { "name": "Babelay" },
-  "common": { "dismiss": "閉じる" },
-  "nav": { "live": "ライブ", "history": "履歴", "settings": "設定", "collapse": "サイドバーを閉じる", "expand": "サイドバーを開く" },
-  "live": { "start": "開始", "stop": "停止", "overlay": "オーバーレイ", "stopping": "停止中…", "cpuFallback": "CPU", "lagging": "遅延" },
+  "common": { "dismiss": "閉じる", "confirm": "確認", "cancel": "キャンセル", "close": "閉じる" },
+  "nav": { "live": "ライブ", "history": "履歴", "settings": "設定", "collapse": "サイドバーを閉じる", "expand": "サイドバーを開く", "search": "履歴を検索", "about": "情報" },
+  "about": { "version": "バージョン", "hardware": "ハードウェア" },
+  "live": { "start": "開始", "stop": "停止", "overlay": "オーバーレイ", "overlayOn": "オン", "overlayOff": "オフ", "stopping": "停止中…", "cpuFallback": "CPU", "lagging": "遅延" },
   "history": { "empty": "まだセッションがありません。", "search": "検索", "exportTxt": "TXT", "exportSrt": "SRT", "delete": "削除", "saved": "保存済み: {{path}}", "segments": "{{count}} セグメント" },
   "settings": { "general": "一般", "models": "モデル", "translation": "翻訳", "overlay": "オーバーレイ" },
   "general": {
     "theme": "テーマ", "themeSystem": "システム", "themeDark": "ダーク", "themeLight": "ライト",
     "language": "言語", "langSystem": "システム既定", "langKo": "韓国語", "langEn": "英語", "langJa": "日本語",
-    "shortcutCapture": "キャプチャ開始 / 停止", "shortcutOverlay": "オーバーレイ表示 / 非表示"
+    "shortcuts": "ショートカット", "shortcutCapture": "キャプチャ開始 / 停止", "shortcutOverlay": "オーバーレイ表示 / 非表示",
+    "permission": "権限"
+  },
+  "permission": {
+    "name": "システムオーディオ録音", "path": "macOS · プライバシーとセキュリティ › システムオーディオ録音",
+    "check": "権限を確認", "openSettings": "システム設定を開く",
+    "granted": "許可済み", "denied": "拒否", "unknown": "未確認"
   },
   "models": {
     "desc": { "tiny": "最速・精度は低い", "base": "速い・短い文向け", "small": "速度と精度のバランス", "medium": "高精度", "large_v3_turbo": "高精度・多言語に強い", "large_v3": "最高精度", "gemma3_1b": "最速・単純な文向け", "qwen3_5_2b": "バランス良好", "gemma3_4b": "より自然な文", "qwen3_5_4b": "最高品質・日中韓に強い" },
     "badgeInstalled": "インストール済み", "badgeInUse": "使用中", "badgeRecommended": "おすすめ",
-    "asr": "文字起こし", "llm": "翻訳", "downloading": "ダウンロード中", "cancel": "キャンセル", "continue": "続ける", "continueWith": "{{size}} を取得して続ける",
+    "asr": "Transcript", "llm": "翻訳", "downloading": "ダウンロード中", "cancel": "キャンセル",
     "speed1": "とても遅い", "speed2": "遅い", "speed3": "普通", "speed4": "速い", "speed5": "とても速い",
     "gpuMac": "Apple Silicon アクセラレーション", "gpuWin": "NVIDIA GPU アクセラレーション",
-    "download": "ダウンロード", "select": "選択", "delete": "削除"
+    "download": "ダウンロード", "select": "選択", "delete": "削除", "confirmDelete": "{{name}} を削除しますか？ ({{size}})"
   },
+  "downloads": { "downloading": "{{name}} をダウンロード中", "next": "次: {{name}}" },
   "translation": {
     "local": "ローカルモデル", "cloud": "クラウド API",
-    "currentModel": "現在のモデル", "changeInModels": "モデルページで変更",
+    "currentModel": "現在のモデル", "changeInModels": "モデルタブで変更",
     "provider": "プロバイダー", "model": "モデル", "baseUrl": "Base URL",
-    "providerOpenai": "OpenAI", "providerAnthropic": "Anthropic", "providerGemini": "Google Gemini", "providerDeepl": "DeepL", "providerCustom": "カスタム (OpenAI 互換)"
+    "providerOpenai": "OpenAI", "providerAnthropic": "Anthropic", "providerGemini": "Google Gemini", "providerDeepl": "DeepL", "providerCustom": "カスタム (OpenAI 互換)",
+    "sourceLang": "音声の言語", "targetLang": "翻訳先の言語", "auto": "自動検出"
   },
   "overlay": {
-    "adjust": "位置を調整", "adjustDone": "完了",
-    "adjustHint": "字幕をドラッグして移動します。角をドラッグするとサイズが変わります。",
+    "adjust": "位置を調整", "adjustDone": "完了", "preview": "プレビュー",
+    "adjustHint": "ドラッグで移動 · 角で幅を調整",
     "displayMode": "表示", "modeBoth": "原文 + 翻訳", "modeSource": "原文のみ", "modeTarget": "翻訳のみ",
-    "subtitleLang": "字幕の言語", "sourceLang": "音声の言語", "auto": "自動検出",
     "fontSize": "文字サイズ", "bgOpacity": "背景の不透明度",
     "previewSource": "We buffer about two seconds of audio before running the model.",
     "previewTarget": "モデルを実行する前に約2秒分の音声をバッファします。"
   },
   "errors": {
-    "busy": "別のモデルをダウンロード中です", "inUse": "使用中のモデルは削除できません",
+    "busy": "別のモデルをダウンロード中です", "capturing": "キャプチャ中はモデルを削除できません",
     "notDownloading": "進行中のダウンロードはありません", "unknownModel": "不明なモデルです",
-    "modelMissing": "選択した文字起こしモデルがインストールされていません", "startFailed": "キャプチャを開始できません",
+    "modelMissing": "選択した Transcript モデルがインストールされていません", "startFailed": "キャプチャを開始できません",
     "busyStopping": "停止中です。しばらくしてからもう一度お試しください", "historyUnavailable": "履歴を利用できません"
   },
   "onboarding": {
-    "next": "次へ", "back": "戻る", "skip": "スキップ", "finish": "始める",
-    "title": { "language": "言語", "permission": "システム音声のキャプチャを許可", "asr": "文字起こしモデル", "llm": "翻訳モデル", "done": "準備完了" },
-    "permissionCheck": "権限を確認", "permissionGranted": "権限が許可されました", "permissionDenied": "権限が拒否されました", "permissionUnknown": "権限はキャプチャ開始時に確認します。",
-    "openSettings": "システム設定を開く"
+    "next": "次へ", "back": "戻る", "skip": "スキップ", "finish": "始める", "skipped": "スキップ済み",
+    "step": { "language": "言語", "permission": "権限", "asr": "Transcript", "llm": "翻訳", "done": "完了" },
+    "title": { "language": "言語", "permission": "システム音声のキャプチャを許可", "asr": "Transcript モデル", "llm": "翻訳モデル", "done": "準備完了" },
+    "check": { "asr": "Transcript モデル", "llm": "翻訳モデル" }
   }
 }

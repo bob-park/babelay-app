@@ -33,7 +33,7 @@ interface ModelsStore {
 // 백엔드는 코드 문자열을 던진다. 아는 코드만 번역하고 나머지는 그대로 보여준다.
 export const ERROR_KEYS: Record<string, string> = {
   busy: "errors.busy",
-  in_use: "errors.inUse",
+  capturing: "errors.capturing",
   "not downloading": "errors.notDownloading",
   "unknown model": "errors.unknownModel",
   unknown_model: "errors.unknownModel",
