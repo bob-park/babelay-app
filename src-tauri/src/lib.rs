@@ -1,10 +1,12 @@
 mod commands;
 mod history;
 mod i18n;
+mod keys;
 mod models;
 mod overlay;
 mod session;
 mod settings;
+mod translator;
 mod tray;
 mod windows;
 
@@ -63,6 +65,10 @@ pub fn run() {
             commands::history_search,
             commands::history_delete,
             commands::history_export,
+            commands::set_api_key,
+            commands::has_api_key,
+            commands::delete_api_key,
+            commands::test_translation,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")

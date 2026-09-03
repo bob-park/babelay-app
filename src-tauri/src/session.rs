@@ -1,7 +1,9 @@
 //! 캡처 세션 수명 관리. 엔진 핸들을 들고 있고, 엔진 이벤트를 창으로 중계한다.
-use crate::{models::models_dir, settings::SettingsState};
+use crate::{models::models_dir, settings::Settings, settings::SettingsState, translator};
 use babelay_engine::engine::{start_default, EngineConfig, EngineEvent, EngineHandle};
 use babelay_engine::models::{find, installed, model_path};
+use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::{
     atomic::{AtomicU64, Ordering},
     mpsc, Mutex,
@@ -39,6 +41,8 @@ pub struct SessionState {
     next_gen: AtomicU64,
     /// 기록 중인 히스토리 세션 행 id(`history`가 읽고 쓴다).
     pub session_id: Mutex<Option<i64>>,
+    /// 엔진 Final id → 히스토리 세그먼트 행 id(`history`가 읽고 쓴다).
+    pub final_rows: Mutex<HashMap<u64, i64>>,
 }
 
 fn state(app: &AppHandle) -> &SessionState {
@@ -59,7 +63,8 @@ pub fn engine_active(app: &AppHandle) -> bool {
     !matches!(*lock(app), Phase::Idle)
 }
 
-/// 모델·경로 검증만 동기로 하고(`unknown_model` / `model_missing`), 실제 로드는
+/// 모델·경로·키 검증만 동기로 하고(`unknown_model` / `model_missing` /
+/// `translation_model_missing` / `api_key_missing` / `base_url_missing`), 실제 로드는
 /// 백그라운드로 넘긴다. 호출자(트레이·단축키·커맨드)는 즉시 돌아온다.
 pub fn start(app: &AppHandle) -> Result<(), String> {
     let settings = app.state::<SettingsState>().get();
@@ -68,11 +73,13 @@ pub fn start(app: &AppHandle) -> Result<(), String> {
     if !installed(&dir, m) {
         return Err("model_missing".into());
     }
+    translator::precheck(&settings, &dir)?;
     let cfg = EngineConfig {
         model_path: model_path(&dir, m),
         model_id: settings.asr.model_id.clone(),
         use_gpu: settings.asr.gpu,
         source_lang: (settings.asr.source_lang != "auto").then(|| settings.asr.source_lang.clone()),
+        tgt_lang: translator::enabled(&settings).then(|| translator::resolve_tgt(&settings)),
     };
     let gen = {
         let mut phase = lock(app);
@@ -88,37 +95,49 @@ pub fn start(app: &AppHandle) -> Result<(), String> {
     };
     crate::tray::relabel_capture(app, true);
     let app2 = app.clone();
-    let log = (
-        settings.asr.source_lang.clone(),
-        settings.overlay.subtitle_lang.clone(),
-        settings.asr.model_id.clone(),
-    );
-    std::thread::spawn(move || run_session(app2, cfg, gen, log));
+    std::thread::spawn(move || run_session(app2, cfg, gen, settings, dir));
     Ok(())
 }
 
-/// 모델 로드부터 이벤트 중계까지 한 스레드에서 돈다.
-fn run_session(app: AppHandle, cfg: EngineConfig, gen: u64, log: (String, String, String)) {
-    let (tx, rx) = mpsc::channel();
-    let handle = match start_default(cfg, tx) {
-        Ok(h) => h,
-        Err(message) => {
-            {
-                let mut phase = lock(&app);
-                if matches!(*phase, Phase::Starting(g) if g == gen) {
-                    *phase = Phase::Idle;
-                }
-            }
-            let _ = app.emit(
-                "engine-event",
-                EngineEvent::Error {
-                    code: "start_failed".into(),
-                    message,
-                },
-            );
-            crate::tray::relabel_capture(&app, is_capturing(&app));
-            return;
+/// 시작 실패: 내 예약이 남아 있으면 Idle 로 되돌리고 오류를 알린다.
+fn fail_start(app: &AppHandle, gen: u64, message: String) {
+    {
+        let mut phase = lock(app);
+        if matches!(*phase, Phase::Starting(g) if g == gen) {
+            *phase = Phase::Idle;
         }
+    }
+    let _ = app.emit(
+        "engine-event",
+        EngineEvent::Error {
+            code: "start_failed".into(),
+            message,
+        },
+    );
+    crate::tray::relabel_capture(app, is_capturing(app));
+}
+
+/// 번역기·모델 로드부터 이벤트 중계까지 한 스레드에서 돈다.
+fn run_session(app: AppHandle, cfg: EngineConfig, gen: u64, settings: Settings, dir: PathBuf) {
+    // 번역기부터 조립한다(로컬 LLM 로드는 수 초). 실패해도 아직 엔진이 없으니 정리할 것이 없다.
+    let tr = match translator::build(&settings, &dir) {
+        Ok(Some((t, fell_back))) => {
+            if fell_back {
+                eprintln!("babelay: 번역 모델 GPU 로드 실패 — CPU 로 폴백");
+            }
+            Some(t)
+        }
+        Ok(None) => None,
+        Err(message) => return fail_start(&app, gen, message),
+    };
+    let tgt_label = cfg
+        .tgt_lang
+        .clone()
+        .unwrap_or_else(|| settings.overlay.subtitle_lang.clone());
+    let (tx, rx) = mpsc::channel();
+    let handle = match start_default(cfg, tr, tx) {
+        Ok(h) => h,
+        Err(message) => return fail_start(&app, gen, message),
     };
     {
         let mut phase = lock(&app);
@@ -132,10 +151,16 @@ fn run_session(app: AppHandle, cfg: EngineConfig, gen: u64, log: (String, String
         }
         *phase = Phase::Running(handle);
     }
-    crate::history::begin(&app, &log.0, &log.1, &log.2);
+    crate::history::begin(
+        &app,
+        &settings.asr.source_lang,
+        &tgt_label,
+        &settings.asr.model_id,
+        translator::label(&settings).as_deref(),
+    );
     // EngineHandle 이 tx 클론을 붙들고 있어 rx 는 스스로 닫히지 않는다. Stopped 에서 끊는다.
     for ev in rx {
-        crate::history::on_final(&app, &ev);
+        crate::history::on_event(&app, &ev);
         let stopped = matches!(ev, EngineEvent::Stopped);
         let _ = app.emit("engine-event", &ev);
         if stopped {

@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS segments(id INTEGER PRIMARY KEY, session_id INTEGER N
 CREATE VIRTUAL TABLE IF NOT EXISTS segments_fts USING fts5(src_text, tgt_text, content='segments', content_rowid='id');
 CREATE TRIGGER IF NOT EXISTS segments_ai AFTER INSERT ON segments BEGIN INSERT INTO segments_fts(rowid, src_text, tgt_text) VALUES (new.id, new.src_text, new.tgt_text); END;
 CREATE TRIGGER IF NOT EXISTS segments_ad AFTER DELETE ON segments BEGIN INSERT INTO segments_fts(segments_fts, rowid, src_text, tgt_text) VALUES('delete', old.id, old.src_text, old.tgt_text); END;
+CREATE TRIGGER IF NOT EXISTS segments_au AFTER UPDATE ON segments BEGIN INSERT INTO segments_fts(segments_fts, rowid, src_text, tgt_text) VALUES('delete', old.id, old.src_text, old.tgt_text); INSERT INTO segments_fts(rowid, src_text, tgt_text) VALUES (new.id, new.src_text, new.tgt_text); END;
 PRAGMA foreign_keys = ON;
 ";
 
@@ -81,16 +82,18 @@ impl Db {
         self.0.lock().unwrap_or_else(|p| p.into_inner())
     }
 
+    /// `translator` 는 `local:<model>` / `cloud:<provider>/<model>`, 번역 없으면 None.
     pub fn begin_session(
         &self,
         src_lang: &str,
         tgt_lang: &str,
         asr_model: &str,
+        translator: Option<&str>,
     ) -> rusqlite::Result<i64> {
         let conn = self.conn();
         conn.execute(
-            "INSERT INTO sessions(started_at, src_lang, tgt_lang, asr_model) VALUES(?1, ?2, ?3, ?4)",
-            params![now(), src_lang, tgt_lang, asr_model],
+            "INSERT INTO sessions(started_at, src_lang, tgt_lang, asr_model, translator) VALUES(?1, ?2, ?3, ?4, ?5)",
+            params![now(), src_lang, tgt_lang, asr_model, translator],
         )?;
         Ok(conn.last_insert_rowid())
     }
@@ -103,6 +106,7 @@ impl Db {
         Ok(())
     }
 
+    /// 새 세그먼트 행 id 를 돌려준다(번역이 나중에 붙는다).
     pub fn insert_segment(
         &self,
         session_id: i64,
@@ -110,10 +114,20 @@ impl Db {
         t1_ms: i64,
         lang: &str,
         src_text: &str,
-    ) -> rusqlite::Result<()> {
-        self.conn().execute(
+    ) -> rusqlite::Result<i64> {
+        let conn = self.conn();
+        conn.execute(
             "INSERT INTO segments(session_id, t0_ms, t1_ms, lang, src_text) VALUES(?1, ?2, ?3, ?4, ?5)",
             params![session_id, t0_ms, t1_ms, lang, src_text],
+        )?;
+        Ok(conn.last_insert_rowid())
+    }
+
+    /// UPDATE 트리거가 FTS 인덱스를 함께 갱신한다.
+    pub fn update_translation(&self, row_id: i64, text: &str) -> rusqlite::Result<()> {
+        self.conn().execute(
+            "UPDATE segments SET tgt_text = ?1 WHERE id = ?2",
+            params![text, row_id],
         )?;
         Ok(())
     }
@@ -168,6 +182,7 @@ impl Db {
         Ok(())
     }
 
+    /// SRT 는 원문 줄 + (있으면) 번역 줄, TXT 는 `원문\t번역`.
     pub fn export(&self, session_id: i64, fmt: &str) -> rusqlite::Result<String> {
         let rows = self.segments(session_id)?;
         if fmt == "srt" {
@@ -175,17 +190,29 @@ impl Db {
                 .iter()
                 .enumerate()
                 .map(|(i, r)| {
+                    let tgt = r
+                        .tgt_text
+                        .as_deref()
+                        .map(|t| format!("\n{t}"))
+                        .unwrap_or_default();
                     format!(
-                        "{}\n{} --> {}\n{}\n\n",
+                        "{}\n{} --> {}\n{}{}\n\n",
                         i + 1,
                         srt_time(r.t0_ms),
                         srt_time(r.t1_ms),
-                        r.src_text
+                        r.src_text,
+                        tgt
                     )
                 })
                 .collect());
         }
-        Ok(rows.iter().map(|r| format!("{}\n", r.src_text)).collect())
+        Ok(rows
+            .iter()
+            .map(|r| match &r.tgt_text {
+                Some(t) => format!("{}\t{}\n", r.src_text, t),
+                None => format!("{}\n", r.src_text),
+            })
+            .collect())
     }
 }
 
@@ -207,11 +234,24 @@ fn current(app: &AppHandle) -> MutexGuard<'_, Option<i64>> {
     state.session_id.lock().unwrap_or_else(|p| p.into_inner())
 }
 
-pub fn begin(app: &AppHandle, src_lang: &str, tgt_lang: &str, asr_model: &str) {
+/// 엔진 Final id → 세그먼트 행 id. Translated 가 뒤따라올 때 갱신 대상을 찾는다.
+fn final_rows(app: &AppHandle) -> MutexGuard<'_, std::collections::HashMap<u64, i64>> {
+    let state = app.state::<crate::session::SessionState>().inner();
+    state.final_rows.lock().unwrap_or_else(|p| p.into_inner())
+}
+
+pub fn begin(
+    app: &AppHandle,
+    src_lang: &str,
+    tgt_lang: &str,
+    asr_model: &str,
+    translator: Option<&str>,
+) {
+    final_rows(app).clear();
     let Some(db) = app.try_state::<Db>() else {
         return;
     };
-    match db.begin_session(src_lang, tgt_lang, asr_model) {
+    match db.begin_session(src_lang, tgt_lang, asr_model, translator) {
         Ok(id) => *current(app) = Some(id),
         Err(e) => eprintln!("history: begin_session failed: {e}"),
     }
@@ -229,23 +269,35 @@ pub fn end(app: &AppHandle) {
 }
 
 /// 중계 스레드에서 불린다 — 어떤 실패도 로그로만 남기고 삼킨다.
-pub fn on_final(app: &AppHandle, ev: &EngineEvent) {
-    let EngineEvent::Final {
-        text,
-        lang,
-        start_ms,
-        end_ms,
-        ..
-    } = ev
-    else {
-        return;
-    };
-    let Some(id) = *current(app) else { return };
+pub fn on_event(app: &AppHandle, ev: &EngineEvent) {
     let Some(db) = app.try_state::<Db>() else {
         return;
     };
-    if let Err(e) = db.insert_segment(id, *start_ms as i64, *end_ms as i64, lang, text) {
-        eprintln!("history: insert_segment failed: {e}");
+    match ev {
+        EngineEvent::Final {
+            id,
+            text,
+            lang,
+            start_ms,
+            end_ms,
+        } => {
+            let Some(sid) = *current(app) else { return };
+            match db.insert_segment(sid, *start_ms as i64, *end_ms as i64, lang, text) {
+                Ok(row) => {
+                    final_rows(app).insert(*id, row);
+                }
+                Err(e) => eprintln!("history: insert_segment failed: {e}"),
+            }
+        }
+        EngineEvent::Translated { id, text, .. } => {
+            let Some(row) = final_rows(app).get(id).copied() else {
+                return;
+            };
+            if let Err(e) = db.update_translation(row, text) {
+                eprintln!("history: update_translation failed: {e}");
+            }
+        }
+        _ => {}
     }
 }
 
@@ -255,7 +307,7 @@ mod tests {
     #[test]
     fn insert_search_and_export() {
         let db = open_in_memory().unwrap();
-        let sid = db.begin_session("en", "ko", "small").unwrap();
+        let sid = db.begin_session("en", "ko", "small", None).unwrap();
         db.insert_segment(sid, 0, 1200, "en", "hello world")
             .unwrap();
         db.insert_segment(sid, 1200, 2500, "en", "second line")
@@ -270,5 +322,40 @@ mod tests {
         db.delete_session(sid).unwrap();
         assert!(db.sessions(10).unwrap().is_empty());
         assert!(db.search("world").unwrap().is_empty());
+    }
+
+    #[test]
+    fn translation_update_is_searchable_and_exported() {
+        let db = open_in_memory().unwrap();
+        let sid = db
+            .begin_session("en", "ko", "small", Some("local:qwen3.5-2b"))
+            .unwrap();
+        let row = db
+            .insert_segment(sid, 0, 1200, "en", "hello world")
+            .unwrap();
+        db.insert_segment(sid, 1200, 2500, "en", "second line")
+            .unwrap();
+        db.update_translation(row, "안녕 세계").unwrap();
+
+        let hits = db.search("세계").unwrap();
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].tgt_text.as_deref(), Some("안녕 세계"));
+        assert_eq!(
+            db.segments(sid).unwrap()[0].tgt_text.as_deref(),
+            Some("안녕 세계")
+        );
+
+        let srt = db.export(sid, "srt").unwrap();
+        assert!(
+            srt.starts_with("1\n00:00:00,000 --> 00:00:01,200\nhello world\n안녕 세계\n\n2\n"),
+            "{srt}"
+        );
+        assert_eq!(
+            db.export(sid, "txt").unwrap(),
+            "hello world\t안녕 세계\nsecond line\n"
+        );
+
+        db.delete_session(sid).unwrap();
+        assert!(db.search("세계").unwrap().is_empty());
     }
 }
