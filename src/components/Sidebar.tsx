@@ -30,6 +30,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
   const justify = collapsed ? "" : "wide:justify-start";
   const navCls = ({ isActive }: { isActive: boolean }) =>
     `btn btn-sm justify-center gap-2 ${justify} ${isActive ? "btn-neutral" : "btn-ghost text-fg-muted"}`;
+  const missing = !view.capturing && !asrInstalled;
   const openAbout = () => { if (!hw) api.getHwInfo().then(setHw).catch(() => {}); about.current?.showModal(); };
   const hwLine = hw ? [hw.chip, `${hw.mem_gb} GB`, hw.gpu && `${hw.gpu}${hw.gpu_mem_gb ? ` ${hw.gpu_mem_gb} GB` : ""}`].filter(Boolean).join(" · ") : "";
 
@@ -64,24 +65,25 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       </button>
 
       <div className="mt-auto flex flex-col gap-1">
-        <button
-          type="button"
-          className="btn btn-primary btn-sm btn-block gap-1"
-          disabled={view.stopping || (!view.capturing && !asrInstalled)}
-          title={!view.capturing && !asrInstalled ? t("errors.modelMissing") : undefined}
-          aria-label={view.stopping ? t("live.stopping") : view.capturing ? t("live.stop") : t("live.start")}
-          onClick={() => (view.capturing ? stop() : start())}
-        >
-          <span aria-hidden="true">{view.capturing ? "■" : "●"}</span>
-          <span className={label}>{view.stopping ? t("live.stopping") : view.capturing ? t("live.stop") : t("live.start")}</span>
-        </button>
+        <div className={missing ? "tooltip tooltip-right w-full" : "w-full"} data-tip={missing ? t("errors.modelMissing") : undefined}>
+          <button
+            type="button"
+            className="btn btn-primary btn-sm btn-block gap-1"
+            disabled={view.stopping || missing}
+            aria-label={view.stopping ? t("live.stopping") : view.capturing ? t("live.stop") : t("live.start")}
+            onClick={() => (view.capturing ? stop() : start())}
+          >
+            <span aria-hidden="true">{view.capturing ? "■" : "●"}</span>
+            <span className={label}>{view.stopping ? t("live.stopping") : view.capturing ? t("live.stop") : t("live.start")}</span>
+          </button>
+        </div>
         <NavLink to="/settings/general" className={navCls} aria-label={t("nav.settings")}>
           <Icon name="general" /><span className={label}>{t("nav.settings")}</span>
         </NavLink>
         <button type="button" className={`btn btn-ghost btn-sm justify-center gap-2 text-fg-muted ${justify}`} onClick={openAbout} aria-label={t("nav.about")}>
           <Icon name="info" /><span className={label}>{t("nav.about")}</span>
         </button>
-        <div className={`text-center text-[10px] text-fg-muted ${label}`}>v{import.meta.env.PACKAGE_VERSION}</div>
+        <div className={`text-center text-[10px] text-fg-muted ${collapsed ? "hidden" : "hidden wide:block"}`}>v{import.meta.env.PACKAGE_VERSION}</div>
       </div>
 
       <dialog ref={about} className="modal">

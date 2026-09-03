@@ -24,7 +24,7 @@ export default function General() {
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
         <div className="tooltip tooltip-left" data-tip={shortcuts}>
-          <button type="button" className="btn btn-circle btn-ghost btn-sm" aria-label={t("general.shortcuts")}><Icon name="help" /><span className="sr-only">{shortcuts}</span></button>
+          <button type="button" className="btn btn-circle btn-ghost btn-sm" aria-label={t("general.shortcuts")} aria-describedby="shortcuts-tip"><Icon name="help" /><span id="shortcuts-tip" className="sr-only">{shortcuts}</span></button>
         </div>
       </div>
 

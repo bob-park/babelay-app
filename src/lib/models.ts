@@ -97,7 +97,7 @@ export const useModels = create<ModelsStore>((set, get) => ({
         const [next, ...rest] = get().queue;
         if (!next) return;
         set({ queue: rest });
-        get().download(next);
+        get().enqueue(next);
       });
     });
     return () => { p.then((un) => un()); };

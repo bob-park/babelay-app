@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { getCurrentWindow, PhysicalSize } from "@tauri-apps/api/window";
+import { currentMonitor, getCurrentWindow, PhysicalSize } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/tauri";
@@ -31,10 +31,12 @@ function startWidthResize(e: ReactPointerEvent<HTMLDivElement>) {
   const abort = () => { released = true; };
   handle.addEventListener("pointerup", abort, { once: true });
   handle.addEventListener("pointercancel", abort, { once: true });
-  win.innerSize().then(({ width: w0, height: h0 }) => {
+  Promise.all([win.innerSize(), currentMonitor()]).then(([{ width: w0, height: h0 }, mon]) => {
     if (released) return;
+    // 0.2 는 overlay.rs 의 ratios_from 이 저장할 때 거는 하한과 같다. 더 좁게 끌면 커밋에서 되튄다.
+    const floor = Math.max(Math.round(MIN_WIDTH * scale), Math.round((mon?.size.width ?? 0) * 0.2));
     const move = (ev: PointerEvent) => {
-      pending = Math.max(MIN_WIDTH * scale, Math.round(w0 + (ev.screenX - startX) * scale));
+      pending = Math.max(floor, Math.round(w0 + (ev.screenX - startX) * scale));
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;

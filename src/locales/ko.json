@@ -19,7 +19,7 @@
   },
   "models": {
     "desc": { "tiny": "가장 빠름 · 정확도 낮음", "base": "빠름 · 짧은 문장에 적합", "small": "속도·정확도 균형", "medium": "높은 정확도", "large_v3_turbo": "높은 정확도 · 다국어 강함", "large_v3": "최고 정확도", "gemma3_1b": "가장 빠름 · 단순 문장", "qwen3_5_2b": "속도·품질 균형", "gemma3_4b": "더 자연스러운 문장", "qwen3_5_4b": "최고 품질 · 한·일 강함" },
-    "badgeInstalled": "설치됨", "badgeInUse": "사용 중", "badgeRecommended": "추천",
+    "badgeInstalled": "설치됨", "badgeInUse": "사용 중", "badgeRecommended": "추천", "notInstalled": "미설치",
     "asr": "Transcript", "llm": "번역", "downloading": "다운로드 중", "cancel": "취소",
     "speed1": "매우 느림", "speed2": "느림", "speed3": "보통", "speed4": "빠름", "speed5": "매우 빠름",
     "gpuMac": "Apple Silicon 가속", "gpuWin": "NVIDIA GPU 가속",

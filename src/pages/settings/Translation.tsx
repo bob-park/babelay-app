@@ -15,7 +15,7 @@ export default function Translation() {
   const models = useModels((s) => s.models);
   if (!settings) return null;
   const tr = settings.translation;
-  const localName = models.find((m) => m.info.id === tr.local_model)?.info.name ?? tr.local_model;
+  const localName = tr.local_model ? models.find((m) => m.info.id === tr.local_model)?.info.name ?? tr.local_model : "—";
 
   return (
     <div className="flex flex-col gap-4">

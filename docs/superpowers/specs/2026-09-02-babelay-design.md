@@ -184,8 +184,8 @@ struct TranslateRequest { text: String, src: Lang, tgt: Lang, context: Vec<Strin
 
 - 하나의 Vite 앱. 창 라벨에 따라 `#/main/*`, `#/overlay`, `#/onboarding`을 렌더한다. 라우팅은 react-router.
 - 상태는 zustand 스토어 둘. `settings`는 커맨드 `get_settings/set_settings`와 이벤트 `settings-changed`로 동기화. `session`은 `engine-event`로 라이브 로그와 오버레이 텍스트를 채운다.
-- daisyUI 5(CSS 플러그인)만 사용, 아이콘 라이브러리 없음. Tailwind + 네이티브 요소(`<select>`, `<dialog>`, `<input type=range>`). 아이콘은 인라인 SVG 7개(`src/components/icons.tsx`).
-- 공용 컴포넌트: `Sidebar`(떠 있는 패널, 접기 상태 저장), `ModelRow`, `Badge`, `PillButton`, `Toggle`, `SegmentedControl`, `SettingGroup`/`SettingRow`, `ProgressBar`, `ErrorBar`.
+- daisyUI 5(CSS 플러그인)만 사용, 아이콘 라이브러리 없음. Tailwind + 네이티브 요소(`<select>`, `<dialog>`, `<input type=range>`). 아이콘은 인라인 SVG 13개(`src/components/icons.tsx`).
+- 공용 컴포넌트: `Sidebar`(떠 있는 패널, 접기 상태 저장), `ModelRow`, `SegmentedControl`, `SettingGroup`/`SettingRow`, `ErrorBar`, `DownloadToast`, `PermissionRow`, `ConfirmModal`, `Settings`(탭 셸).
 - 디자인 토큰: 카드 반경 12px, 사이드바 패널 14px, 컨트롤은 pill. 필 버튼은 대문자·자간 없이 굵기 600. 보조 텍스트 `#8a8a8a`(다크) / `#6a6a6a`(라이트). 안내 문장·힌트 문구는 두지 않는다(제목과 컨트롤만).
 
 ### 7.1 i18n

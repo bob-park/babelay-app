@@ -13,7 +13,7 @@ export default function Models() {
   const { settings, update } = useSettings();
   const { models, refresh } = useModels();
   const [kind, setKind] = useState<ModelKind>("asr");
-  const [platform, setPlatform] = useState("macos");
+  const [platform, setPlatform] = useState<string | null>(null);
   const [hw, setHw] = useState<HwInfo | null>(null);
   useEffect(() => { refresh(); api.getPlatform().then(setPlatform).catch(() => {}); api.getHwInfo().then(setHw).catch(() => {}); }, []);
   if (!settings) return null;
@@ -35,11 +35,13 @@ export default function Models() {
           <ModelRow key={m.info.id} status={m} selected={current === m.info.id} onSelect={() => { if (m.installed) select(m.info.id); }} />
         ))}
       </div>
-      <SettingGroup>
-        <SettingRow label={platform === "windows" ? t("models.gpuWin") : t("models.gpuMac")}>
-          <input type="checkbox" role="switch" className="toggle toggle-primary" checked={settings.asr.gpu} onChange={(e) => update({ asr: { gpu: e.target.checked } })} />
-        </SettingRow>
-      </SettingGroup>
+      {platform && (
+        <SettingGroup>
+          <SettingRow label={platform === "windows" ? t("models.gpuWin") : t("models.gpuMac")}>
+            <input type="checkbox" role="switch" className="toggle toggle-primary" checked={settings.asr.gpu} onChange={(e) => update({ asr: { gpu: e.target.checked } })} />
+          </SettingRow>
+        </SettingGroup>
+      )}
     </div>
   );
 }

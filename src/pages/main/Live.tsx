@@ -15,7 +15,7 @@ export default function Live() {
   useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [view.finals[view.finals.length - 1]?.id, view.partial?.text]);
 
   if (!settings) return null;
-  const name = (id: string) => models.find((m) => m.info.id === id)?.info.name ?? id;
+  const name = (id: string) => (id ? models.find((m) => m.info.id === id)?.info.name ?? id : "—");
   // 캡처 중에는 돌고 있는 세션의 설정을 보여준다 — 설정을 바꿔도 다음 세션부터 적용된다.
   const srcLang = (view.capturing ? view.sourceLang ?? "auto" : settings.asr.source_lang);
   const asrModel = (view.capturing ? view.modelId : null) ?? settings.asr.model_id;
