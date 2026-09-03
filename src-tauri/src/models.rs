@@ -237,6 +237,8 @@ pub fn delete(app: &AppHandle, id: &str) -> Result<(), String> {
         return Err("busy".into());
     }
     let path = model_path(&models_dir(app)?, m);
+    // 캐시가 mmap 으로 쥐고 있으면 Windows 에서 삭제가 실패한다. 먼저 내린다.
+    crate::llm::evict(app, &path);
     let mut part = path.as_os_str().to_owned();
     part.push(".part");
     for p in [path, PathBuf::from(part)] {

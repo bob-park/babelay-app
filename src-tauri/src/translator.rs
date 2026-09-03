@@ -1,10 +1,10 @@
-//! 설정 → 번역기 조립. 로컬 LLM 로드는 무거우므로 `build` 는 세션 스레드에서 부르고,
-//! 동기 시작 경로는 `precheck` 로 키·모델 존재만 확인한다.
+//! 설정 → 번역기 조립. 조립은 네트워크도 디스크도 타지 않는다 — 로컬 LLM 은 첫 번역에서
+//! 로드되고(`llm::SharedLlm`), 동기 시작 경로는 `precheck` 로 키·모델 존재만 확인한다.
 use crate::i18n::{resolve, Lang};
+use crate::llm::{LlmCache, SharedLlm};
 use crate::{keys, settings::Settings};
 use babelay_engine::models::{find, installed, model_path};
 use babelay_engine::translate::cloud::{Anthropic, DeepL, Gemini, OpenAiCompatible};
-use babelay_engine::translate::local::LocalLlm;
 use babelay_engine::translate::{TranslateRequest, Translator};
 use std::path::{Path, PathBuf};
 use std::time::Instant;
@@ -106,20 +106,24 @@ pub fn precheck(settings: &Settings, models_dir: &Path) -> Result<(), String> {
     }
 }
 
-/// 번역기와 GPU 폴백 여부.
-pub type Built = (Box<dyn Translator>, bool);
-
-/// `None` = 번역 없음(표시 모드 원문만).
-pub fn build(settings: &Settings, models_dir: &Path) -> Result<Option<Built>, String> {
+/// `None` = 번역 없음(표시 모드 원문만). 로드는 하지 않으므로 즉시 돌아온다.
+pub fn build(
+    settings: &Settings,
+    models_dir: &Path,
+    cache: &LlmCache,
+) -> Result<Option<Box<dyn Translator>>, String> {
     if !enabled(settings) {
         return Ok(None);
     }
     if settings.translation.backend == "cloud" {
-        return Ok(Some((cloud_translator(settings)?, false)));
+        return Ok(Some(cloud_translator(settings)?));
     }
     let path = local_model_path(settings, models_dir)?;
-    let (t, fell_back) = LocalLlm::load(&path, settings.asr.gpu).map_err(|e| e.to_string())?;
-    Ok(Some((Box::new(t), fell_back)))
+    Ok(Some(Box::new(SharedLlm {
+        cache: cache.clone(),
+        path,
+        gpu: settings.asr.gpu,
+    })))
 }
 
 #[derive(serde::Serialize, Debug)]
@@ -132,8 +136,8 @@ pub struct TestResult {
     pub error: Option<String>,
 }
 
-/// 설정 그대로 한 문장을 번역해 본다. 로드 포함 시간을 잰다.
-pub fn test_translation(settings: &Settings, models_dir: &Path) -> TestResult {
+/// 설정 그대로 한 문장을 번역해 본다. 세션과 같은 캐시를 쓰므로 첫 번만 로드 시간이 든다.
+pub fn test_translation(settings: &Settings, models_dir: &Path, cache: &LlmCache) -> TestResult {
     let started = Instant::now();
     let fail = |code: &str, text: String| TestResult {
         ok: false,
@@ -141,8 +145,8 @@ pub fn test_translation(settings: &Settings, models_dir: &Path) -> TestResult {
         text,
         error: Some(code.into()),
     };
-    let mut t = match build(settings, models_dir) {
-        Ok(Some((t, _))) => t,
+    let mut t = match build(settings, models_dir, cache) {
+        Ok(Some(t)) => t,
         Ok(None) => return fail("display_mode_source", String::new()),
         Err(e) => return fail(&e, String::new()),
     };
@@ -187,7 +191,9 @@ mod tests {
         assert!(!enabled(&s));
         assert_eq!(label(&s), None);
         assert!(precheck(&s, Path::new("/nonexistent")).is_ok());
-        assert!(build(&s, Path::new("/nonexistent")).unwrap().is_none());
+        assert!(build(&s, Path::new("/nonexistent"), &LlmCache::default())
+            .unwrap()
+            .is_none());
     }
 
     #[test]

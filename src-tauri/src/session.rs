@@ -117,17 +117,11 @@ fn fail_start(app: &AppHandle, gen: u64, message: String) {
     crate::tray::relabel_capture(app, is_capturing(app));
 }
 
-/// 번역기·모델 로드부터 이벤트 중계까지 한 스레드에서 돈다.
+/// 번역기 조립부터 이벤트 중계까지 한 스레드에서 돈다.
 fn run_session(app: AppHandle, cfg: EngineConfig, gen: u64, settings: Settings, dir: PathBuf) {
-    // 번역기부터 조립한다(로컬 LLM 로드는 수 초). 실패해도 아직 엔진이 없으니 정리할 것이 없다.
-    let tr = match translator::build(&settings, &dir) {
-        Ok(Some((t, fell_back))) => {
-            if fell_back {
-                eprintln!("babelay: 번역 모델 GPU 로드 실패 — CPU 로 폴백");
-            }
-            Some(t)
-        }
-        Ok(None) => None,
+    // 번역기 조립은 가볍다(로컬 LLM 은 첫 번역에서 로드된다). 실패해도 아직 엔진이 없다.
+    let tr = match translator::build(&settings, &dir, &crate::llm::cache(&app)) {
+        Ok(t) => t,
         Err(message) => return fail_start(&app, gen, message),
     };
     let tgt_label = cfg

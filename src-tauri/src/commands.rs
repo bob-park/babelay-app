@@ -193,9 +193,10 @@ const TEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(20);
 pub fn test_translation(app: AppHandle) -> Result<crate::translator::TestResult, String> {
     let settings = app.state::<SettingsState>().get();
     let dir = crate::models::models_dir(&app)?;
+    let cache = crate::llm::cache(&app);
     let (tx, rx) = std::sync::mpsc::channel();
     std::thread::spawn(move || {
-        let _ = tx.send(crate::translator::test_translation(&settings, &dir));
+        let _ = tx.send(crate::translator::test_translation(&settings, &dir, &cache));
     });
     rx.recv_timeout(TEST_TIMEOUT)
         .map_err(|_| "timeout".to_string())
