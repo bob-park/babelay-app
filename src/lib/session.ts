@@ -17,6 +17,8 @@ export interface SessionView {
   /// 실행 중인 세션의 설정(설정 화면에서 바꿔도 안 흔들린다). idle 이면 null.
   modelId: string | null;
   sourceLang: string | null;
+  /// 백엔드가 정한 번역 타겟. null 이면 이 세션은 번역하지 않는다(오버레이가 기다리지 않는다).
+  targetLang: string | null;
   lastEventAt: number;
   /// 마지막 final 이 도착한 시각. 오버레이가 번역을 기다리는 기준점.
   lastFinalAt: number;
@@ -37,6 +39,7 @@ export const initialView: SessionView = {
   finals: [],
   modelId: null,
   sourceLang: null,
+  targetLang: null,
   lastEventAt: 0,
   lastFinalAt: 0,
 };
@@ -49,7 +52,7 @@ export function reduce(v: SessionView, ev: EngineEvent): SessionView {
   switch (ev.type) {
     case "started":
       // 새 세션은 빈 타임라인에서 시작한다. 지난 세션의 줄이 섞이면 시간축이 거짓말을 한다.
-      return { ...next, capturing: true, stopping: false, gpuFallback: ev.gpu_fallback, lagging: false, partial: null, finals: [], modelId: ev.model_id, sourceLang: ev.source_lang };
+      return { ...next, capturing: true, stopping: false, gpuFallback: ev.gpu_fallback, lagging: false, partial: null, finals: [], modelId: ev.model_id, sourceLang: ev.source_lang, targetLang: ev.target_lang };
     case "partial":
       return { ...next, partial: { text: ev.text, lang: ev.lang, start_ms: ev.start_ms } };
     case "final": {
@@ -67,7 +70,8 @@ export function reduce(v: SessionView, ev: EngineEvent): SessionView {
     case "lagging":
       return { ...next, lagging: true };
     case "stopped":
-      return { ...next, capturing: false, stopping: false, gpuFallback: false, lagging: false, partial: null };
+      // 타겟은 지운다 — 정지 뒤에는 기다릴 번역이 없다.
+      return { ...next, capturing: false, stopping: false, gpuFallback: false, lagging: false, partial: null, targetLang: null };
     case "error":
       // 배너는 bind가 띄운다. 시작이 실패했으면 Stopped 가 안 오므로 버튼 잠금은 여기서 푼다.
       return { ...next, stopping: false };

@@ -3,11 +3,16 @@ import { reduce, initialView } from "../lib/session";
 
 describe("session reducer", () => {
   it("started/stopped toggle capturing and flags", () => {
-    let v = reduce(initialView, { type: "started", gpu_active: false, gpu_fallback: true, model_id: "whisper-small", source_lang: "en" });
+    let v = reduce(initialView, { type: "started", gpu_active: false, gpu_fallback: true, model_id: "whisper-small", source_lang: "en", target_lang: "ko" });
     expect(v.capturing).toBe(true); expect(v.gpuFallback).toBe(true);
-    expect(v.modelId).toBe("whisper-small"); expect(v.sourceLang).toBe("en");
+    expect(v.modelId).toBe("whisper-small"); expect(v.sourceLang).toBe("en"); expect(v.targetLang).toBe("ko");
     v = reduce(v, { type: "stopped" });
     expect(v.capturing).toBe(false); expect(v.partial).toBeNull(); expect(v.gpuFallback).toBe(false); expect(v.lagging).toBe(false);
+    expect(v.targetLang).toBeNull();
+  });
+  it("started without a translator leaves the target null", () => {
+    const v = reduce(initialView, { type: "started", gpu_active: false, gpu_fallback: false, model_id: "m", source_lang: null, target_lang: null });
+    expect(v.targetLang).toBeNull();
   });
   it("partial is replaced by final and finals are capped", () => {
     let v = reduce(initialView, { type: "partial", text: "hel", lang: "en", start_ms: 0 });

@@ -31,11 +31,17 @@ describe("pairForOverlay", () => {
 });
 
 describe("overlayLines", () => {
+  it("target mode shows the source once the wait expires", () => {
+    const finals = [f(1, "a", "\u3131"), f(2, "b")];
+    const late = pairForOverlay(finals, "ko", 12_000, 9_000);
+    expect(overlayLines("target", late.source, "", late.translated)).toEqual({ primary: "b", secondary: "" });
+  });
   it("puts the translation first in both mode and only the translation in target mode", () => {
     expect(overlayLines("both", "src", "", "tgt")).toEqual({ primary: "tgt", secondary: "src" });
     expect(overlayLines("both", "src", "par", "")).toEqual({ primary: "src", secondary: "par" });
     expect(overlayLines("target", "src", "par", "tgt")).toEqual({ primary: "tgt", secondary: "" });
-    expect(overlayLines("target", "src", "par")).toEqual({ primary: "", secondary: "" }); // 번역 전엔 비어 있다
+    expect(overlayLines("target", "src", "par")).toEqual({ primary: "src", secondary: "" }); // 번역이 없으면 원문으로 내려간다
+    expect(overlayLines("target", "", "par")).toEqual({ primary: "", secondary: "" });
     expect(overlayLines("source", "src", "par", "tgt")).toEqual({ primary: "src", secondary: "par" });
   });
 });

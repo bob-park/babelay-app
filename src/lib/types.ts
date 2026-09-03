@@ -37,7 +37,7 @@ export type DownloadState = "downloading" | "done" | "error" | "cancelled";
 export interface DownloadEvent { id: string; received: number; total: number; state: DownloadState; message: string | null }
 
 export type EngineEvent =
-  | { type: "started"; gpu_active: boolean; gpu_fallback: boolean; model_id: string; source_lang: string | null }
+  | { type: "started"; gpu_active: boolean; gpu_fallback: boolean; model_id: string; source_lang: string | null; target_lang: string | null }
   | { type: "partial"; text: string; lang: string; start_ms: number }
   | { type: "final"; id: number; text: string; lang: string; start_ms: number; end_ms: number }
   | { type: "translated"; id: number; text: string; lang: string }

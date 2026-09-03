@@ -61,7 +61,7 @@ function startWidthResize(e: ReactPointerEvent<HTMLDivElement>) {
 }
 
 export default function OverlayWindow() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const settings = useSettings((s) => s.settings);
   const view = useSession((s) => s.view);
   const [adjust, setAdjust] = useState(false);
@@ -69,10 +69,8 @@ export default function OverlayWindow() {
   const [, setTick] = useState(0);
   const timer = useRef<number | undefined>(undefined);
 
-  // 번역 타겟 코드. 표시 모드가 원문만이면 번역이 오지 않는다(null). system 은 UI 언어와 같다.
-  const tgt = !settings || settings.overlay.display_mode === "source"
-    ? null
-    : settings.overlay.subtitle_lang === "system" ? i18n.language.split("-")[0] : settings.overlay.subtitle_lang;
+  // 번역 타겟은 백엔드가 Started 로 알려준다(UI 언어로 다시 유추하면 OS 로케일과 어긋난다).
+  const tgt = view.targetLang;
   const now = Date.now();
   const waiting = awaitingTranslation(view.finals, tgt, now, view.lastFinalAt);
 
