@@ -17,7 +17,7 @@ const ALL: Step[] = ["language", "permission", "asr", "llm", "done"];
 export default function Onboarding() {
   const { t } = useTranslation();
   const { settings, update, setError } = useSettings();
-  const { models, enqueue, refresh } = useModels();
+  const { models, enqueue, refresh, queue, dequeue } = useModels();
   const [steps, setSteps] = useState<Step[]>(ALL);
   const [idx, setIdx] = useState(0);
   const [skippedLlm, setSkippedLlm] = useState(false);
@@ -40,6 +40,8 @@ export default function Onboarding() {
   const asr = byId(settings.asr.model_id);
   const llm = byId(settings.translation.local_model);
   const macos = steps.includes("permission");
+  // 이미 설치된 모델을 건너뛰어도 준비된 건 준비된 거다.
+  const llmSkipped = skippedLlm && !llm?.installed;
 
   // 모델 단계의 "다음": 미설치면 뒤에서 받기 시작하고 바로 넘어간다.
   const nextFromModel = (kind: ModelKind) => {
@@ -60,11 +62,14 @@ export default function Onboarding() {
     <button key={v} type="button" className={`btn btn-sm ${settings.general.ui_language === v ? "btn-primary" : "btn-neutral"}`} onClick={() => update({ general: { ui_language: v } })}>{text}</button>
   );
   const pct = (m: typeof asr) => (m?.download ? `${Math.round((m.download.received / Math.max(1, m.download.total)) * 100)}%` : null);
-  const mark = (ok: boolean, progress: string | null) => ok
-    ? <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-content"><Icon name="check" /></span>
-    : progress
-      ? <span className="text-xs tabular-nums text-fg-muted">{progress}</span>
-      : <span className="flex h-6 w-6 items-center justify-center rounded-full bg-error text-error-content"><Icon name="x" /></span>;
+  // 대기열에 있는 모델은 아직 실패가 아니다. ✕ 대신 중립 표시.
+  const mark = (m: typeof asr) => m?.installed
+    ? <span role="img" aria-label={t("permission.granted")} className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-content"><Icon name="check" /></span>
+    : m?.download
+      ? <span className="text-xs tabular-nums text-fg-muted">{pct(m)}</span>
+      : m && queue.includes(m.info.id)
+        ? <span role="img" aria-label={t("permission.unknown")} className="flex h-6 w-6 items-center justify-center rounded-full bg-neutral text-neutral-content"><Icon name="help" /></span>
+        : <span role="img" aria-label={t("permission.denied")} className="flex h-6 w-6 items-center justify-center rounded-full bg-error text-error-content"><Icon name="x" /></span>;
 
   return (
     <div className="flex h-full flex-col gap-4 p-6">
@@ -85,10 +90,10 @@ export default function Onboarding() {
           {step === "llm" && rows("llm")}
           {step === "done" && (
             <SettingGroup>
-              <div className="flex items-center justify-between px-4 py-3 text-sm"><span>{t("onboarding.check.asr")} · {asr?.info.name ?? "—"}</span>{mark(Boolean(asr?.installed), pct(asr))}</div>
+              <div className="flex items-center justify-between px-4 py-3 text-sm"><span>{t("onboarding.check.asr")} · {asr?.info.name ?? "—"}</span>{mark(asr)}</div>
               <div className="flex items-center justify-between px-4 py-3 text-sm">
-                <span>{t("onboarding.check.llm")} · {skippedLlm ? t("onboarding.skipped") : llm?.info.name ?? "—"}</span>
-                {skippedLlm ? <span className="text-xs text-fg-muted">—</span> : mark(Boolean(llm?.installed), pct(llm))}
+                <span>{t("onboarding.check.llm")} · {llmSkipped ? t("onboarding.skipped") : llm?.info.name ?? "—"}</span>
+                {llmSkipped ? <span className="text-xs text-fg-muted">—</span> : mark(llm)}
               </div>
               {macos && <div className="flex items-center justify-between px-4 py-3 text-sm"><span>{t("permission.name")}</span><PermissionIcon perm={perm} /></div>}
             </SettingGroup>
@@ -98,7 +103,7 @@ export default function Onboarding() {
         <div className="flex items-center justify-between">
           <button type="button" className="btn btn-ghost btn-sm" onClick={back} disabled={cur === 0}>{t("onboarding.back")}</button>
           <div className="flex gap-2">
-            {step === "llm" && <button type="button" className="btn btn-outline btn-sm" onClick={() => { setSkippedLlm(true); next(); }}>{t("onboarding.skip")}</button>}
+            {step === "llm" && <button type="button" className="btn btn-outline btn-sm" onClick={() => { if (llm) dequeue(llm.info.id); setSkippedLlm(true); next(); }}>{t("onboarding.skip")}</button>}
             {(step === "language" || step === "permission") && <button type="button" className="btn btn-primary btn-sm" onClick={next}>{t("onboarding.next")}</button>}
             {step === "asr" && <button type="button" className="btn btn-primary btn-sm" disabled={!asr} onClick={() => nextFromModel("asr")}>{t("onboarding.next")}</button>}
             {step === "llm" && <button type="button" className="btn btn-primary btn-sm" disabled={!llm} onClick={() => nextFromModel("llm")}>{t("onboarding.next")}</button>}
