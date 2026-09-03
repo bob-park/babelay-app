@@ -14,8 +14,9 @@ fn main() {
         model_id: "test".into(),
         use_gpu: true,
         source_lang: Some("en".into()),
+        tgt_lang: None,
     };
-    let handle = start_default(cfg, tx).expect("engine start");
+    let handle = start_default(cfg, None, tx).expect("engine start");
     std::thread::spawn(|| {
         std::thread::sleep(Duration::from_millis(500));
         let _ = std::process::Command::new("say")
