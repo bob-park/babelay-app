@@ -23,8 +23,11 @@ export function formatSize(bytes: number): string {
 interface ModelsStore {
   models: ModelStatus[];
   lastEvent: { id: string; state: DownloadState } | null;
+  queue: string[];
   refresh: () => Promise<void>;
   download: (id: string) => Promise<void>;
+  enqueue: (id: string) => Promise<void>;
+  dequeue: (id: string) => void;
   cancel: (id: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
   bind: () => () => void;
@@ -56,6 +59,16 @@ export const useModels = create<ModelsStore>((set, get) => ({
   download: async (id) => {
     try { await api.downloadModel(id); await get().refresh(); } catch (e) { report(e); }
   },
+  queue: [],
+  enqueue: async (id) => {
+    const s = get();
+    if (!s.models.some((m) => m.download)) { await s.download(id); return; }
+    const kindOf = (x: string) => s.models.find((m) => m.info.id === x)?.info.kind;
+    const kind = kindOf(id);
+    // 온보딩에서 마음을 바꾸면 같은 종류의 대기 항목은 새 선택으로 갈아끼운다.
+    set({ queue: [...s.queue.filter((q) => q !== id && kindOf(q) !== kind), id] });
+  },
+  dequeue: (id) => set({ queue: get().queue.filter((q) => q !== id) }),
   cancel: async (id) => {
     try { await api.cancelDownload(id); } catch (e) { report(e); }
   },
@@ -71,7 +84,12 @@ export const useModels = create<ModelsStore>((set, get) => ({
         return;
       }
       if (state === "error" && message) report(message);
-      get().refresh();
+      get().refresh().then(() => {
+        const [next, ...rest] = get().queue;
+        if (!next) return;
+        set({ queue: rest });
+        get().download(next);
+      });
     });
     return () => { p.then((un) => un()); };
   },

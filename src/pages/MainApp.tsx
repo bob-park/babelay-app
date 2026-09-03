@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { HashRouter, Navigate, Route, Routes } from "react-router";
+import { DownloadToast } from "../components/DownloadToast";
 import { ErrorBar } from "../components/ErrorBar";
 import { Sidebar } from "../components/Sidebar";
 import Live from "./main/Live";
@@ -24,6 +25,7 @@ export default function MainApp() {
   return (
     <HashRouter>
       <div className="flex h-full bg-base-100">
+        <DownloadToast />
         <Sidebar collapsed={collapsed} onToggle={toggle} />
         <main className="flex-1 overflow-auto px-6 py-5">
           <ErrorBar />
