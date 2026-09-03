@@ -1,56 +1,99 @@
-import { NavLink } from "react-router";
+import { useRef, useState } from "react";
+import { NavLink, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Icon, type IconName } from "./icons";
+import { useModels } from "../lib/models";
 import { useSession } from "../lib/session";
 import { useSettings } from "../lib/settings";
-import { useModels } from "../lib/models";
+import { api } from "../lib/tauri";
+import type { HwInfo } from "../lib/types";
 
 interface Item { to: string; icon: IconName; label: string }
 
 export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const { t } = useTranslation();
-  const capturing = useSession((s) => s.view.capturing);
+  const navigate = useNavigate();
+  const { view, start, stop } = useSession();
   const modelId = useSettings((s) => s.settings?.asr.model_id);
-  const modelName = useModels((s) => s.models.find((m) => m.info.id === modelId)?.info.name ?? modelId);
+  const asrInstalled = useModels((s) => s.models.some((m) => m.info.id === modelId && m.installed));
+  const [q, setQ] = useState("");
+  const [hw, setHw] = useState<HwInfo | null>(null);
+  const about = useRef<HTMLDialogElement>(null);
 
-  const main: Item[] = [
+  const items: Item[] = [
     { to: "/live", icon: "live", label: t("nav.live") },
     { to: "/history", icon: "history", label: t("nav.history") },
   ];
-  const settings: Item[] = [
-    { to: "/settings/general", icon: "general", label: t("settings.general") },
-    { to: "/settings/models", icon: "models", label: t("settings.models") },
-    { to: "/settings/translation", icon: "translation", label: t("settings.translation") },
-    { to: "/settings/overlay", icon: "overlay", label: t("settings.overlay") },
-  ];
-  const cls = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-2 rounded-full py-2 text-sm ${isActive ? "bg-neutral font-semibold" : "text-fg-muted"} ${collapsed ? "justify-center" : "px-3"}`;
-  const render = (i: Item) => (
-    <NavLink key={i.to} to={i.to} className={cls} aria-label={i.label}>
-      <Icon name={i.icon} />
-      {!collapsed && <span>{i.label}</span>}
-    </NavLink>
-  );
+  // 수동 접힘은 항상 숨긴다. 자동은 800px 미만에서만.
+  const label = collapsed ? "hidden" : "hidden wide:inline";
+  const wide = collapsed ? "" : "wide:w-52";
+  const justify = collapsed ? "" : "wide:justify-start";
+  const navCls = ({ isActive }: { isActive: boolean }) =>
+    `btn btn-sm justify-center gap-2 ${justify} ${isActive ? "btn-neutral" : "btn-ghost text-fg-muted"}`;
+  const openAbout = () => { api.getHwInfo().then(setHw).catch(() => {}); about.current?.showModal(); };
+  const hwLine = hw ? [hw.chip, `${hw.mem_gb} GB`, hw.gpu && `${hw.gpu}${hw.gpu_mem_gb ? ` ${hw.gpu_mem_gb} GB` : ""}`].filter(Boolean).join(" · ") : "";
 
   return (
-    <aside className={`m-2 flex ${collapsed ? "w-14" : "w-52"} shrink-0 flex-col gap-0.5 rounded-box bg-base-200 p-2 shadow-[0_8px_24px_rgba(0,0,0,0.5)] transition-[width]`}>
-      <div className={`mb-2 flex items-center ${collapsed ? "justify-center" : "justify-between"} px-2 pt-1`}>
-        <span className="flex items-center gap-2 font-bold"><span className="h-5 w-5 rounded-md bg-primary" />{!collapsed && t("app.name")}</span>
-        {!collapsed && (
-          <button type="button" onClick={onToggle} aria-label={t("nav.collapse")} className="rounded-full p-1 text-fg-muted hover:bg-base-300"><Icon name="collapse" /></button>
-        )}
+    <aside className={`relative flex w-14 shrink-0 flex-col gap-1 border-r border-base-300 bg-base-200 p-2 ${wide}`}>
+      <div className={`mb-1 flex items-center justify-center gap-2 px-1 pt-1 font-bold ${justify}`}>
+        <span className="h-5 w-5 shrink-0 rounded-md bg-primary" />
+        <span className={label}>{t("app.name")}</span>
       </div>
-      {main.map(render)}
-      {!collapsed && <div className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-fg-muted">{t("nav.settings")}</div>}
-      {collapsed && <div className="my-1 h-px bg-base-300" />}
-      {settings.map(render)}
-      {collapsed && (
-        <button type="button" onClick={onToggle} aria-label={t("nav.expand")} className="mt-2 rounded-full p-2 text-fg-muted hover:bg-base-300"><Icon name="collapse" className="h-4 w-4 rotate-180" /></button>
+      {!collapsed && (
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && q.trim()) { navigate(`/history?q=${encodeURIComponent(q.trim())}`); setQ(""); } }}
+          placeholder={t("nav.search")}
+          aria-label={t("nav.search")}
+          className="input input-sm mb-1 hidden w-full rounded-full wide:block"
+        />
       )}
-      <div className={`mt-auto flex items-center gap-2 rounded-box bg-base-100 px-3 py-2 text-xs text-fg-muted ${collapsed ? "justify-center" : ""}`}>
-        <span className={`h-2 w-2 shrink-0 rounded-full ${capturing ? "bg-primary" : "bg-fg-muted"}`} />
-        {!collapsed && <span className="truncate">{modelName}</span>}
+      {items.map((i) => (
+        <NavLink key={i.to} to={i.to} className={navCls} aria-label={i.label}>
+          <Icon name={i.icon} /><span className={label}>{i.label}</span>
+        </NavLink>
+      ))}
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label={collapsed ? t("nav.expand") : t("nav.collapse")}
+        className="btn btn-circle btn-neutral btn-xs absolute -right-3 top-12 hidden wide:flex"
+      >
+        <Icon name="collapse" className={`h-3 w-3 ${collapsed ? "rotate-180" : ""}`} />
+      </button>
+
+      <div className="mt-auto flex flex-col gap-1">
+        <button
+          type="button"
+          className="btn btn-primary btn-sm btn-block gap-1"
+          disabled={view.stopping || (!view.capturing && !asrInstalled)}
+          title={!view.capturing && !asrInstalled ? t("errors.modelMissing") : undefined}
+          onClick={() => (view.capturing ? stop() : start())}
+        >
+          <span>{view.capturing ? "■" : "●"}</span>
+          <span className={label}>{view.stopping ? t("live.stopping") : view.capturing ? t("live.stop") : t("live.start")}</span>
+        </button>
+        <NavLink to="/settings/general" className={navCls} aria-label={t("nav.settings")}>
+          <Icon name="general" /><span className={label}>{t("nav.settings")}</span>
+        </NavLink>
+        <button type="button" className={`btn btn-ghost btn-sm justify-center gap-2 text-fg-muted ${justify}`} onClick={openAbout} aria-label={t("nav.about")}>
+          <Icon name="info" /><span className={label}>{t("nav.about")}</span>
+        </button>
+        <div className={`text-center text-[10px] text-fg-muted ${label}`}>v{import.meta.env.PACKAGE_VERSION}</div>
       </div>
+
+      <dialog ref={about} className="modal">
+        <div className="modal-box max-w-sm">
+          <h3 className="text-lg font-bold">{t("app.name")}</h3>
+          <div className="mt-2 text-sm"><span className="text-fg-muted">{t("about.version")}</span> {import.meta.env.PACKAGE_VERSION}</div>
+          {hwLine && <div className="text-sm"><span className="text-fg-muted">{t("about.hardware")}</span> {hwLine}</div>}
+          <div className="modal-action">
+            <form method="dialog"><button className="btn btn-sm">{t("common.close")}</button></form>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop"><button aria-label={t("common.close")} /></form>
+      </dialog>
     </aside>
   );
 }

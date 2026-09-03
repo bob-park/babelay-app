@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router";
 import { clock } from "../../lib/session";
 import { useSettings } from "../../lib/settings";
 import { api } from "../../lib/tauri";
@@ -11,7 +12,10 @@ export default function History() {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [sel, setSel] = useState<number | null>(null);
   const [segments, setSegments] = useState<SegmentRow[]>([]);
-  const [q, setQ] = useState("");
+  const [params] = useSearchParams();
+  const [q, setQ] = useState(params.get("q") ?? "");
+  // 사이드바 검색은 ?q= 로 들어온다. 파라미터가 바뀌면 검색어도 따라간다.
+  useEffect(() => { const v = params.get("q"); if (v !== null) setQ(v); }, [params]);
   const [hits, setHits] = useState<SegmentRow[] | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const toastTimer = useRef<number | undefined>(undefined);

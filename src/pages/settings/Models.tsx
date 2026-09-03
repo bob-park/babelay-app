@@ -23,8 +23,7 @@ export default function Models() {
   const select = (id: string) => (kind === "asr" ? update({ asr: { model_id: id } }) : update({ translation: { local_model: id } })).then(() => refresh());
 
   return (
-    <div className="flex max-w-3xl flex-col gap-4">
-      <h2 className="text-2xl font-bold">{t("settings.models")}</h2>
+    <div className="flex flex-col gap-4">
       {hw && (
         <div className="text-xs text-fg-muted">
           {[hw.chip, `${hw.mem_gb} GB`, hw.gpu && `${hw.gpu}${hw.gpu_mem_gb ? ` ${hw.gpu_mem_gb} GB` : ""}`].filter(Boolean).join(" · ")}
@@ -37,7 +36,7 @@ export default function Models() {
         ))}
       </div>
       <SettingGroup>
-        <SettingRow as="div" label={platform === "windows" ? t("models.gpuWin") : t("models.gpuMac")}>
+        <SettingRow label={platform === "windows" ? t("models.gpuWin") : t("models.gpuMac")}>
           <input type="checkbox" role="switch" className="toggle toggle-primary" checked={settings.asr.gpu} onChange={(e) => update({ asr: { gpu: e.target.checked } })} />
         </SettingRow>
       </SettingGroup>

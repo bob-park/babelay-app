@@ -5,10 +5,7 @@ import { ErrorBar } from "../components/ErrorBar";
 import { Sidebar } from "../components/Sidebar";
 import Live from "./main/Live";
 import History from "./main/History";
-import General from "./settings/General";
-import Models from "./settings/Models";
-import Translation from "./settings/Translation";
-import Overlay from "./settings/Overlay";
+import Settings from "./Settings";
 
 const KEY = "babelay.sidebar";
 
@@ -33,11 +30,9 @@ export default function MainApp() {
             <Route path="/" element={<Navigate to="/live" replace />} />
             <Route path="/live" element={<Live />} />
             <Route path="/history" element={<History />} />
-            <Route path="/settings/general" element={<General />} />
-            <Route path="/settings/models" element={<Models />} />
+            <Route path="/settings" element={<Navigate to="/settings/general" replace />} />
             <Route path="/settings/transcription" element={<Navigate to="/settings/models" replace />} />
-            <Route path="/settings/translation" element={<Translation />} />
-            <Route path="/settings/overlay" element={<Overlay />} />
+            <Route path="/settings/:tab" element={<Settings />} />
             <Route path="*" element={<Navigate to="/live" replace />} />
           </Routes>
         </main>

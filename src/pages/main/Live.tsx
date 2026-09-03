@@ -6,7 +6,7 @@ import { useSettings } from "../../lib/settings";
 
 export default function Live() {
   const { t } = useTranslation();
-  const { view, start, stop } = useSession();
+  const { view } = useSession();
   const { settings, update } = useSettings();
   const models = useModels((s) => s.models);
   const end = useRef<HTMLDivElement>(null);
@@ -26,11 +26,9 @@ export default function Live() {
     <div className="flex h-full flex-col gap-3">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">{t("nav.live")}</h2>
-        <div className="flex gap-2">
-          <button type="button" className="btn btn-primary btn-sm" disabled={view.stopping} onClick={() => (view.capturing ? stop() : start())}>
-            {view.stopping ? t("live.stopping") : view.capturing ? `■ ${t("live.stop")}` : `● ${t("live.start")}`}
-          </button>
-          <button type="button" className={`btn btn-sm ${settings.overlay.enabled ? "btn-neutral" : "btn-ghost"}`} onClick={() => update({ overlay: { enabled: !settings.overlay.enabled } })}>{t("live.overlay")}</button>
+        <div className="join">
+          <button type="button" className={`btn btn-sm join-item ${settings.overlay.enabled ? "btn-primary" : "btn-ghost"}`} onClick={() => update({ overlay: { enabled: true } })}>{t("live.overlay")} {t("live.overlayOn")}</button>
+          <button type="button" className={`btn btn-sm join-item ${settings.overlay.enabled ? "btn-ghost" : "btn-primary"}`} onClick={() => update({ overlay: { enabled: false } })}>{t("live.overlayOff")}</button>
         </div>
       </div>
 
