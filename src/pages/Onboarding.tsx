@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { DownloadToast } from "../components/DownloadToast";
 import { ErrorBar } from "../components/ErrorBar";
+import { Icon } from "../components/icons";
 import { ModelRow } from "../components/ModelRow";
-import { formatSize, useModels } from "../lib/models";
+import { PermissionIcon, PermissionRow, type Perm } from "../components/PermissionRow";
+import { SettingGroup } from "../components/SettingGroup";
+import { useModels } from "../lib/models";
 import { api } from "../lib/tauri";
 import { useSettings } from "../lib/settings";
 import type { ModelKind, UiLang } from "../lib/types";
@@ -13,11 +17,12 @@ const ALL: Step[] = ["language", "permission", "asr", "llm", "done"];
 export default function Onboarding() {
   const { t } = useTranslation();
   const { settings, update, setError } = useSettings();
-  const { models, download, refresh, lastEvent } = useModels();
+  const { models, enqueue, refresh } = useModels();
   const [steps, setSteps] = useState<Step[]>(ALL);
   const [idx, setIdx] = useState(0);
-  const [perm, setPerm] = useState<"granted" | "denied" | "unknown" | null>(null);
-  const [waiting, setWaiting] = useState<string | null>(null); // 다운로드 완료를 기다리는 모델 id
+  const [skippedLlm, setSkippedLlm] = useState(false);
+  // 권한 단계가 조회한 값. 완료 단계에서 다시 탭을 만들지 않는다.
+  const [perm, setPerm] = useState<Perm | null>(null);
 
   useEffect(() => {
     api.getPlatform().then((p) => { if (p !== "macos") setSteps((s) => s.filter((x) => x !== "permission")); }).catch(() => {});
@@ -27,78 +32,78 @@ export default function Onboarding() {
   const last = steps.length - 1;
   const cur = Math.min(idx, last);
   const step = steps[cur];
-
-  // 권한 조회는 실제 탭을 만들어 TCC 프롬프트를 띄운다. 그 단계에 왔을 때 딱 한 번만.
-  useEffect(() => {
-    if (step === "permission" && perm === null) api.checkAudioPermission().then(setPerm).catch(() => {});
-  }, [step, perm]);
-
   const next = () => setIdx(Math.min(cur + 1, last));
-  const back = () => { setWaiting(null); setIdx(Math.max(cur - 1, 0)); };
-
-  // 지금 이 단계에서 고른 모델. 다른 모델을 고르거나 다른 단계로 가면 대기 중인 다운로드는 무효다.
-  const chosenId = step === "asr" ? settings?.asr.model_id : step === "llm" ? settings?.translation.local_model : null;
-
-  // 다운로드가 끝나 설치되면 자동으로 다음 단계
-  useEffect(() => {
-    if (waiting && waiting === chosenId && models.find((m) => m.info.id === waiting)?.installed) { setWaiting(null); next(); }
-  }, [models, waiting, chosenId]);
-
-  // 취소·실패로 끝났으면 버튼을 다시 살린다. 안 그러면 영영 disabled.
-  useEffect(() => {
-    if (waiting && lastEvent && lastEvent.id === waiting && lastEvent.state !== "downloading" && lastEvent.state !== "done") setWaiting(null);
-  }, [lastEvent, waiting]);
+  const back = () => setIdx(Math.max(cur - 1, 0));
 
   if (!settings) return null;
+  const byId = (id: string) => models.find((m) => m.info.id === id);
+  const asr = byId(settings.asr.model_id);
+  const llm = byId(settings.translation.local_model);
+  const macos = steps.includes("permission");
 
-  const modelStep = (kind: ModelKind) => {
-    const current = kind === "asr" ? settings.asr.model_id : settings.translation.local_model;
-    const chosen = models.find((m) => m.info.id === current);
-    const select = (id: string) => (kind === "asr" ? update({ asr: { model_id: id } }) : update({ translation: { local_model: id } })).then(() => refresh());
-    const primary = !chosen ? null : chosen.installed
-      ? <button type="button" className="btn btn-primary btn-sm" onClick={next}>{t("models.continue")}</button>
-      : chosen.download
-        ? <button type="button" className="btn btn-primary btn-sm" disabled>{`${Math.round((chosen.download.received / Math.max(1, chosen.download.total)) * 100)}%`}</button>
-        : <button type="button" className="btn btn-primary btn-sm" disabled={waiting === chosen.info.id} onClick={() => { setWaiting(chosen.info.id); download(chosen.info.id); }}>{t("models.continueWith", { size: formatSize(chosen.info.size_bytes) })}</button>;
-    const rows = models
-      .filter((m) => m.info.kind === kind)
-      .map((m) => <ModelRow key={m.info.id} status={m} selected={current === m.info.id} onSelect={() => select(m.info.id)} />);
-    return { rows, primary };
+  // 모델 단계의 "다음": 미설치면 뒤에서 받기 시작하고 바로 넘어간다.
+  const nextFromModel = (kind: ModelKind) => {
+    const chosen = kind === "asr" ? asr : llm;
+    if (chosen && !chosen.installed && !chosen.download) enqueue(chosen.info.id);
+    if (kind === "llm") setSkippedLlm(false);
+    next();
   };
-
-  const asr = step === "asr" ? modelStep("asr") : null;
-  const llm = step === "llm" ? modelStep("llm") : null;
-  const langBtn = (v: UiLang, text: string) => <button key={v} type="button" className={`btn btn-sm ${settings.general.ui_language === v ? "btn-primary" : "btn-neutral"}`} onClick={() => update({ general: { ui_language: v } })}>{text}</button>;
+  const select = (kind: ModelKind, id: string) =>
+    (kind === "asr" ? update({ asr: { model_id: id } }) : update({ translation: { local_model: id } })).then(() => refresh());
+  const rows = (kind: ModelKind) => {
+    const current = kind === "asr" ? settings.asr.model_id : settings.translation.local_model;
+    return models.filter((m) => m.info.kind === kind).map((m) => (
+      <ModelRow key={m.info.id} status={m} selected={current === m.info.id} onSelect={() => select(kind, m.info.id)} />
+    ));
+  };
+  const langBtn = (v: UiLang, text: string) => (
+    <button key={v} type="button" className={`btn btn-sm ${settings.general.ui_language === v ? "btn-primary" : "btn-neutral"}`} onClick={() => update({ general: { ui_language: v } })}>{text}</button>
+  );
+  const pct = (m: typeof asr) => (m?.download ? `${Math.round((m.download.received / Math.max(1, m.download.total)) * 100)}%` : null);
+  const mark = (ok: boolean, progress: string | null) => ok
+    ? <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-content"><Icon name="check" /></span>
+    : progress
+      ? <span className="text-xs tabular-nums text-fg-muted">{progress}</span>
+      : <span className="flex h-6 w-6 items-center justify-center rounded-full bg-error text-error-content"><Icon name="x" /></span>;
 
   return (
     <div className="flex h-full flex-col gap-4 p-6">
-      <div className="flex gap-1.5">{steps.map((s, i) => <span key={s} className={`h-1 flex-1 rounded-full ${i <= cur ? "bg-primary" : "bg-base-300"}`} />)}</div>
+      <DownloadToast />
+      <ul className="steps w-full text-xs">
+        {steps.map((s, i) => (
+          <li key={s} className={`step ${i <= cur ? "step-primary" : ""}`} data-content={i < cur ? "✓" : String(i + 1)}>{t(`onboarding.step.${s}`)}</li>
+        ))}
+      </ul>
       <ErrorBar />
-      <h2 className="text-2xl font-bold">{t(`onboarding.title.${step}`)}</h2>
+      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 overflow-hidden">
+        <h2 className="text-2xl font-bold">{t(`onboarding.title.${step}`)}</h2>
 
-      <div className="flex flex-1 flex-col gap-2 overflow-auto">
-        {step === "language" && <div className="flex flex-wrap gap-2">{langBtn("system", t("general.langSystem"))}{langBtn("ko", "한국어")}{langBtn("en", "English")}{langBtn("ja", "日本語")}</div>}
-        {step === "permission" && (
-          <div className="flex flex-col gap-3">
-            <div className="flex gap-2">
-              <button type="button" className={`btn btn-sm ${perm === "denied" ? "btn-neutral" : "btn-primary"}`} onClick={() => api.checkAudioPermission().then(setPerm).catch(setError)}>{t("onboarding.permissionCheck")}</button>
-              <button type="button" className={`btn btn-sm ${perm === "denied" ? "btn-primary" : "btn-outline"}`} onClick={() => api.openPrivacySettings().catch(setError)}>{t("onboarding.openSettings")}</button>
-            </div>
-            {perm && <p className="text-sm text-fg-muted">{t(`onboarding.permission${perm[0].toUpperCase()}${perm.slice(1)}`)}</p>}
+        <div className="flex flex-1 flex-col gap-2 overflow-auto">
+          {step === "language" && <div className="flex flex-wrap gap-2">{langBtn("system", t("general.langSystem"))}{langBtn("ko", "한국어")}{langBtn("en", "English")}{langBtn("ja", "日本語")}</div>}
+          {step === "permission" && <PermissionRow onStatus={setPerm} />}
+          {step === "asr" && rows("asr")}
+          {step === "llm" && rows("llm")}
+          {step === "done" && (
+            <SettingGroup>
+              <div className="flex items-center justify-between px-4 py-3 text-sm"><span>{t("onboarding.check.asr")} · {asr?.info.name ?? "—"}</span>{mark(Boolean(asr?.installed), pct(asr))}</div>
+              <div className="flex items-center justify-between px-4 py-3 text-sm">
+                <span>{t("onboarding.check.llm")} · {skippedLlm ? t("onboarding.skipped") : llm?.info.name ?? "—"}</span>
+                {skippedLlm ? <span className="text-xs text-fg-muted">—</span> : mark(Boolean(llm?.installed), pct(llm))}
+              </div>
+              {macos && <div className="flex items-center justify-between px-4 py-3 text-sm"><span>{t("permission.name")}</span><PermissionIcon perm={perm} /></div>}
+            </SettingGroup>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between">
+          <button type="button" className="btn btn-ghost btn-sm" onClick={back} disabled={cur === 0}>{t("onboarding.back")}</button>
+          <div className="flex gap-2">
+            {step === "llm" && <button type="button" className="btn btn-outline btn-sm" onClick={() => { setSkippedLlm(true); next(); }}>{t("onboarding.skip")}</button>}
+            {(step === "language" || step === "permission") && <button type="button" className="btn btn-primary btn-sm" onClick={next}>{t("onboarding.next")}</button>}
+            {step === "asr" && <button type="button" className="btn btn-primary btn-sm" disabled={!asr} onClick={() => nextFromModel("asr")}>{t("onboarding.next")}</button>}
+            {step === "llm" && <button type="button" className="btn btn-primary btn-sm" disabled={!llm} onClick={() => nextFromModel("llm")}>{t("onboarding.next")}</button>}
+            {step === "done" && <button type="button" className="btn btn-primary btn-sm" disabled={!asr?.installed} onClick={() => api.finishOnboarding().catch(setError)}>{t("onboarding.finish")}</button>}
           </div>
-        )}
-        {asr?.rows}
-        {llm?.rows}
-      </div>
-
-      <div className="flex items-center justify-between">
-        <button type="button" className="btn btn-ghost btn-sm" onClick={back} disabled={cur === 0}>{t("onboarding.back")}</button>
-        <div className="flex gap-2">
-          {step === "llm" && <button type="button" className="btn btn-outline btn-sm" onClick={next}>{t("onboarding.skip")}</button>}
-          {step === "asr" && asr?.primary}
-          {step === "llm" && llm?.primary}
-          {(step === "language" || step === "permission") && <button type="button" className="btn btn-primary btn-sm" onClick={next}>{t("onboarding.next")}</button>}
-          {step === "done" && <button type="button" className="btn btn-primary btn-sm" onClick={() => api.finishOnboarding().catch(setError)}>{t("onboarding.finish")}</button>}
         </div>
       </div>
     </div>
