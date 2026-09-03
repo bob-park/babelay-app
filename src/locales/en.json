@@ -18,7 +18,7 @@
     "granted": "Granted", "denied": "Denied", "unknown": "Not checked"
   },
   "models": {
-    "desc": { "tiny": "fastest, low accuracy", "base": "fast, short sentences", "small": "balanced speed and accuracy", "medium": "high accuracy", "large_v3_turbo": "high accuracy, strong multilingual", "large_v3": "best accuracy", "gemma3_1b": "fastest, simple sentences", "qwen3_5_2b": "good balance", "gemma3_4b": "better fluency", "qwen3_5_4b": "best quality, strong CJK" },
+    "desc": { "tiny": "fastest, low accuracy", "base": "fast, short sentences", "small": "balanced speed and accuracy", "medium": "high accuracy", "large_v3_turbo": "high accuracy, strong multilingual", "large_v3": "best accuracy", "gemma3_1b": "fastest, simple sentences", "qwen3_5_2b": "good balance", "gemma3_4b": "better fluency", "qwen3_5_4b": "best quality, strong CJK", "qwen3_1_7b": "fast, light translation", "qwen3_4b": "high quality, needs more memory" },
     "badgeInstalled": "installed", "badgeInUse": "in use", "badgeRecommended": "recommended", "notInstalled": "Not installed",
     "asr": "Transcript", "llm": "Translation", "downloading": "downloading", "cancel": "Cancel",
     "speed1": "Very slow", "speed2": "Slow", "speed3": "Medium", "speed4": "Fast", "speed5": "Very fast",

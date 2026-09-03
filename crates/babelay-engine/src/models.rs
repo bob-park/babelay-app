@@ -149,6 +149,28 @@ pub const REGISTRY: &[ModelInfo] = &[
         "Qwen3.5-4B-Q4_K_M.gguf",
         Some("00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4")
     ),
+    m!(
+        "qwen3-1.7b",
+        Llm,
+        "Qwen 3 1.7B",
+        "models.desc.qwen3_1_7b",
+        1_107_409_472,
+        4,
+        "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/main/Qwen3-1.7B-Q4_K_M.gguf",
+        "Qwen3-1.7B-Q4_K_M.gguf",
+        Some("b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897")
+    ),
+    m!(
+        "qwen3-4b",
+        Llm,
+        "Qwen 3 4B",
+        "models.desc.qwen3_4b",
+        2_497_281_312,
+        2,
+        "https://huggingface.co/unsloth/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf",
+        "Qwen3-4B-Q4_K_M.gguf",
+        Some("f6f851777709861056efcdad3af01da38b31223a3ba26e61a4f8bf3a2195813a")
+    ),
 ];
 
 pub fn find(id: &str) -> Option<&'static ModelInfo> {
