@@ -28,22 +28,19 @@ fn send_err(e: reqwest::Error) -> TranslateError {
     }
 }
 
-/// HTTP 상태를 오류로. 5xx 는 `Request("5xx: …")` 로 남겨 `with_retry` 가 재시도 대상으로 본다.
+/// HTTP 상태를 오류로. 상태는 `Http` 에 그대로 담아 `retryable` 이 문자열을 보지 않게 한다.
 pub(crate) fn map_status(status: u16, body: &str) -> TranslateError {
     match status {
         401 | 403 => TranslateError::Auth,
         429 => TranslateError::RateLimited,
-        _ => {
-            let head: String = body.chars().take(200).collect();
-            TranslateError::Request(format!("{status}: {head}"))
-        }
+        _ => TranslateError::Http(status, body.chars().take(200).collect()),
     }
 }
 
 fn retryable(e: &TranslateError) -> bool {
     match e {
         TranslateError::RateLimited | TranslateError::Timeout => true,
-        TranslateError::Request(m) => m.starts_with('5'),
+        TranslateError::Http(status, _) => (500..600).contains(status),
         _ => false,
     }
 }
@@ -109,6 +106,7 @@ impl OpenAiCompatible {
             .json(&json!({
                 "model": self.model,
                 "temperature": 0,
+                "max_tokens": 512,
                 "messages": [
                     {"role": "system", "content": system_prompt(&req.tgt)},
                     {"role": "user", "content": user_prompt(req)},
@@ -203,6 +201,7 @@ impl Gemini {
             .json(&json!({
                 "system_instruction": {"parts": [{"text": system_prompt(&req.tgt)}]},
                 "contents": [{"role": "user", "parts": [{"text": user_prompt(req)}]}],
+                "generationConfig": {"maxOutputTokens": 512},
             }))
             .send()
             .map_err(send_err)?;
@@ -249,12 +248,17 @@ impl DeepL {
     }
 
     fn once(&self, req: &TranslateRequest) -> Result<String, TranslateError> {
-        let mut form = vec![
-            ("text", req.text.clone()),
-            ("target_lang", req.tgt.to_ascii_uppercase()),
-        ];
+        // DeepL 은 타겟으로 맨 EN 을 더 이상 권하지 않는다(EN-US / EN-GB).
+        let tgt = match req.tgt.as_str() {
+            "en" => "EN-US".to_string(),
+            other => other.to_ascii_uppercase(),
+        };
+        let mut form = vec![("text", req.text.clone()), ("target_lang", tgt)];
         if matches!(req.src.as_str(), "ko" | "en" | "ja") {
             form.push(("source_lang", req.src.to_ascii_uppercase()));
+        }
+        if !req.context.is_empty() {
+            form.push(("context", req.context.join(" ")));
         }
         let resp = http()
             .post(format!(
@@ -328,7 +332,8 @@ mod tests {
             w.method(POST)
                 .path("/v1/chat/completions")
                 .header("authorization", "Bearer k")
-                .body_contains("Korean");
+                .body_contains("Korean")
+                .body_contains("\"max_tokens\":512");
             t.status(200)
                 .json_body(json!({"choices":[{"message":{"content":"안녕"}}]}));
         });
@@ -449,7 +454,8 @@ mod tests {
             w.method(POST)
                 .path("/v1beta/models/gemini-2.5-flash:generateContent")
                 .query_param("key", "k")
-                .body_contains("Korean");
+                .body_contains("Korean")
+                .body_contains("\"maxOutputTokens\":512");
             t.status(200).json_body(
                 json!({"candidates":[{"content":{"parts":[{"text":"안녕"}],"role":"model"}}]}),
             );
@@ -511,7 +517,8 @@ mod tests {
                 .path("/v2/translate")
                 .header("authorization", "DeepL-Auth-Key k:fx")
                 .body_contains("target_lang=KO")
-                .body_contains("source_lang=EN");
+                .body_contains("source_lang=EN")
+                .body_contains("context=Prev");
             t.status(200).json_body(
                 json!({"translations":[{"detected_source_language":"EN","text":"안녕"}]}),
             );
@@ -520,7 +527,11 @@ mod tests {
             base_url: s.url(""),
             api_key: "k:fx".into(),
         };
-        assert_eq!(c.translate(&req("Hello", "en", "ko")).unwrap(), "안녕");
+        let with_context = TranslateRequest {
+            context: vec!["Prev one".into(), "Prev two".into()],
+            ..req("Hello", "en", "ko")
+        };
+        assert_eq!(c.translate(&with_context).unwrap(), "안녕");
         m.assert();
     }
 
@@ -558,6 +569,24 @@ mod tests {
             Err(TranslateError::Auth)
         ));
         assert_eq!(m.hits(), 1);
+    }
+
+    #[test]
+    fn deepl_uses_en_us_for_english_targets() {
+        let s = MockServer::start();
+        let m = s.mock(|w, t| {
+            w.method(POST)
+                .path("/v2/translate")
+                .body_contains("target_lang=EN-US");
+            t.status(200)
+                .json_body(json!({"translations":[{"text":"Hi"}]}));
+        });
+        let mut c = DeepL {
+            base_url: s.url(""),
+            api_key: "k".into(),
+        };
+        assert_eq!(c.translate(&req("안녕", "ko", "en")).unwrap(), "Hi");
+        m.assert();
     }
 
     #[test]

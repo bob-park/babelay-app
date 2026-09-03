@@ -21,6 +21,9 @@ pub enum TranslateError {
     Load(String),
     #[error("request: {0}")]
     Request(String),
+    /// HTTP 상태가 있는 실패. 재시도 판단(5xx)이 문자열이 아니라 상태를 본다.
+    #[error("http {0}: {1}")]
+    Http(u16, String),
     #[error("rate limited")]
     RateLimited,
     #[error("auth")]
@@ -37,7 +40,8 @@ pub trait Translator: Send {
     fn name(&self) -> &str;
 }
 
-/// 모델 출력 정리: `<think>…</think>` 제거, 앞뒤 따옴표·공백 제거, 줄바꿈과 연속 공백은 한 칸으로.
+/// 모델 출력 정리: `<think>…</think>` 제거, 앞뒤 따옴표·공백 제거, 줄바꿈과 연속 공백은 한 칸으로,
+/// 끝에 남은 `/no_think` 제거.
 pub fn postprocess(raw: &str) -> String {
     let mut s = raw.to_string();
     while let Some(open) = s.find("<think>") {
@@ -52,7 +56,13 @@ pub fn postprocess(raw: &str) -> String {
             '"' | '“' | '”' | '「' | '」' | '\'' | ' ' | '\n' | '\r' | '\t'
         )
     });
-    trimmed.split_whitespace().collect::<Vec<_>>().join(" ")
+    let joined = trimmed.split_whitespace().collect::<Vec<_>>().join(" ");
+    // 채팅 템플릿이 소비하지 않은 Qwen3 스위치가 답변에 섞여 나오는 일이 있다.
+    joined
+        .strip_suffix("/no_think")
+        .unwrap_or(&joined)
+        .trim_end()
+        .to_string()
 }
 
 #[cfg(test)]
@@ -97,5 +107,6 @@ mod tests {
         assert_eq!(postprocess("첫 줄\n둘째 줄"), "첫 줄 둘째 줄");
         assert_eq!(postprocess("   "), "");
         assert_eq!(postprocess("<think>unterminated"), "");
+        assert_eq!(postprocess("안녕하세요 /no_think"), "안녕하세요");
     }
 }
