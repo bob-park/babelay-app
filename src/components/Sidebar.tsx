@@ -30,7 +30,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
   const justify = collapsed ? "" : "wide:justify-start";
   const navCls = ({ isActive }: { isActive: boolean }) =>
     `btn btn-sm justify-center gap-2 ${justify} ${isActive ? "btn-neutral" : "btn-ghost text-fg-muted"}`;
-  const openAbout = () => { api.getHwInfo().then(setHw).catch(() => {}); about.current?.showModal(); };
+  const openAbout = () => { if (!hw) api.getHwInfo().then(setHw).catch(() => {}); about.current?.showModal(); };
   const hwLine = hw ? [hw.chip, `${hw.mem_gb} GB`, hw.gpu && `${hw.gpu}${hw.gpu_mem_gb ? ` ${hw.gpu_mem_gb} GB` : ""}`].filter(Boolean).join(" · ") : "";
 
   return (
@@ -69,9 +69,10 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
           className="btn btn-primary btn-sm btn-block gap-1"
           disabled={view.stopping || (!view.capturing && !asrInstalled)}
           title={!view.capturing && !asrInstalled ? t("errors.modelMissing") : undefined}
+          aria-label={view.stopping ? t("live.stopping") : view.capturing ? t("live.stop") : t("live.start")}
           onClick={() => (view.capturing ? stop() : start())}
         >
-          <span>{view.capturing ? "■" : "●"}</span>
+          <span aria-hidden="true">{view.capturing ? "■" : "●"}</span>
           <span className={label}>{view.stopping ? t("live.stopping") : view.capturing ? t("live.stop") : t("live.start")}</span>
         </button>
         <NavLink to="/settings/general" className={navCls} aria-label={t("nav.settings")}>

@@ -26,7 +26,7 @@ export default function OverlaySettings() {
   const toggleAdjust = () => { const next = !adjust; setAdjust(next); api.overlaySetAdjustMode(next).catch((e) => { setAdjust(!next); setError(e); }); };
 
   return (
-    <div className="flex max-w-xl flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <span className="text-sm text-fg-muted">{t("overlay.preview")}</span>
         <button type="button" className={`btn btn-sm ${adjust ? "btn-primary" : "btn-neutral"}`} onClick={toggleAdjust}>{adjust ? t("overlay.adjustDone") : t("overlay.adjust")}</button>
