@@ -210,11 +210,25 @@ pub fn cancel(app: &AppHandle, id: &str) -> Result<(), String> {
     }
 }
 
+/// 삭제한 모델이 선택돼 있으면 선택을 비운다. 바뀌었으면 true.
+pub fn clear_selection(settings: &mut Settings, id: &str) -> bool {
+    let mut changed = false;
+    if settings.asr.model_id == id {
+        settings.asr.model_id.clear();
+        changed = true;
+    }
+    if settings.translation.local_model == id {
+        settings.translation.local_model.clear();
+        changed = true;
+    }
+    changed
+}
+
 pub fn delete(app: &AppHandle, id: &str) -> Result<(), String> {
     let m = find(id).ok_or("unknown model")?;
-    let settings = app.state::<SettingsState>().get();
-    if in_use(&settings, m) {
-        return Err("in_use".into());
+    // 캡처 중에는 파일을 읽고 있다. 어느 모델이든 거부한다.
+    if crate::session::is_capturing(app) {
+        return Err("capturing".into());
     }
     if lock(&app.state::<Downloads>())
         .as_ref()
@@ -229,6 +243,11 @@ pub fn delete(app: &AppHandle, id: &str) -> Result<(), String> {
         if p.exists() {
             std::fs::remove_file(&p).map_err(|e| e.to_string())?;
         }
+    }
+    let state = app.state::<SettingsState>();
+    let mut s = state.get();
+    if clear_selection(&mut s, id) {
+        state.set(app, s)?;
     }
     Ok(())
 }
@@ -253,5 +272,16 @@ mod tests {
         s.translation.local_model = "qwen3.5-2b".into();
         assert!(!in_use(&s, find("large-v3").unwrap()));
         assert!(!in_use(&s, find("gemma3-4b").unwrap()));
+    }
+
+    #[test]
+    fn clear_selection_empties_only_the_deleted_model() {
+        let mut s = Settings::default();
+        s.asr.model_id = "small".into();
+        s.translation.local_model = "qwen3.5-2b".into();
+        assert!(clear_selection(&mut s, "small"));
+        assert_eq!(s.asr.model_id, "");
+        assert_eq!(s.translation.local_model, "qwen3.5-2b");
+        assert!(!clear_selection(&mut s, "large-v3"));
     }
 }

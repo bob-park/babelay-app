@@ -36,7 +36,7 @@ pub fn show_onboarding(app: &AppHandle) -> Result<(), String> {
     WebviewWindowBuilder::new(app, ONBOARDING, WebviewUrl::App("/".into()))
         .title("Babelay")
         .inner_size(720.0, 560.0)
-        .resizable(false)
+        .min_inner_size(640.0, 480.0)
         .build()
         .map(|_| ())
         .map_err(|e| e.to_string())
