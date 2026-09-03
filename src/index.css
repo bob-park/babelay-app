@@ -1,32 +1,42 @@
 @import "tailwindcss";
 @source not "../docs";
-@custom-variant dark (&:where(.dark, .dark *));
+@plugin "daisyui" { themes: false; exclude: rootcolor; }
+@plugin "daisyui/theme" {
+  name: "babelay"; default: true; color-scheme: dark;
+  --color-base-100: #121212; --color-base-200: #181818; --color-base-300: #1f1f1f; --color-base-content: #ffffff;
+  --color-neutral: #252525; --color-neutral-content: #ffffff;
+  --color-primary: #1ed760; --color-primary-content: #000000;
+  --color-secondary: #252525; --color-secondary-content: #ffffff;
+  --color-accent: #1ed760; --color-accent-content: #000000;
+  --color-info: #539df5; --color-info-content: #000000;
+  --color-success: #1ed760; --color-success-content: #000000;
+  --color-warning: #ffa42b; --color-warning-content: #000000;
+  --color-error: #f3727f; --color-error-content: #000000;
+  --radius-box: 12px; --radius-field: 9999px; --radius-selector: 9999px;
+  --size-field: 0.25rem; --size-selector: 0.25rem; --border: 1px; --depth: 0; --noise: 0;
+}
+@plugin "daisyui/theme" {
+  name: "babelay-light"; color-scheme: light;
+  --color-base-100: #ffffff; --color-base-200: #f5f5f5; --color-base-300: #eeeeee; --color-base-content: #121212;
+  --color-neutral: #e4e4e4; --color-neutral-content: #121212;
+  --color-primary: #1ed760; --color-primary-content: #000000;
+  --color-secondary: #e4e4e4; --color-secondary-content: #121212;
+  --color-accent: #1ed760; --color-accent-content: #000000;
+  --color-info: #539df5; --color-info-content: #000000;
+  --color-success: #1ed760; --color-success-content: #000000;
+  --color-warning: #ffa42b; --color-warning-content: #000000;
+  --color-error: #d33a4a; --color-error-content: #ffffff;
+  --radius-box: 12px; --radius-field: 9999px; --radius-selector: 9999px;
+  --size-field: 0.25rem; --size-selector: 0.25rem; --border: 1px; --depth: 0; --noise: 0;
+}
 
 @theme {
-  --color-base: #ffffff;
-  --color-base-2: #f5f5f5;
-  --color-surface: #eeeeee;
-  --color-surface-2: #e4e4e4;
-  --color-fg: #121212;
-  --color-fg-muted: #6a6a6a;
-  --color-accent: #1ed760;
-  --color-accent-fg: #000000;
-  --color-danger: #d33a4a;
-  --radius-card: 12px;
-  --radius-panel: 14px;
+  --color-fg-muted: #8a8a8a;
+  --breakpoint-wide: 800px;
   --font-sans: -apple-system, "Helvetica Neue", Arial, "Hiragino Sans", "Apple SD Gothic Neo", "Meiryo", sans-serif;
 }
-
-.dark {
-  --color-base: #121212;
-  --color-base-2: #181818;
-  --color-surface: #1f1f1f;
-  --color-surface-2: #252525;
-  --color-fg: #ffffff;
-  --color-fg-muted: #8a8a8a;
-  --color-danger: #f3727f;
-}
+[data-theme="babelay-light"] { --color-fg-muted: #6a6a6a; }
 
 html, body, #root { height: 100%; margin: 0; }
-body { color: var(--color-fg); font-family: var(--font-sans); font-size: 14px; }
-body:not(.overlay) { background: var(--color-base); }
+body { color: var(--color-base-content); font-family: var(--font-sans); font-size: 14px; }
+body:not(.overlay) { background: var(--color-base-100); }

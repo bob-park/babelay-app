@@ -12,7 +12,7 @@ let currentPref: Theme = "system";
 
 function apply() {
   const dark = resolveTheme(currentPref, mq?.matches ?? false) === "dark";
-  document.documentElement.classList.toggle("dark", dark);
+  document.documentElement.dataset.theme = dark ? "babelay" : "babelay-light";
 }
 
 export function applyTheme(pref: Theme) {

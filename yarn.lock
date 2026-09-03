@@ -1712,6 +1712,7 @@ __metadata:
     "@types/react": "npm:^19.1.8"
     "@types/react-dom": "npm:^19.1.6"
     "@vitejs/plugin-react": "npm:^4.6.0"
+    daisyui: "npm:^5.7"
     i18next: "npm:^26"
     jsdom: "npm:^30.0.1"
     react: "npm:^19.1.0"
@@ -1809,6 +1810,13 @@ __metadata:
   version: 3.2.3
   resolution: "csstype@npm:3.2.3"
   checksum: 10c0/cd29c51e70fa822f1cecd8641a1445bed7063697469d35633b516e60fe8c1bde04b08f6c5b6022136bb669b64c63d4173af54864510fbb4ee23281801841a3ce
+  languageName: node
+  linkType: hard
+
+"daisyui@npm:^5.7":
+  version: 5.7.27
+  resolution: "daisyui@npm:5.7.27"
+  checksum: 10c0/d7d2f859a19f24c196d3e4f0fa5fe35e5948d6b42a21c17ab8e65c1c8877b9aca18b4833f5e5bd736b2304b83fbb1f103e38b667910ed807cef871650653c74c
   languageName: node
   linkType: hard
 
