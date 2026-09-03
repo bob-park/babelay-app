@@ -100,13 +100,15 @@ babelay-app/
 ### 4.3 로컬 번역
 
 - `llama-cpp-2`(`default-features = false, features = ["common"]`; `openmp`는 macOS clang 빌드를 깨뜨려 끈다), 같은 feature 규칙. GPU 토글은 `n_gpu_layers`를 1000 또는 0으로 바꾸고, GPU 로드가 실패하면 0으로 한 번 더 시도한다(폴백은 stderr 로그).
-- 모델은 세션 시작 시 세션 스레드에서 로드하고(`translator::build`), 세션이 끝나면 해제한다. 시작 전 동기 검사(`precheck`)는 파일 존재만 본다.
+- 모델은 첫 번역 시점에 로드하고, 모델이 바뀌기 전까지 세션 종료 후에도 유지한다. 프로세스 전역 캐시(`src-tauri/src/llm.rs`, `LlmCache = Arc<Mutex<Option<{path, gpu, LocalLlm}>>>`, `app.manage`)에 최대 하나를 담고, `translator::build`는 로드 없이 `SharedLlm{cache, path, gpu}`만 만들어 돌려준다 — 그래서 캡처는 GGUF 로드를 기다리지 않고 즉시 시작하고, stop→start 나 연결 테스트는 같은 모델을 다시 읽지 않는다. 경로나 GPU 토글이 다르면 첫 번역에서 갈아 끼운다. 모델 삭제는 파일을 지우기 전에 캐시를 비운다(`llm::evict`; Windows 는 mmap 된 파일을 못 지운다). 시작 전 동기 검사(`precheck`)는 키·파일 존재만 본다.
 - 요청마다 새 컨텍스트(`n_ctx` = 입력 + 최대 생성 + 8, 512~4096), 스레드 수 = min(코어, 8). 프롬프트는 모델 채팅 템플릿으로 system("You are a subtitle translator… Output only the translation, one line") + user(직전 원문 2줄 컨텍스트 + 번역 대상)를 렌더하고, 템플릿이 없으면 ChatML. Qwen3 계열(파일명 판별)은 유저 메시지 끝에 ` /no_think`. 샘플러 greedy, 최대 토큰 = max(32, 입력 토큰 × 3), EOG에서 중단.
 - 출력 후처리(`postprocess`, 클라우드와 공용): `<think>…</think>` 제거, 앞뒤 따옴표·공백 제거, 줄바꿈→공백. 빈 결과는 `Empty` 오류.
 
 ### 4.4 스레드와 백프레셔
 
-오디오 콜백 → 청커 스레드 → 전사 스레드 → 번역 스레드(로컬·클라우드 모두 동기 `Translator`, `sync_channel(16)`으로 배압). 전사 스레드는 `Final`을 낸 직후 `(id, 원문, 원어)`를 번역 큐에 넣고, 번역 스레드가 `Translated{id, text, lang}`을 낸다. 원어 == 타겟이면 건너뛴다(이벤트 없음). 번역 실패는 `Error{code:"translate"}`를 연속 실패 중 30초에 한 번만 발행하고 원문은 그대로 남는다. 번역 스레드가 있으면 `Stopped`는 번역 스레드가(큐가 닫힌 뒤) 보낸다. 프레임 채널은 unbounded라 과부하에서도 프레임을 버리지 않는다. 전사가 밀리면 `Partial` 실행은 건너뛰고 `Final` 조각은 버리지 않는다. 큐에 오래 머문 조각이 기준을 넘으면 `Lagging`을 한 번 발행하고 회복되면 해제한다 — 경고일 뿐 부하를 덜지는 않는다(load shedding 없음).
+오디오 콜백 → 청커 스레드 → 전사 스레드 → 번역 스레드(로컬·클라우드 모두 동기 `Translator`, `sync_channel(16)`). 전사 스레드는 `Final`을 **먼저** 낸 뒤 `(id, 원문, 원어)`를 번역 큐에 `try_send` 한다 — 큐가 차면 그 조각은 버린다(원문만 보이고 전사는 계속 흐른다). 번역 큐는 절대 전사를 막지 않는다. 번역 스레드가 `Translated{id, text, lang}`을 낸다. 원어 == 타겟이면 건너뛴다(이벤트 없음). 번역 실패는 `Error{code:"translate"}`를 연속 실패 중 30초에 한 번만 발행하고 원문은 그대로 남는다. 번역 스레드가 있으면 `Stopped`는 번역 스레드가(큐가 닫힌 뒤) 보낸다. 프레임 채널은 unbounded라 과부하에서도 프레임을 버리지 않는다. 전사가 밀리면 `Partial` 실행은 건너뛰고 `Final` 조각은 버리지 않는다. 큐에 오래 머문 조각이 기준을 넘으면 `Lagging`을 한 번 발행하고 회복되면 해제한다 — 경고일 뿐 부하를 덜지는 않는다(load shedding 없음).
+
+정지(`stop_capture`)는 대기 중인 번역을 포기한다(`AtomicBool` 플래그, 번역 루프가 조각마다 확인하고 번역 없이 큐를 비운다) — 세션이 끝난 뒤의 번역은 쓸 데가 없고, 재시도 예산 때문에 정지가 몇 분씩 걸리면 안 된다. 전사 드레인은 그대로 기다린다.
 
 전사 루프는 패닉에 안전하다. `catch_unwind`로 감싸 whisper 쪽이 패닉해도 세션은 `Error{code:"panic"}`을 발행하고 정상적으로 멈춘다.
 
@@ -172,25 +174,25 @@ pub trait Translator: Send {
     fn name(&self) -> &str;
 }
 pub struct TranslateRequest { text: String, src: String, tgt: String, context: Vec<String> }
-pub enum TranslateError { Load(String), Request(String), RateLimited, Auth, Timeout, Empty }
+pub enum TranslateError { Load(String), Request(String), Http(u16, String), RateLimited, Auth, Timeout, Empty }
 ```
 
 동기 트레이트다(번역 워커 스레드에서 실행). 구현체(`crates/babelay-engine/src/translate/`): `local::LocalLlm`, `cloud::{OpenAiCompatible, Anthropic, Gemini, DeepL}`. Custom은 `OpenAiCompatible`에 사용자 `base_url`.
 
 | 어댑터 | 엔드포인트 | 인증 | 응답 경로 |
 |---|---|---|---|
-| OpenAiCompatible | `POST {base_url}/chat/completions` (기본 `https://api.openai.com/v1`) | `Authorization: Bearer` | `choices[0].message.content` |
+| OpenAiCompatible | `POST {base_url}/chat/completions` (기본 `https://api.openai.com/v1`, `max_tokens` 512) | `Authorization: Bearer` | `choices[0].message.content` |
 | Anthropic | `POST {base_url}/v1/messages` (`max_tokens` 512) | `x-api-key`, `anthropic-version: 2023-06-01` | `content[0].text` |
-| Gemini | `POST {base_url}/v1beta/models/{model}:generateContent?key=` | 쿼리 `key` | `candidates[0].content.parts[0].text` |
-| DeepL | `POST {base_url}/v2/translate` (form: `text`, `target_lang`, `source_lang` 대문자) | `Authorization: DeepL-Auth-Key` | `translations[0].text` |
+| Gemini | `POST {base_url}/v1beta/models/{model}:generateContent?key=` (`generationConfig.maxOutputTokens` 512) | 쿼리 `key` | `candidates[0].content.parts[0].text` |
+| DeepL | `POST {base_url}/v2/translate` (form: `text`, `target_lang` 대문자·영어는 `EN-US`, `source_lang`, 비어 있지 않으면 `context`) | `Authorization: DeepL-Auth-Key` | `translations[0].text` |
 
 DeepL은 키가 `:fx`로 끝나면 `api-free.deepl.com`, 아니면 `api.deepl.com`. 채팅형 셋은 `system_prompt`/`user_prompt`를 공유하고 응답은 `postprocess`를 거친다. 모델명이 비면 기본값(`gpt-4o-mini` / `claude-haiku-4-5-20251001` / `gemini-2.5-flash`).
 
-- HTTP 타임아웃 10초. `with_retry`: 429 / 5xx / 타임아웃이면 200ms, 600ms 뒤 최대 2회 재시도; 401·403(`Auth`)과 그 외는 즉시 실패.
+- HTTP 타임아웃 10초. `with_retry`: 429(`RateLimited`) / 5xx(`Http(5xx, _)`) / 타임아웃이면 200ms, 600ms 뒤 최대 2회 재시도; 401·403(`Auth`)과 그 외는 즉시 실패. 재시도 판단은 상태 코드를 보고 메시지 문자열을 보지 않는다.
 - API 키는 `keyring` 크레이트로 OS 자격 증명 저장소에 저장한다(service `com.babelay.app`, user = 프로바이더 `openai|anthropic|gemini|deepl|custom`). 설정 파일에는 넣지 않는다. 커맨드 `set_api_key`(빈 키는 삭제) / `has_api_key` / `delete_api_key`. 화면은 "저장됨 ●●●●" 상태만 보여준다.
 - "연결 테스트"(`test_translation`, 상한 20초)는 설정 그대로 번역기를 조립해 "Good morning."을 한 번 번역하고 `{ok, ms, text, error}`를 돌려준다. 실패 코드: `translation_model_missing` / `api_key_missing` / `base_url_missing` / `display_mode_source` / `translate` / `timeout`.
-- 세션 시작의 동기 검사도 같은 코드를 쓴다(`translator::precheck`): 키·모델 존재만 확인하고 로드는 세션 스레드에서 한다.
-- 조각 하나당 요청 하나. 직전에 확정된 원문 2문장을 `context`로 함께 보낸다. 로컬 LLM도 같은 형식.
+- 세션 시작의 동기 검사도 같은 코드를 쓴다(`translator::precheck`): 키·모델 존재만 확인한다. 로컬 모델 로드는 첫 번역에서 일어나고 캐시를 세션과 공유한다(§4.3) — 그래서 두 번째 연결 테스트는 로드 없이 끝난다.
+- 조각 하나당 요청 하나. 직전에 확정된 원문 2문장을 `context`로 함께 보낸다(채팅형 셋은 유저 프롬프트에, DeepL은 form 필드 `context`에). 로컬 LLM도 같은 형식.
 - 세션당 번역은 한 번에 하나만 진행하고 순서를 보존한다.
 - 자동 감지 시 원어는 Whisper가 조각마다 돌려주는 언어 코드를 쓴다.
 
@@ -221,7 +223,7 @@ react-i18next, `src/locales/{ko,en,ja}.json`. "시스템 기본"은 프론트에
 
 ### 7.4 오버레이 창
 
-조정 모드에서만 클릭 통과를 끄고 드래그 영역과 모서리 리사이즈 핸들을 보여준다. 위치는 `{monitor_id, x_ratio, y_ratio, w_ratio}`로 저장해 해상도가 바뀌어도 비율로 복원한다. 다른 모니터로 드래그하면 위치 확정 시 백엔드가 현재 모니터를 읽어 `monitor_id`를 갱신하므로 별도의 모니터 선택 UI는 없다. 최신 `Final`+번역 한 쌍과 그 아래 `Partial`을 흐리게 보여주고, 무음 6초 후 페이드아웃한다. 원문과 번역은 한 세트로 동시에 나타난다(`pairForOverlay`, 3단계 구현 완료): 마지막 `Final`에 번역이 붙어 있으면 그 세트를, 아직 없으면 직전 세트를 최대 3초 유지하고, 그 뒤엔 원문만 그린다. 번역이 올 수 없는 경우(표시 모드 원문만, 원어 == 타겟)는 기다리지 않는다. 대기 중에만 100ms 타이머로 다시 그린다. 표시 모드에 따라 원문 줄 또는 번역 줄을 숨긴다(`overlayLines`).
+조정 모드에서만 클릭 통과를 끄고 드래그 영역과 모서리 리사이즈 핸들을 보여준다. 위치는 `{monitor_id, x_ratio, y_ratio, w_ratio}`로 저장해 해상도가 바뀌어도 비율로 복원한다. 다른 모니터로 드래그하면 위치 확정 시 백엔드가 현재 모니터를 읽어 `monitor_id`를 갱신하므로 별도의 모니터 선택 UI는 없다. 자막 상자는 항상 두 줄까지다(`overlayLines`). 번역이 붙어 있으면 `both`는 번역(큰 줄) + 원문(작은 줄)이고, 번역이 없으면 원문(큰 줄) + `Partial`(작은 줄, 흐리게)이다 — 번역된 한 쌍이 두 줄을 다 쓰므로 그때 `Partial` 줄은 나오지 않는다. `source`는 언제나 원문 + `Partial`, `target`은 번역 한 줄이고 번역이 없으면(대기 만료·실패) 원문으로 내려간다. 무음 6초 후 페이드아웃한다. 원문과 번역은 한 세트로 동시에 나타난다(`pairForOverlay`, 3단계 구현 완료): 마지막 `Final`에 번역이 붙어 있으면 그 세트를, 아직 없으면 직전 세트를 최대 3초 유지하고, 그 뒤엔 원문만 그린다. 번역 타겟은 `Started{target_lang}`이 알려준다(프론트가 UI 언어로 다시 유추하지 않는다). 번역이 올 수 없는 경우(`target_lang` 없음, 원어 == 타겟)는 기다리지 않는다. 대기 중에만 100ms 타이머로 다시 그린다.
 
 ### 7.5 온보딩
 
@@ -295,7 +297,7 @@ NSIS 인스톨러, 서명 없음. cudart/cublas/cublasLt DLL을 `bundle.resource
 2. **전사 엔진**: 오디오 캡처(mac/win), 청커, whisper, 사양 기반 balanced, GPU 토글, 라이브 페이지, SQLite·히스토리 — 완료(2026-09-03), 런타임 캡처 검증은 coreaudiod 재시작 후 보류
    - Windows 캡처는 캡처 모듈만 크로스 타깃 `cargo check`로 확인했다(워크스페이스 전체 check는 `ring`이 막는다). 런타임 검증은 Windows 머신에서.
 2.5. **UI 리디자인 + 백그라운드 온보딩 + 오버레이 수정**: 스펙 docs/superpowers/specs/2026-09-03-phase2.5-ui-onboarding-design.md — 완료(2026-09-03)
-3. **번역**: 로컬 llama, 클라우드 어댑터 4종(Custom은 OpenAI 호환 공용), keyring, 설정 > 번역(키 저장·연결 테스트), 오버레이 한 세트 규칙, 히스토리 번역 저장·검색·내보내기 — 완료(2026-09-03). 백로그: 장치 변경 감지(§4.1), 로컬 LLM GPU 폴백의 UI 표시.
+3. **번역**: 로컬 llama, 클라우드 어댑터 4종(Custom은 OpenAI 호환 공용), keyring, 설정 > 번역(키 저장·연결 테스트), 오버레이 한 세트 규칙, 히스토리 번역 저장·검색·내보내기 — 완료(2026-09-03). 백로그: 장치 변경 감지(§4.1), 로컬 LLM GPU 폴백의 UI 표시 — 로드가 첫 번역으로 미뤄져(§4.3) 세션 시작 시점에는 폴백 여부를 알 수 없다. 알리려면 `Translated`/`Status` 계열 이벤트로 나중에 실어 보내야 한다(지금은 stderr 로그만).
 
 ## 12. 범위 밖 (1차)
 
