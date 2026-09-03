@@ -50,6 +50,9 @@ export const report = (e: unknown) => {
   useSettings.getState().setError(key ? i18next.t(key) : e);
 };
 
+// 모듈 스코프. download() 를 부른 뒤 첫 진행 이벤트가 오기 전까지의 창을 막는다.
+let starting: string | null = null;
+
 export const useModels = create<ModelsStore>((set, get) => ({
   models: [],
   lastEvent: null,
@@ -62,7 +65,13 @@ export const useModels = create<ModelsStore>((set, get) => ({
   queue: [],
   enqueue: async (id) => {
     const s = get();
-    if (!s.models.some((m) => m.download)) { await s.download(id); return; }
+    const activeId = starting ?? s.models.find((m) => m.download)?.info.id ?? null;
+    if (activeId === id) return;                 // 이미 받는 중이면 무시
+    if (!activeId) {
+      starting = id;
+      try { await s.download(id); } finally { starting = null; }
+      return;
+    }
     const kindOf = (x: string) => s.models.find((m) => m.info.id === x)?.info.kind;
     const kind = kindOf(id);
     // 온보딩에서 마음을 바꾸면 같은 종류의 대기 항목은 새 선택으로 갈아끼운다.

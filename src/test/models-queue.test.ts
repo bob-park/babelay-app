@@ -56,4 +56,22 @@ describe("download queue", () => {
     useModels.getState().dequeue("qwen");
     expect(useModels.getState().queue).toEqual(["gemma"]);
   });
+
+  it("two un-awaited enqueues start one download and queue the other", async () => {
+    let resolveDl: () => void = () => {};
+    h.api.downloadModel.mockImplementationOnce(() => new Promise<void>((r) => { resolveDl = r; }));
+    const p1 = useModels.getState().enqueue("small");
+    const p2 = useModels.getState().enqueue("qwen");
+    expect(h.api.downloadModel).toHaveBeenCalledTimes(1);
+    expect(useModels.getState().queue).toEqual(["qwen"]);
+    resolveDl();
+    await Promise.all([p1, p2]);
+  });
+
+  it("enqueue of the active model is a no-op", async () => {
+    useModels.setState({ models: [model("small", "asr", { received: 1, total: 10 }), model("qwen", "llm"), model("gemma", "llm")] });
+    await useModels.getState().enqueue("small");
+    expect(h.api.downloadModel).not.toHaveBeenCalled();
+    expect(useModels.getState().queue).toEqual([]);
+  });
 });
