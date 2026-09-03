@@ -19,7 +19,7 @@ export default function Live() {
   // 캡처 중에는 돌고 있는 세션의 설정을 보여준다 — 설정을 바꿔도 다음 세션부터 적용된다.
   const srcLang = (view.capturing ? view.sourceLang ?? "auto" : settings.asr.source_lang);
   const asrModel = (view.capturing ? view.modelId : null) ?? settings.asr.model_id;
-  const src = srcLang === "auto" ? t("overlay.auto") : srcLang.toUpperCase();
+  const src = srcLang === "auto" ? t("translation.auto") : srcLang.toUpperCase();
   const tgt = settings.overlay.subtitle_lang === "system" ? t("general.langSystem") : settings.overlay.subtitle_lang.toUpperCase();
 
   return (

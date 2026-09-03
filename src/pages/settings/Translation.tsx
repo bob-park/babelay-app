@@ -4,7 +4,7 @@ import { SegmentedControl } from "../../components/SegmentedControl";
 import { SettingGroup, SettingRow } from "../../components/SettingGroup";
 import { useModels } from "../../lib/models";
 import { useSettings } from "../../lib/settings";
-import type { Provider } from "../../lib/types";
+import type { Provider, SourceLang, UiLang } from "../../lib/types";
 
 const input = "input input-sm w-56";
 const PROVIDERS: Provider[] = ["openai", "anthropic", "gemini", "deepl", "custom"];
@@ -18,8 +18,7 @@ export default function Translation() {
   const localName = models.find((m) => m.info.id === tr.local_model)?.info.name ?? tr.local_model;
 
   return (
-    <div className="flex max-w-3xl flex-col gap-4">
-      <h2 className="text-2xl font-bold">{t("settings.translation")}</h2>
+    <div className="flex flex-col gap-4">
       <SegmentedControl
         value={tr.backend}
         onChange={(v) => update({ translation: { backend: v } })}
@@ -52,6 +51,19 @@ export default function Translation() {
           )}
         </SettingGroup>
       )}
+
+      <SettingGroup>
+        <SettingRow label={t("translation.sourceLang")}>
+          <select className="select select-sm w-44" value={settings.asr.source_lang} onChange={(e) => update({ asr: { source_lang: e.target.value as SourceLang } })}>
+            <option value="auto">{t("translation.auto")}</option><option value="ko">{t("general.langKo")}</option><option value="en">{t("general.langEn")}</option><option value="ja">{t("general.langJa")}</option>
+          </select>
+        </SettingRow>
+        <SettingRow label={t("translation.targetLang")}>
+          <select className="select select-sm w-44" value={settings.overlay.subtitle_lang} onChange={(e) => update({ overlay: { subtitle_lang: e.target.value as UiLang } })}>
+            <option value="system">{t("general.langSystem")}</option><option value="ko">{t("general.langKo")}</option><option value="en">{t("general.langEn")}</option><option value="ja">{t("general.langJa")}</option>
+          </select>
+        </SettingRow>
+      </SettingGroup>
     </div>
   );
 }
