@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ErrorBar } from "../components/ErrorBar";
 import { ModelRow } from "../components/ModelRow";
-import { PillButton } from "../components/PillButton";
 import { formatSize, useModels } from "../lib/models";
 import { api } from "../lib/tauri";
 import { useSettings } from "../lib/settings";
@@ -57,10 +56,10 @@ export default function Onboarding() {
     const chosen = models.find((m) => m.info.id === current);
     const select = (id: string) => (kind === "asr" ? update({ asr: { model_id: id } }) : update({ translation: { local_model: id } })).then(() => refresh());
     const primary = !chosen ? null : chosen.installed
-      ? <PillButton variant="primary" onClick={next}>{t("models.continue")}</PillButton>
+      ? <button type="button" className="btn btn-primary btn-sm" onClick={next}>{t("models.continue")}</button>
       : chosen.download
-        ? <PillButton variant="primary" disabled>{`${Math.round((chosen.download.received / Math.max(1, chosen.download.total)) * 100)}%`}</PillButton>
-        : <PillButton variant="primary" disabled={waiting === chosen.info.id} onClick={() => { setWaiting(chosen.info.id); download(chosen.info.id); }}>{t("models.continueWith", { size: formatSize(chosen.info.size_bytes) })}</PillButton>;
+        ? <button type="button" className="btn btn-primary btn-sm" disabled>{`${Math.round((chosen.download.received / Math.max(1, chosen.download.total)) * 100)}%`}</button>
+        : <button type="button" className="btn btn-primary btn-sm" disabled={waiting === chosen.info.id} onClick={() => { setWaiting(chosen.info.id); download(chosen.info.id); }}>{t("models.continueWith", { size: formatSize(chosen.info.size_bytes) })}</button>;
     const rows = models
       .filter((m) => m.info.kind === kind)
       .map((m) => <ModelRow key={m.info.id} status={m} selected={current === m.info.id} onSelect={() => select(m.info.id)} />);
@@ -69,11 +68,11 @@ export default function Onboarding() {
 
   const asr = step === "asr" ? modelStep("asr") : null;
   const llm = step === "llm" ? modelStep("llm") : null;
-  const langBtn = (v: UiLang, text: string) => <PillButton key={v} variant={settings.general.ui_language === v ? "primary" : "default"} onClick={() => update({ general: { ui_language: v } })}>{text}</PillButton>;
+  const langBtn = (v: UiLang, text: string) => <button key={v} type="button" className={`btn btn-sm ${settings.general.ui_language === v ? "btn-primary" : "btn-neutral"}`} onClick={() => update({ general: { ui_language: v } })}>{text}</button>;
 
   return (
     <div className="flex h-full flex-col gap-4 p-6">
-      <div className="flex gap-1.5">{steps.map((s, i) => <span key={s} className={`h-1 flex-1 rounded-full ${i <= cur ? "bg-accent" : "bg-surface"}`} />)}</div>
+      <div className="flex gap-1.5">{steps.map((s, i) => <span key={s} className={`h-1 flex-1 rounded-full ${i <= cur ? "bg-primary" : "bg-base-300"}`} />)}</div>
       <ErrorBar />
       <h2 className="text-2xl font-bold">{t(`onboarding.title.${step}`)}</h2>
 
@@ -82,8 +81,8 @@ export default function Onboarding() {
         {step === "permission" && (
           <div className="flex flex-col gap-3">
             <div className="flex gap-2">
-              <PillButton variant={perm === "denied" ? "default" : "primary"} onClick={() => api.checkAudioPermission().then(setPerm).catch(setError)}>{t("onboarding.permissionCheck")}</PillButton>
-              <PillButton variant={perm === "denied" ? "primary" : "outline"} onClick={() => api.openPrivacySettings().catch(setError)}>{t("onboarding.openSettings")}</PillButton>
+              <button type="button" className={`btn btn-sm ${perm === "denied" ? "btn-neutral" : "btn-primary"}`} onClick={() => api.checkAudioPermission().then(setPerm).catch(setError)}>{t("onboarding.permissionCheck")}</button>
+              <button type="button" className={`btn btn-sm ${perm === "denied" ? "btn-primary" : "btn-outline"}`} onClick={() => api.openPrivacySettings().catch(setError)}>{t("onboarding.openSettings")}</button>
             </div>
             {perm && <p className="text-sm text-fg-muted">{t(`onboarding.permission${perm[0].toUpperCase()}${perm.slice(1)}`)}</p>}
           </div>
@@ -93,13 +92,13 @@ export default function Onboarding() {
       </div>
 
       <div className="flex items-center justify-between">
-        <PillButton variant="ghost" onClick={back} disabled={cur === 0}>{t("onboarding.back")}</PillButton>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={back} disabled={cur === 0}>{t("onboarding.back")}</button>
         <div className="flex gap-2">
-          {step === "llm" && <PillButton variant="outline" onClick={next}>{t("onboarding.skip")}</PillButton>}
+          {step === "llm" && <button type="button" className="btn btn-outline btn-sm" onClick={next}>{t("onboarding.skip")}</button>}
           {step === "asr" && asr?.primary}
           {step === "llm" && llm?.primary}
-          {(step === "language" || step === "permission") && <PillButton variant="primary" onClick={next}>{t("onboarding.next")}</PillButton>}
-          {step === "done" && <PillButton variant="primary" onClick={() => api.finishOnboarding().catch(setError)}>{t("onboarding.finish")}</PillButton>}
+          {(step === "language" || step === "permission") && <button type="button" className="btn btn-primary btn-sm" onClick={next}>{t("onboarding.next")}</button>}
+          {step === "done" && <button type="button" className="btn btn-primary btn-sm" onClick={() => api.finishOnboarding().catch(setError)}>{t("onboarding.finish")}</button>}
         </div>
       </div>
     </div>

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { PillButton } from "../../components/PillButton";
 import { clock } from "../../lib/session";
 import { useSettings } from "../../lib/settings";
 import { api } from "../../lib/tauri";
@@ -69,16 +68,16 @@ export default function History() {
           onChange={(e) => setQ(e.target.value)}
           placeholder={t("history.search")}
           aria-label={t("history.search")}
-          className="w-56 rounded-full bg-surface px-3 py-1.5 text-sm text-fg placeholder:text-fg-muted"
+          className="input input-sm w-56 rounded-full"
         />
       </div>
 
-      {saved && <div className="rounded-md bg-surface-2 px-3 py-2 text-xs text-fg-muted">{t("history.saved", { path: saved })}</div>}
+      {saved && <div className="rounded-md bg-neutral px-3 py-2 text-xs text-fg-muted">{t("history.saved", { path: saved })}</div>}
 
       {hits ? (
         <div className="flex flex-col gap-1">
           {hits.map((r) => (
-            <button key={r.id} type="button" onClick={() => { setQ(""); setSel(r.session_id); }} className="flex gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-surface">
+            <button key={r.id} type="button" onClick={() => { setQ(""); setSel(r.session_id); }} className="flex gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-base-300">
               <span className="shrink-0 tabular-nums text-fg-muted">{sessionLabel(r.session_id)} · {clock(r.t0_ms)}</span>
               <span className="min-w-0 break-words">{r.src_text}</span>
             </button>
@@ -87,15 +86,15 @@ export default function History() {
       ) : sel !== null ? (
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <PillButton variant="ghost" onClick={() => setSel(null)}>{`← ${t("nav.history")}`}</PillButton>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSel(null)}>{`← ${t("nav.history")}`}</button>
             <div className="flex gap-2">
-              <PillButton onClick={() => exportAs(sel, "txt")}>{t("history.exportTxt")}</PillButton>
-              <PillButton onClick={() => exportAs(sel, "srt")}>{t("history.exportSrt")}</PillButton>
-              <PillButton variant="outline" onClick={() => remove(sel)}>{t("history.delete")}</PillButton>
+              <button type="button" className="btn btn-neutral btn-sm" onClick={() => exportAs(sel, "txt")}>{t("history.exportTxt")}</button>
+              <button type="button" className="btn btn-neutral btn-sm" onClick={() => exportAs(sel, "srt")}>{t("history.exportSrt")}</button>
+              <button type="button" className="btn btn-outline btn-sm" onClick={() => remove(sel)}>{t("history.delete")}</button>
             </div>
           </div>
           <div className="text-xs text-fg-muted">{head}</div>
-          <div className="flex flex-col gap-2 rounded-[var(--radius-card)] bg-base-2 p-4 text-sm">
+          <div className="flex flex-col gap-2 rounded-box bg-base-200 p-4 text-sm">
             {segments.map((s) => (
               <div key={s.id} className="flex gap-3">
                 <span className="shrink-0 tabular-nums text-fg-muted">{clock(s.t0_ms)}</span>
@@ -105,11 +104,11 @@ export default function History() {
           </div>
         </div>
       ) : sessions.length === 0 ? (
-        <div className="rounded-lg bg-base-2 p-4 text-sm text-fg-muted">{t("history.empty")}</div>
+        <div className="rounded-lg bg-base-200 p-4 text-sm text-fg-muted">{t("history.empty")}</div>
       ) : (
         <div className="flex flex-col gap-1">
           {sessions.map((s) => (
-            <button key={s.id} type="button" onClick={() => setSel(s.id)} className="flex flex-wrap items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-surface">
+            <button key={s.id} type="button" onClick={() => setSel(s.id)} className="flex flex-wrap items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-base-300">
               <span className="font-semibold">{when(s.started_at)}</span>
               <span className="text-xs text-fg-muted">{duration(s)} · {s.src_lang.toUpperCase()} → {s.tgt_lang.toUpperCase()} · {t("history.segments", { count: s.segments })}</span>
             </button>

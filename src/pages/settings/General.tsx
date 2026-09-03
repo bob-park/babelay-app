@@ -3,7 +3,7 @@ import { SettingGroup, SettingRow } from "../../components/SettingGroup";
 import { useSettings } from "../../lib/settings";
 import type { Theme, UiLang } from "../../lib/types";
 
-const select = "rounded-full bg-surface px-3 py-1.5 text-sm text-fg";
+const select = "select select-sm w-44";
 
 export default function General() {
   const { t } = useTranslation();
@@ -33,8 +33,8 @@ export default function General() {
       </SettingGroup>
 
       <SettingGroup>
-        <SettingRow as="div" label={t("general.shortcutCapture")}><kbd>⌘/Ctrl+Shift+S</kbd></SettingRow>
-        <SettingRow as="div" label={t("general.shortcutOverlay")}><kbd>⌘/Ctrl+Shift+O</kbd></SettingRow>
+        <SettingRow as="div" label={t("general.shortcutCapture")}><kbd className="kbd kbd-sm">⌘/Ctrl+Shift+S</kbd></SettingRow>
+        <SettingRow as="div" label={t("general.shortcutOverlay")}><kbd className="kbd kbd-sm">⌘/Ctrl+Shift+O</kbd></SettingRow>
       </SettingGroup>
     </div>
   );

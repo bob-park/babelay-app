@@ -1,7 +1,5 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Badge } from "../../components/Badge";
-import { PillButton } from "../../components/PillButton";
 import { useModels } from "../../lib/models";
 import { clock, useSession } from "../../lib/session";
 import { useSettings } from "../../lib/settings";
@@ -29,21 +27,21 @@ export default function Live() {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">{t("nav.live")}</h2>
         <div className="flex gap-2">
-          <PillButton variant="primary" disabled={view.stopping} onClick={() => (view.capturing ? stop() : start())}>
+          <button type="button" className="btn btn-primary btn-sm" disabled={view.stopping} onClick={() => (view.capturing ? stop() : start())}>
             {view.stopping ? t("live.stopping") : view.capturing ? `■ ${t("live.stop")}` : `● ${t("live.start")}`}
-          </PillButton>
-          <PillButton variant={settings.overlay.enabled ? "default" : "ghost"} onClick={() => update({ overlay: { enabled: !settings.overlay.enabled } })}>{t("live.overlay")}</PillButton>
+          </button>
+          <button type="button" className={`btn btn-sm ${settings.overlay.enabled ? "btn-neutral" : "btn-ghost"}`} onClick={() => update({ overlay: { enabled: !settings.overlay.enabled } })}>{t("live.overlay")}</button>
         </div>
       </div>
 
       <div className="flex items-center gap-2 text-xs text-fg-muted">
-        <span className={`h-2 w-2 shrink-0 rounded-full ${view.capturing ? "bg-accent" : "bg-fg-muted"}`} />
+        <span className={`h-2 w-2 shrink-0 rounded-full ${view.capturing ? "bg-primary" : "bg-fg-muted"}`} />
         <span>{src} → {tgt} · {name(asrModel)}{settings.translation.backend === "local" ? ` · ${name(settings.translation.local_model)}` : ""}</span>
-        {view.gpuFallback && <Badge>{t("live.cpuFallback")}</Badge>}
-        {view.lagging && <Badge>{t("live.lagging")}</Badge>}
+        {view.gpuFallback && <span className="badge badge-neutral badge-sm">{t("live.cpuFallback")}</span>}
+        {view.lagging && <span className="badge badge-neutral badge-sm">{t("live.lagging")}</span>}
       </div>
 
-      <div className="flex-1 overflow-auto rounded-[var(--radius-card)] bg-base-2 p-4">
+      <div className="flex-1 overflow-auto rounded-box bg-base-200 p-4">
         <div className="flex flex-col gap-2 text-sm">
           {view.finals.map((f) => (
             <div key={f.id} className="flex gap-3">

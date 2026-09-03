@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { ModelRow } from "../../components/ModelRow";
 import { SegmentedControl } from "../../components/SegmentedControl";
 import { SettingGroup, SettingRow } from "../../components/SettingGroup";
-import { Toggle } from "../../components/Toggle";
 import { useModels } from "../../lib/models";
 import { useSettings } from "../../lib/settings";
 import { api } from "../../lib/tauri";
@@ -39,7 +38,7 @@ export default function Models() {
       </div>
       <SettingGroup>
         <SettingRow as="div" label={platform === "windows" ? t("models.gpuWin") : t("models.gpuMac")}>
-          <Toggle checked={settings.asr.gpu} onChange={(v) => update({ asr: { gpu: v } })} />
+          <input type="checkbox" role="switch" className="toggle toggle-primary" checked={settings.asr.gpu} onChange={(e) => update({ asr: { gpu: e.target.checked } })} />
         </SettingRow>
       </SettingGroup>
     </div>

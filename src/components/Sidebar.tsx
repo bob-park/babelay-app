@@ -24,7 +24,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     { to: "/settings/overlay", icon: "overlay", label: t("settings.overlay") },
   ];
   const cls = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-2 rounded-full py-2 text-sm ${isActive ? "bg-surface-2 font-semibold text-fg" : "text-fg-muted hover:text-fg"} ${collapsed ? "justify-center" : "px-3"}`;
+    `flex items-center gap-2 rounded-full py-2 text-sm ${isActive ? "bg-neutral font-semibold" : "text-fg-muted"} ${collapsed ? "justify-center" : "px-3"}`;
   const render = (i: Item) => (
     <NavLink key={i.to} to={i.to} className={cls} aria-label={i.label}>
       <Icon name={i.icon} />
@@ -33,22 +33,22 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
   );
 
   return (
-    <aside className={`m-2 flex ${collapsed ? "w-14" : "w-52"} shrink-0 flex-col gap-0.5 rounded-[var(--radius-panel)] bg-base-2 p-2 shadow-[0_8px_24px_rgba(0,0,0,0.5)] transition-[width]`}>
+    <aside className={`m-2 flex ${collapsed ? "w-14" : "w-52"} shrink-0 flex-col gap-0.5 rounded-box bg-base-200 p-2 shadow-[0_8px_24px_rgba(0,0,0,0.5)] transition-[width]`}>
       <div className={`mb-2 flex items-center ${collapsed ? "justify-center" : "justify-between"} px-2 pt-1`}>
-        <span className="flex items-center gap-2 font-bold"><span className="h-5 w-5 rounded-md bg-accent" />{!collapsed && t("app.name")}</span>
+        <span className="flex items-center gap-2 font-bold"><span className="h-5 w-5 rounded-md bg-primary" />{!collapsed && t("app.name")}</span>
         {!collapsed && (
-          <button type="button" onClick={onToggle} aria-label={t("nav.collapse")} className="rounded-full p-1 text-fg-muted hover:bg-surface hover:text-fg"><Icon name="collapse" /></button>
+          <button type="button" onClick={onToggle} aria-label={t("nav.collapse")} className="rounded-full p-1 text-fg-muted hover:bg-base-300"><Icon name="collapse" /></button>
         )}
       </div>
       {main.map(render)}
       {!collapsed && <div className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-fg-muted">{t("nav.settings")}</div>}
-      {collapsed && <div className="my-1 h-px bg-surface" />}
+      {collapsed && <div className="my-1 h-px bg-base-300" />}
       {settings.map(render)}
       {collapsed && (
-        <button type="button" onClick={onToggle} aria-label={t("nav.expand")} className="mt-2 rounded-full p-2 text-fg-muted hover:bg-surface hover:text-fg"><Icon name="collapse" className="h-4 w-4 rotate-180" /></button>
+        <button type="button" onClick={onToggle} aria-label={t("nav.expand")} className="mt-2 rounded-full p-2 text-fg-muted hover:bg-base-300"><Icon name="collapse" className="h-4 w-4 rotate-180" /></button>
       )}
-      <div className={`mt-auto flex items-center gap-2 rounded-[var(--radius-card)] bg-base px-3 py-2 text-xs text-fg-muted ${collapsed ? "justify-center" : ""}`}>
-        <span className={`h-2 w-2 shrink-0 rounded-full ${capturing ? "bg-accent" : "bg-fg-muted"}`} />
+      <div className={`mt-auto flex items-center gap-2 rounded-box bg-base-100 px-3 py-2 text-xs text-fg-muted ${collapsed ? "justify-center" : ""}`}>
+        <span className={`h-2 w-2 shrink-0 rounded-full ${capturing ? "bg-primary" : "bg-fg-muted"}`} />
         {!collapsed && <span className="truncate">{modelName}</span>}
       </div>
     </aside>

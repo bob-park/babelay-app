@@ -6,7 +6,7 @@ import { useModels } from "../../lib/models";
 import { useSettings } from "../../lib/settings";
 import type { Provider } from "../../lib/types";
 
-const input = "rounded-md bg-surface px-3 py-2 text-sm text-fg";
+const input = "input input-sm w-56";
 const PROVIDERS: Provider[] = ["openai", "anthropic", "gemini", "deepl", "custom"];
 
 export default function Translation() {
@@ -29,14 +29,14 @@ export default function Translation() {
       {tr.backend === "local" ? (
         <SettingGroup>
           <SettingRow as="div" label={t("translation.currentModel")}>
-            <span className="text-fg">{localName}</span>
-            <Link to="/settings/models" className="text-fg underline underline-offset-2 hover:text-fg-muted">{t("translation.changeInModels")}</Link>
+            <span>{localName}</span>
+            <Link to="/settings/models" className="underline underline-offset-2 hover:text-fg-muted">{t("translation.changeInModels")}</Link>
           </SettingRow>
         </SettingGroup>
       ) : (
         <SettingGroup>
           <SettingRow label={t("translation.provider")}>
-            <select className={input} value={tr.cloud.provider} onChange={(e) => update({ translation: { cloud: { provider: e.target.value as Provider } } })}>
+            <select className="select select-sm w-56" value={tr.cloud.provider} onChange={(e) => update({ translation: { cloud: { provider: e.target.value as Provider } } })}>
               {PROVIDERS.map((p) => <option key={p} value={p}>{t(`translation.provider${p[0].toUpperCase()}${p.slice(1)}`)}</option>)}
             </select>
           </SettingRow>

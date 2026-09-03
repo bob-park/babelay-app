@@ -23,7 +23,7 @@ export default function MainApp() {
 
   return (
     <HashRouter>
-      <div className="flex h-full bg-base">
+      <div className="flex h-full bg-base-100">
         <Sidebar collapsed={collapsed} onToggle={toggle} />
         <main className="flex-1 overflow-auto px-6 py-5">
           <ErrorBar />

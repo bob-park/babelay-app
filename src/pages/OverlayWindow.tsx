@@ -58,17 +58,17 @@ export default function OverlayWindow() {
     <div className="flex h-full w-full items-end justify-center bg-transparent p-2">
       <div
         onMouseDown={(e) => { if (adjust && e.button === 0) getCurrentWindow().startDragging(); }}
-        className={`relative max-w-full rounded-[10px] px-4 py-2 text-center text-white transition-opacity duration-500 ${adjust ? "min-h-12 min-w-48 cursor-move ring-2 ring-accent" : ""}`}
+        className={`relative max-w-full rounded-[10px] px-4 py-2 text-center text-white transition-opacity duration-500 ${adjust ? "min-h-12 min-w-48 cursor-move ring-2 ring-primary" : ""}`}
         style={{ background: `rgba(18,18,18,${bg_opacity})`, backdropFilter: "blur(6px)", opacity: visible ? 1 : 0 }}
       >
         {last && <div style={{ fontSize: font_size, lineHeight: 1.3 }} className="font-bold">{last.text}</div>}
         {partial && <div style={{ fontSize: font_size * 0.6 }} className="text-white/70">{partial}</div>}
         {adjust && (
           <>
-            <div className="absolute -top-6 left-0 rounded bg-accent px-2 py-0.5 text-xs font-bold text-accent-fg">{t("overlay.adjustHint")}</div>
+            <div className="absolute -top-6 left-0 rounded bg-primary px-2 py-0.5 text-xs font-bold text-primary-content">{t("overlay.adjustHint")}</div>
             <div
               onMouseDown={(e) => { e.stopPropagation(); if (e.button === 0) getCurrentWindow().startResizeDragging("SouthEast"); }}
-              className="absolute -right-1.5 -bottom-1.5 h-3 w-3 cursor-nwse-resize rounded-[2px] bg-accent"
+              className="absolute -right-1.5 -bottom-1.5 h-3 w-3 cursor-nwse-resize rounded-[2px] bg-primary"
             />
           </>
         )}
