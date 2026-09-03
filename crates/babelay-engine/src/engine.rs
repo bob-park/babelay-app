@@ -6,7 +6,9 @@ use crate::translate::{TranslateRequest, Translator};
 use std::collections::VecDeque;
 use std::panic::AssertUnwindSafe;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender, SyncSender};
+use std::sync::Arc;
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
@@ -38,6 +40,8 @@ pub enum EngineEvent {
         gpu_fallback: bool,
         model_id: String,
         source_lang: Option<String>,
+        /// 번역 타겟 코드. 번역기가 붙어 있을 때만 `Some` — 프론트가 타겟을 다시 유추하지 않는다.
+        target_lang: Option<String>,
     },
     Partial {
         text: String,
@@ -81,12 +85,15 @@ pub struct EngineHandle {
     chunker: Option<JoinHandle<()>>,
     transcriber: Option<JoinHandle<()>>,
     translator: Option<JoinHandle<()>>,
+    /// 정지 신호. 켜지면 번역 루프는 남은 큐를 번역하지 않고 흘려보낸다.
+    discard: Arc<AtomicBool>,
     tx: Sender<EngineEvent>,
 }
 
 impl EngineHandle {
     /// 큐를 전부 비울 때까지 블로킹한다. 진행 중인 추론 1건 + 대기 중인 최대 8건 +
     /// flush 조각을 모두 처리한 뒤에야 반환하므로, 느린 모델에서는 수십 초가 걸릴 수 있다.
+    /// 번역은 기다리지 않는다(`stop_capture` 가 대기 큐를 버린다).
     /// **UI 스레드에서 호출하면 안 된다** — 호출자가 백그라운드 스레드에서 돌려야 한다.
     /// 반환 시점에는 `Stopped` 가 정확히 한 번 발행되어 있다.
     pub fn stop(mut self) {
@@ -96,7 +103,10 @@ impl EngineHandle {
 
     /// 캡처만 즉시 멈춘다(오디오 탭 해제). 큐에 남은 조각은 그대로 두므로 빠르다.
     /// sink(= frames_tx 클론)가 드롭돼야 청커 루프가 끝난다.
+    /// 대기 중인 번역은 여기서 포기한다 — 세션이 끝난 뒤의 번역은 화면에 쓸 데가 없고,
+    /// 재시도 예산(조각당 최대 ~31초)을 다 물면 정지가 몇 분씩 걸린다.
     pub fn stop_capture(&mut self) {
+        self.discard.store(true, Ordering::Relaxed);
         self.source.stop();
         drop(self.frames_tx.take());
     }
@@ -181,6 +191,8 @@ pub fn start(
         (Some(t), Some(tgt)) => Some((t, tgt)),
         _ => None,
     };
+    let target_lang = translation.as_ref().map(|(_, tgt)| tgt.clone());
+    let discard = Arc::new(AtomicBool::new(false));
 
     // 소스를 먼저 띄운다. 실패하면 스레드를 만들지 않았으므로 고아 스레드도,
     // 유령 Stopped 도 생기지 않는다. 프레임은 채널에 쌓였다가 청커가 뜨면 소비된다.
@@ -197,7 +209,8 @@ pub fn start(
         Some((t, tgt)) => {
             let (ttx, trx) = mpsc::sync_channel::<TranslateJob>(16);
             let tx3 = tx.clone();
-            let h = std::thread::spawn(move || translate_loop(trx, t, tgt, tx3));
+            let d = discard.clone();
+            let h = std::thread::spawn(move || translate_loop(trx, t, tgt, tx3, d));
             (Some(ttx), Some(h))
         }
         None => (None, None),
@@ -223,6 +236,7 @@ pub fn start(
         gpu_fallback,
         model_id: cfg.model_id,
         source_lang: cfg.source_lang,
+        target_lang,
     });
     Ok(EngineHandle {
         source,
@@ -230,6 +244,7 @@ pub fn start(
         chunker: Some(chunker),
         transcriber: Some(transcriber_thread),
         translator: translator_thread,
+        discard,
         tx,
     })
 }
@@ -325,10 +340,10 @@ fn transcribe_loop(
                     if let Some(s) = segs.into_iter().next() {
                         let id = next_id;
                         next_id += 1;
-                        if let Some(q) = &translate_tx {
-                            // 번역 큐가 차면 여기서 기다린다(전사가 번역보다 빠를 때 자연스러운 배압).
-                            let _ = q.send((id, s.text.clone(), s.lang.clone()));
-                        }
+                        let job = translate_tx
+                            .as_ref()
+                            .map(|_| (id, s.text.clone(), s.lang.clone()));
+                        // 원문이 먼저다. 번역 큐 사정이 자막을 늦추면 안 된다.
                         let _ = tx.send(EngineEvent::Final {
                             id,
                             text: s.text,
@@ -336,6 +351,10 @@ fn transcribe_loop(
                             start_ms,
                             end_ms,
                         });
+                        // 큐가 차면 그 조각은 버린다 — 원문만 보이고 전사는 계속 흐른다.
+                        if let (Some(q), Some(job)) = (&translate_tx, job) {
+                            let _ = q.try_send(job);
+                        }
                     }
                 }
                 Ok(Err(e)) => {
@@ -365,10 +384,15 @@ fn translate_loop(
     mut translator: Box<dyn Translator>,
     tgt: String,
     tx: Sender<EngineEvent>,
+    discard: Arc<AtomicBool>,
 ) {
     let mut context: VecDeque<String> = VecDeque::with_capacity(TRANSLATE_CONTEXT + 1);
     let mut last_error: Option<Instant> = None;
     for (id, text, lang) in rx {
+        // 정지 신호가 왔으면 남은 큐는 번역하지 않고 비운다.
+        if discard.load(Ordering::Relaxed) {
+            continue;
+        }
         if lang != tgt {
             let req = TranslateRequest {
                 text: text.clone(),
@@ -515,6 +539,30 @@ mod tests {
         }
     }
 
+    /// 요청마다 1초를 태우는 번역기. 정지 시 큐를 버리지 않으면 테스트가 느려진다.
+    struct SlowTranslator;
+    impl Translator for SlowTranslator {
+        fn name(&self) -> &str {
+            "slow"
+        }
+        fn translate(&mut self, req: &TranslateRequest) -> Result<String, TranslateError> {
+            std::thread::sleep(Duration::from_secs(1));
+            Ok(req.text.clone())
+        }
+    }
+
+    /// 받은 요청의 context 를 그대로 기록한다.
+    struct RecordingTranslator(Arc<std::sync::Mutex<Vec<Vec<String>>>>);
+    impl Translator for RecordingTranslator {
+        fn name(&self) -> &str {
+            "recording"
+        }
+        fn translate(&mut self, req: &TranslateRequest) -> Result<String, TranslateError> {
+            self.0.lock().unwrap().push(req.context.clone());
+            Ok(req.text.clone())
+        }
+    }
+
     struct FailingTranslator;
     impl Translator for FailingTranslator {
         fn name(&self) -> &str {
@@ -553,11 +601,13 @@ mod tests {
         }
     }
 
-    /// FakeSource 로 파이프라인을 돌려 Final 이 하나 나올 때까지 기다린 뒤 멈추고 이벤트를 모은다.
+    /// FakeSource 로 파이프라인을 돌려 `done` 이 참이 될 때까지 기다린 뒤 멈추고 이벤트를 모은다.
+    /// 정지는 대기 중인 번역을 버리므로(I4), 번역을 보려면 `done` 이 그것까지 기다려야 한다.
     fn run(
         cfg: EngineConfig,
         transcriber: Box<dyn Transcriber>,
         translator: Option<Box<dyn Translator>>,
+        done: impl Fn(&[EngineEvent]) -> bool,
     ) -> Vec<EngineEvent> {
         let (tx, rx) = mpsc::channel();
         let handle = start(
@@ -571,9 +621,7 @@ mod tests {
         )
         .unwrap();
         let mut events = Vec::new();
-        drain_until(&rx, &mut events, 5, |ev| {
-            ev.iter().any(|e| matches!(e, EngineEvent::Final { .. }))
-        });
+        drain_until(&rx, &mut events, 5, done);
         handle.stop();
         drain_until(&rx, &mut events, 5, |ev| {
             matches!(ev.last(), Some(EngineEvent::Stopped))
@@ -586,6 +634,98 @@ mod tests {
             .iter()
             .filter(|e| matches!(e, EngineEvent::Stopped))
             .count()
+    }
+
+    /// 번역 큐가 꽉 차도 전사 루프는 멈추지 않는다(C1). 넘치는 조각은 버려져 원문만 남는다.
+    #[test]
+    fn full_translate_queue_drops_jobs_instead_of_blocking_finals() {
+        let (jobs_tx, jobs_rx) = mpsc::sync_channel::<Job>(8);
+        // 수신자를 붙들고 하나도 꺼내지 않는다 — 용량 1이 차면 그 뒤는 전부 넘친다.
+        let (ttx, trx) = mpsc::sync_channel::<TranslateJob>(1);
+        let (tx, rx) = mpsc::channel();
+        let worker = std::thread::spawn(move || {
+            let mut t = FakeTranscriber;
+            transcribe_loop(jobs_rx, &mut t, None, tx, Some(ttx), true);
+        });
+        for i in 0..5u64 {
+            jobs_tx
+                .send(Job {
+                    ev: ChunkEvent::Final {
+                        pcm: vec![0.0; 16],
+                        start_ms: i * 1000,
+                        end_ms: i * 1000 + 900,
+                    },
+                    enqueued: Instant::now(),
+                })
+                .unwrap();
+        }
+        drop(jobs_tx);
+        worker.join().unwrap();
+
+        let events: Vec<_> = rx.iter().collect();
+        let finals = events
+            .iter()
+            .filter(|e| matches!(e, EngineEvent::Final { .. }))
+            .count();
+        assert_eq!(finals, 5, "큐가 차도 Final 은 다 나와야 한다: {events:?}");
+        let queued = trx.try_iter().count();
+        assert!(
+            queued < finals,
+            "넘친 조각은 버려져야 한다(queued={queued})"
+        );
+    }
+
+    /// 정지 신호가 켜지면 남은 번역 작업은 번역하지 않고 비운다(I4).
+    #[test]
+    fn stop_discards_pending_translations_quickly() {
+        let (ttx, trx) = mpsc::channel::<TranslateJob>();
+        let (tx, rx) = mpsc::channel();
+        for i in 1..=8u64 {
+            ttx.send((i, format!("s{i}"), "en".into())).unwrap();
+        }
+        drop(ttx);
+        let discard = Arc::new(AtomicBool::new(true));
+        let started = Instant::now();
+        translate_loop(trx, Box::new(SlowTranslator), "ko".into(), tx, discard);
+        let elapsed = started.elapsed();
+        assert!(
+            elapsed < Duration::from_secs(2),
+            "정지가 느리다: {elapsed:?}"
+        );
+
+        let events: Vec<_> = rx.iter().collect();
+        assert!(
+            !events
+                .iter()
+                .any(|e| matches!(e, EngineEvent::Translated { .. })),
+            "버린 조각은 번역되지 않는다: {events:?}"
+        );
+        assert_eq!(count_stopped(&events), 1, "Stopped 는 정확히 한 번");
+    }
+
+    /// 세 번째 조각은 직전 두 원문을 순서대로 context 로 받는다(§6).
+    #[test]
+    fn third_job_gets_the_previous_two_finals_as_context() {
+        let (ttx, trx) = mpsc::channel::<TranslateJob>();
+        let (tx, _rx) = mpsc::channel();
+        for (i, text) in ["one", "two", "three"].iter().enumerate() {
+            ttx.send((i as u64 + 1, (*text).into(), "en".into()))
+                .unwrap();
+        }
+        drop(ttx);
+        let seen = Arc::new(std::sync::Mutex::new(Vec::new()));
+        translate_loop(
+            trx,
+            Box::new(RecordingTranslator(seen.clone())),
+            "ko".into(),
+            tx,
+            Arc::new(AtomicBool::new(false)),
+        );
+        let seen = seen.lock().unwrap();
+        assert_eq!(seen.len(), 3);
+        assert!(seen[0].is_empty());
+        assert_eq!(seen[1], vec!["one".to_string()]);
+        assert_eq!(seen[2], vec!["one".to_string(), "two".to_string()]);
     }
 
     #[test]
@@ -636,7 +776,9 @@ mod tests {
 
     #[test]
     fn pipeline_emits_started_final_and_stopped() {
-        let events = run(cfg(None), Box::new(FakeTranscriber), None);
+        let events = run(cfg(None), Box::new(FakeTranscriber), None, |ev| {
+            ev.iter().any(|e| matches!(e, EngineEvent::Final { .. }))
+        });
 
         assert!(matches!(events[0], EngineEvent::Started { .. }));
         let f = events
@@ -670,8 +812,16 @@ mod tests {
             cfg(Some("ko")),
             Box::new(FakeTranscriber),
             Some(Box::new(UpperTranslator)),
+            |ev| {
+                ev.iter()
+                    .any(|e| matches!(e, EngineEvent::Translated { .. }))
+            },
         );
 
+        assert!(
+            matches!(&events[0], EngineEvent::Started { target_lang, .. } if target_lang.as_deref() == Some("ko")),
+            "Started 는 번역 타겟을 실어 나른다: {events:?}"
+        );
         let (fid, ftext) = events
             .iter()
             .find_map(|e| match e {
@@ -703,6 +853,7 @@ mod tests {
             cfg(Some("en")),
             Box::new(FakeTranscriber),
             Some(Box::new(UpperTranslator)),
+            |ev| ev.iter().any(|e| matches!(e, EngineEvent::Final { .. })),
         );
         assert!(events
             .iter()
@@ -723,6 +874,10 @@ mod tests {
             cfg(Some("ko")),
             Box::new(FakeTranscriber),
             Some(Box::new(FailingTranslator)),
+            |ev| {
+                ev.iter()
+                    .any(|e| matches!(e, EngineEvent::Error { code, .. } if code == "translate"))
+            },
         );
         let finals = events
             .iter()
