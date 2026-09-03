@@ -226,8 +226,8 @@ pub fn clear_selection(settings: &mut Settings, id: &str) -> bool {
 
 pub fn delete(app: &AppHandle, id: &str) -> Result<(), String> {
     let m = find(id).ok_or("unknown model")?;
-    // 캡처 중에는 파일을 읽고 있다. 어느 모델이든 거부한다.
-    if crate::session::is_capturing(app) {
+    // 캡처 중이거나 정지 드레인 중에는 엔진이 파일을 쥐고 있다. 어느 모델이든 거부한다.
+    if crate::session::engine_active(app) {
         return Err("capturing".into());
     }
     if lock(&app.state::<Downloads>())

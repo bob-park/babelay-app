@@ -54,6 +54,11 @@ pub fn is_capturing(app: &AppHandle) -> bool {
     matches!(*lock(app), Phase::Starting(_) | Phase::Running(_))
 }
 
+/// 엔진이 모델 파일을 쥐고 있을 수 있는 모든 단계(정지 드레인 포함). 모델 삭제 가드용.
+pub fn engine_active(app: &AppHandle) -> bool {
+    !matches!(*lock(app), Phase::Idle)
+}
+
 /// 모델·경로 검증만 동기로 하고(`unknown_model` / `model_missing`), 실제 로드는
 /// 백그라운드로 넘긴다. 호출자(트레이·단축키·커맨드)는 즉시 돌아온다.
 pub fn start(app: &AppHandle) -> Result<(), String> {
