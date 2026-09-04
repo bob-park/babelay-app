@@ -90,7 +90,7 @@
 - 엔진: `transcribe_loop` 다수결 — Fake transcriber 가 `[en, en, cy]` 를 돌려줄 때 세 번째 Final 의 `lang == "en"` 이고 번역 큐에 `en` 이 실린다; `[ko, ko, ja]` 에 타겟 `ko` 면 세 번째 Final 이 번역되지 않는다(`Translated` 없음). 첫 Final 은 감지값 그대로.
 - 엔진: `chunker_loop` — 48k/2ch 프레임 뒤 44.1k/1ch 프레임을 넣어도 패닉 없이 16k 모노가 이어진다(출력 샘플 수가 두 구간 합에 근사).
 - src-tauri: `session::start` 의 `tgt_lang` 계산을 순수 함수로 빼서 `(source "en", tgt "en") → None`, `("auto", "en") → Some("en")`, `("ko", "en") → Some("en")` 확인.
-- 프론트(vitest): 리듀서 `cpu_fallback` — 캡처 중이면 `gpuFallback` 켜짐, idle 이면 변화 없음. Translation 페이지 — `변경` 클릭 후 입력 상자·취소가 보이고, 취소하면 배지로 돌아온다. 로케일 키 집합 일치 테스트는 기존 것이 잡는다.
+- 프론트(vitest): 리듀서 `cpu_fallback` — 캡처 중이면 `gpuFallback` 켜짐, idle 이면 변화 없음. 키 `변경` 버튼은 상태 하나짜리 토글이고 프로젝트에 컴포넌트 테스트 도구(testing-library)가 없으므로 tsc + GUI 체크리스트로 확인한다. 로케일 키 집합 일치 테스트는 기존 것이 잡는다.
 - tap.m 재생성과 Windows 재연결은 자동 테스트 없음 → GUI 체크리스트(헤드폰 연결/해제, 사운드 설정에서 출력 장치 전환, 전환 후 자막이 이어지는지).
 - 게이트: `cargo test --workspace`, `cargo clippy`, `cargo fmt --check`, `yarn test`, `tsc`, `yarn build`, Windows 캡처 모듈 크로스 `cargo check`.
 
