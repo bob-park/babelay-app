@@ -127,7 +127,7 @@ fn run_session(app: AppHandle, cfg: EngineConfig, gen: u64, settings: Settings, 
     let tgt_label = cfg
         .tgt_lang
         .clone()
-        .unwrap_or_else(|| settings.overlay.subtitle_lang.clone());
+        .unwrap_or_else(|| translator::resolve_tgt(&settings));
     let (tx, rx) = mpsc::channel();
     let handle = match start_default(cfg, tr, tx) {
         Ok(h) => h,

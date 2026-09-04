@@ -41,10 +41,9 @@ pub fn target(settings: &Settings) -> Option<String> {
 }
 
 /// 히스토리 `translator` 컬럼 값. `local:<model>` / `cloud:<provider>/<model>`.
+/// 번역 단계가 없는 세션(`target` 이 `None`)은 모델을 한 번도 안 쓰므로 `None` 을 기록한다.
 pub fn label(settings: &Settings) -> Option<String> {
-    if !enabled(settings) {
-        return None;
-    }
+    target(settings)?;
     let t = &settings.translation;
     Some(if t.backend == "cloud" {
         format!("cloud:{}/{}", t.cloud.provider, t.cloud.model)
@@ -237,8 +236,14 @@ mod tests {
         s.overlay.subtitle_lang = "en".into();
         s.asr.source_lang = "en".into();
         assert_eq!(target(&s), None, "en→en 은 번역 단계를 만들지 않는다");
+        assert_eq!(
+            label(&s),
+            None,
+            "번역 단계가 없으면 translator 컬럼도 비운다"
+        );
         s.asr.source_lang = "auto".into();
         assert_eq!(target(&s).as_deref(), Some("en"), "auto 는 항상 번역 단계");
+        assert_eq!(label(&s).as_deref(), Some("local:qwen3.5-2b"));
         s.asr.source_lang = "ko".into();
         assert_eq!(target(&s).as_deref(), Some("en"));
         s.overlay.display_mode = "source".into();

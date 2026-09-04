@@ -20,6 +20,7 @@ typedef struct {
     // ARC 가 C 구조체 필드의 소유를 못 잡으므로 CFBridgingRetain/Release 로 수동 소유한다.
     void *queue;     // dispatch_queue_t — 리스너·재생성·정지가 직렬로 도는 큐
     void *listener;  // AudioObjectPropertyListenerBlock
+    void *teardown;  // dispatch_block_t — 리스너와 `alive` 바이레프를 공유하는 정지 블록
     void *out_uid;   // NSString* — 현재 집계 장치가 물고 있는 기본 출력 UID
 } tap_handle;
 
@@ -218,11 +219,16 @@ int babelay_tap_start(babelay_cb cb, void *user, void **handle_out) {
         return rc;
     }
 
+    // RemovePropertyListenerBlock 이 돌아온 뒤에도, 이미 블록을 집어 든 HAL 스레드는 그것을
+    // h->queue 에 dispatch_async 할 수 있다 — 정지 teardown 뒤에 줄 서서 free(h) 다음에 도는
+    // 지각 호출. `alive` 는 두 블록이 공유하는 __block 바이레프(블록 복사본이 살려두므로 h 보다
+    // 오래 산다)이고 같은 직렬 큐에서만 읽고 쓰므로, 지각 호출은 반드시 NO 를 본다.
+    __block BOOL alive = YES;
     AudioObjectPropertyListenerBlock listener = ^(UInt32 n,
                                                  const AudioObjectPropertyAddress *addrs) {
         (void)n, (void)addrs;
-        // 이 블록은 h->queue 에서 돈다(AddPropertyListenerBlock 의 큐 인자). stop 은 리스너를 먼저
-        // 떼고 같은 큐에서 dispatch_sync 하므로 h 는 여기서 항상 살아 있다.
+        // 이 블록은 h->queue 에서 돈다(AddPropertyListenerBlock 의 큐 인자).
+        if (!alive) return;  // 정지가 이미 돌았다 — h 는 free 됐거나 곧 free 된다
         NSString *now = nil;
         if (default_output_uid(&now) != noErr) return;
         NSString *cur = (__bridge NSString *)h->out_uid;
@@ -234,7 +240,12 @@ int babelay_tap_start(babelay_cb cb, void *user, void **handle_out) {
         // 그동안 프레임은 오지 않는다.
         if (rebuild != 0) NSLog(@"babelay: aggregate rebuild failed (%d)", rebuild);
     };
+    dispatch_block_t teardown = ^{
+        alive = NO;
+        close_aggregate(h);
+    };
     h->listener = (void *)CFBridgingRetain(listener);
+    h->teardown = (void *)CFBridgingRetain(teardown);
     AudioObjectPropertyAddress defAddr = kDefaultOutputAddr;
     st = AudioObjectAddPropertyListenerBlock(kAudioObjectSystemObject, &defAddr,
                                              (__bridge dispatch_queue_t)h->queue,
@@ -244,6 +255,7 @@ int babelay_tap_start(babelay_cb cb, void *user, void **handle_out) {
         NSLog(@"babelay: default output listener not registered (%d), no auto-rebuild", (int)st);
         CFBridgingRelease(h->listener);
         h->listener = NULL;
+        // teardown 은 그대로 둔다 — stop 이 릴리스한다. 리스너가 없으니 경합도 없다.
     }
 
     *handle_out = h;
@@ -262,8 +274,18 @@ void babelay_tap_stop(void *handle) {
         h->listener = NULL;
     }
     // 진행 중인 재생성이 끝난 뒤에 닫는다. 반환 시점에는 IOProc 이 없으므로 콜백도 없다.
+    // teardown 은 `alive = NO` 를 같은 큐에서 세우므로, 리스너를 뗀 뒤 뒤늦게 들어온 알림이
+    // 이 뒤에 줄 서더라도 free 된 h 를 건드리지 않는다.
     if (h->queue) {
-        dispatch_sync((__bridge dispatch_queue_t)h->queue, ^{ close_aggregate(h); });
+        if (h->teardown) {
+            dispatch_sync((__bridge dispatch_queue_t)h->queue,
+                          (__bridge dispatch_block_t)h->teardown);
+            CFBridgingRelease(h->teardown);
+            h->teardown = NULL;
+        } else {
+            // 리스너·teardown 이 만들어지기 전의 start 실패 경로 — 지각 알림이 있을 수 없다.
+            dispatch_sync((__bridge dispatch_queue_t)h->queue, ^{ close_aggregate(h); });
+        }
         CFBridgingRelease(h->queue);
         h->queue = NULL;
     } else {
