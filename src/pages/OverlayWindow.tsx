@@ -121,7 +121,7 @@ export default function OverlayWindow() {
     ? overlayLines(display_mode, t("overlay.previewSource"), "", t("overlay.previewTarget"))
     : overlayLines(display_mode, pair.source, partial, pair.translated);
   // 정지 뒤에는 마지막 자막이 다시 뜨면 안 된다(캡처 중일 때만 보인다).
-  const visible = adjust || (view.capturing && fresh && Boolean(lines.primary || lines.secondary));
+  const visible = adjust || (view.capturing && fresh && lines.length > 0);
 
   return (
     <div className="flex h-full w-full items-end justify-center bg-transparent p-2">
@@ -130,8 +130,11 @@ export default function OverlayWindow() {
         className={`relative rounded-[10px] px-4 py-2 text-center text-white transition-opacity duration-500 ${adjust ? "w-full min-h-12 cursor-move ring-2 ring-primary" : "max-w-full"}`}
         style={{ background: `rgba(18,18,18,${bg_opacity})`, backdropFilter: "blur(6px)", opacity: visible ? 1 : 0 }}
       >
-        {lines.primary && <div style={{ fontSize: font_size, lineHeight: 1.3 }} className="font-bold">{lines.primary}</div>}
-        {lines.secondary && <div style={{ fontSize: font_size * 0.6 }} className="text-white/70">{lines.secondary}</div>}
+        {lines.map((l, i) => (
+          l.muted
+            ? <div key={i} style={{ fontSize: font_size * 0.6 }} className="text-neutral-400">{l.text}</div>
+            : <div key={i} style={{ fontSize: font_size, lineHeight: 1.3 }} className="font-bold">{l.text}</div>
+        ))}
         {adjust && (
           <>
             <div className="absolute -top-6 left-0 rounded bg-primary px-2 py-0.5 text-xs font-bold text-primary-content">{t("overlay.adjustHint")}</div>

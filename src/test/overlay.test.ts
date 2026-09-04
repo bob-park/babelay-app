@@ -44,17 +44,24 @@ describe("pairForOverlay", () => {
 });
 
 describe("overlayLines", () => {
+  const L = (text: string, muted = false) => ({ text, muted });
   it("target mode shows the source once the safety cap expires", () => {
     const finals = [f(1, "a", "\u3131"), f(2, "b")];
     const late = pairForOverlay(finals, "ko", 9_000 + TRANSLATION_WAIT_MS, 9_000);
-    expect(overlayLines("target", late.source, "", late.translated)).toEqual({ primary: "b", secondary: "" });
+    expect(overlayLines("target", late.source, "", late.translated)).toEqual([L("b")]);
   });
-  it("puts the translation first in both mode and only the translation in target mode", () => {
-    expect(overlayLines("both", "src", "", "tgt")).toEqual({ primary: "tgt", secondary: "src" });
-    expect(overlayLines("both", "src", "par", "")).toEqual({ primary: "src", secondary: "par" });
-    expect(overlayLines("target", "src", "par", "tgt")).toEqual({ primary: "tgt", secondary: "" });
-    expect(overlayLines("target", "src", "par")).toEqual({ primary: "src", secondary: "" }); // 번역이 없으면 원문으로 내려간다
-    expect(overlayLines("target", "", "par")).toEqual({ primary: "", secondary: "" });
-    expect(overlayLines("source", "src", "par", "tgt")).toEqual({ primary: "src", secondary: "par" });
+  it("both: translation bold on top, source muted below", () => {
+    expect(overlayLines("both", "src", "", "tgt")).toEqual([L("tgt"), L("src", true)]);
+  });
+  it("source alone is never muted (both without translation, source mode, target fallback)", () => {
+    expect(overlayLines("both", "src", "par", "")).toEqual([L("src"), L("par", true)]);
+    expect(overlayLines("source", "src", "par", "tgt")).toEqual([L("src"), L("par", true)]);
+    expect(overlayLines("source", "src", "")).toEqual([L("src")]);
+    expect(overlayLines("target", "src", "par")).toEqual([L("src")]);
+  });
+  it("target shows only the translation and drops empty lines", () => {
+    expect(overlayLines("target", "src", "par", "tgt")).toEqual([L("tgt")]);
+    expect(overlayLines("target", "", "par")).toEqual([]);
+    expect(overlayLines("both", "", "", "")).toEqual([]);
   });
 });

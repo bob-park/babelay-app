@@ -38,8 +38,11 @@ export default function OverlaySettings() {
         return (
           <div className="@container relative aspect-[16/7] w-full rounded-box bg-[linear-gradient(#1b2230,#0e1218)]">
             <div className="absolute bottom-[6%] left-1/2 w-[60%] -translate-x-1/2 rounded-[1cqw] px-[3cqw] py-[2.5cqw] text-center text-white" style={{ background: `rgba(18,18,18,${o.bg_opacity})` }}>
-              {lines.primary && <div className="font-bold leading-tight" style={{ fontSize: `${4.2 * scale}cqw` }}>{lines.primary}</div>}
-              {lines.secondary && <div className="text-white/70" style={{ fontSize: `${2.6 * scale}cqw` }}>{lines.secondary}</div>}
+              {lines.map((l, i) => (
+                l.muted
+                  ? <div key={i} className="text-neutral-400" style={{ fontSize: `${2.6 * scale}cqw` }}>{l.text}</div>
+                  : <div key={i} className="font-bold leading-tight" style={{ fontSize: `${4.2 * scale}cqw` }}>{l.text}</div>
+              ))}
             </div>
           </div>
         );
