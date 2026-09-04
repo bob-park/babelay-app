@@ -1,20 +1,19 @@
 import type { Final } from "./session";
 import type { DisplayMode } from "./types";
 
-/** 오버레이 한 줄. muted 는 작은 회색(번역 옆의 원문, 진행 중 부분 자막). 나머지는 굵은 흰색. */
+/** 오버레이 한 줄. muted 는 회색(번역 옆의 원문, 말하는 중인 부분 자막). 나머지는 굵은 흰색. */
 export interface OverlayLine { text: string; muted: boolean }
 
 /**
  * 표시 모드 → 오버레이 줄(최대 두 줄, 빈 줄은 뺀다).
- * - source: 원문을 바로, 그 아래 진행 중 부분 자막. 번역은 없다.
- * - both: 번역이 붙은 세트만 — 번역을 굵게 위에, 원문을 작게 아래에. 부분 자막은 보이지 않는다.
+ * - source: 말하는 중인 부분 자막만 회색으로. 확정 문장은 보여주지 않는다(번역도 없다).
+ * - both: 번역이 붙은 세트만 — 번역을 굵게 위에, 원문을 작게 아래에.
  * - target: both 와 같은 대기, 번역 줄만.
- * 원문이 혼자 보일 때(원문 모드, 번역이 끝내 안 와서 풀릴 때)는 유일한 줄이라 굵은 흰색으로 둔다.
- * both/target 에서 translated 없이 source 만 오는 건 안전 상한이 지난 경우뿐이다 — 빈 상자보다 낫다.
+ * both/target 에서 translated 없이 source 만 오는 건 안전 상한이 지난 경우뿐이고, 그때는 굵은 흰색 — 빈 상자보다 낫다.
  */
 export function overlayLines(mode: DisplayMode, source: string, partial: string, translated = ""): OverlayLine[] {
   const lines: OverlayLine[] =
-    mode === "source" ? [{ text: source, muted: false }, { text: partial, muted: true }]
+    mode === "source" ? [{ text: partial, muted: true }]
     : mode === "both" && translated ? [{ text: translated, muted: false }, { text: source, muted: true }]
     : [{ text: translated || source, muted: false }];
   return lines.filter((l) => l.text);

@@ -118,7 +118,7 @@ export default function OverlayWindow() {
   // 조정 모드에서 자막이 없으면 예시 문구로 상자를 채운다. 캡처 중이면 실제 자막이 우선.
   const sample = adjust && !view.capturing;
   const lines = sample
-    ? overlayLines(display_mode, t("overlay.previewSource"), "", t("overlay.previewTarget"))
+    ? overlayLines(display_mode, t("overlay.previewSource"), t("overlay.previewSource"), t("overlay.previewTarget"))
     : overlayLines(display_mode, pair.source, partial, pair.translated);
   // 정지 뒤에는 마지막 자막이 다시 뜨면 안 된다(캡처 중일 때만 보인다).
   const visible = adjust || (view.capturing && fresh && lines.length > 0);
@@ -131,9 +131,8 @@ export default function OverlayWindow() {
         style={{ background: `rgba(18,18,18,${bg_opacity})`, backdropFilter: "blur(6px)", opacity: visible ? 1 : 0 }}
       >
         {lines.map((l, i) => (
-          l.muted
-            ? <div key={i} style={{ fontSize: font_size * 0.6 }} className="text-neutral-400">{l.text}</div>
-            : <div key={i} style={{ fontSize: font_size, lineHeight: 1.3 }} className="font-bold">{l.text}</div>
+          // 회색 줄은 둘째 줄일 때만 작게. 혼자면(원문 모드) 본 크기.
+          <div key={i} style={{ fontSize: i > 0 ? font_size * 0.6 : font_size, lineHeight: 1.3 }} className={l.muted ? "text-neutral-400" : "font-bold"}>{l.text}</div>
         ))}
         {adjust && (
           <>

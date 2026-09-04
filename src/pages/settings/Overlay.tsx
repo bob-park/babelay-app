@@ -33,15 +33,13 @@ export default function OverlaySettings() {
       </div>
 
       {(() => {
-        const lines = overlayLines(o.display_mode, t("overlay.previewSource"), "", t("overlay.previewTarget"));
+        const lines = overlayLines(o.display_mode, t("overlay.previewSource"), t("overlay.previewSource"), t("overlay.previewTarget"));
         const scale = o.font_size / 28;
         return (
           <div className="@container relative aspect-[16/7] w-full rounded-box bg-[linear-gradient(#1b2230,#0e1218)]">
             <div className="absolute bottom-[6%] left-1/2 w-[60%] -translate-x-1/2 rounded-[1cqw] px-[3cqw] py-[2.5cqw] text-center text-white" style={{ background: `rgba(18,18,18,${o.bg_opacity})` }}>
               {lines.map((l, i) => (
-                l.muted
-                  ? <div key={i} className="text-neutral-400" style={{ fontSize: `${2.6 * scale}cqw` }}>{l.text}</div>
-                  : <div key={i} className="font-bold leading-tight" style={{ fontSize: `${4.2 * scale}cqw` }}>{l.text}</div>
+                <div key={i} className={l.muted ? "text-neutral-400 leading-tight" : "font-bold leading-tight"} style={{ fontSize: `${(i > 0 ? 2.6 : 4.2) * scale}cqw` }}>{l.text}</div>
               ))}
             </div>
           </div>
