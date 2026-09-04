@@ -149,10 +149,3 @@ Rust와 Node.js가 필요합니다. 빌드, 검증, macOS 서명, Windows CUDA �
 ## 기여
 
 이슈와 PR을 환영합니다. 머지 전 로컬 게이트(타입 검사, 프론트 테스트, Rust 테스트, clippy)는 개발 가이드에 있습니다. CI는 없고 빌드는 로컬에서만 합니다.
-
-## 감사의 말
-
-- [whisper.cpp](https://github.com/ggerganov/whisper.cpp)와 [whisper-rs](https://github.com/tazz4843/whisper-rs)
-- [llama.cpp](https://github.com/ggerganov/llama.cpp)와 [llama-cpp-2](https://github.com/utilityai/llama-cpp-rs)
-- [Tauri](https://tauri.app), [daisyUI](https://daisyui.com)
-- 프로젝트 구성의 참고가 된 [Meetily](https://github.com/Zackriya-Solutions/meetily)
