@@ -72,4 +72,5 @@ Windows: CUDA Toolkit 설치 후 `cudart64_12.dll`, `cublas64_12.dll`, `cublasLt
 - 설계: `docs/superpowers/specs/2026-09-02-babelay-design.md`
 - 2단계 GUI 수동 체크리스트: `docs/superpowers/2026-09-03-phase2-gui-checklist.md`
 - 3단계(번역) GUI 수동 체크리스트: `docs/superpowers/2026-09-03-phase3-gui-checklist.md`
+- 4단계(패스쓰루·장치 변경) GUI 수동 체크리스트: `docs/superpowers/2026-09-04-phase4-gui-checklist.md`
 - 목업: `docs/design/mockups/`

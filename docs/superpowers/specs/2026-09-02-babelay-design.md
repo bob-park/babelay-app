@@ -86,7 +86,7 @@ babelay-app/
 - **macOS**: Core Audio Process Tap. 탭 생성과 집계 장치 구성은 `cc`로 컴파일하는 ObjC 심(`crates/babelay-engine/csrc/tap.m`)이 맡고, Rust에는 C ABI 세 개(`babelay_tap_start` / `babelay_tap_stop` / `babelay_tap_probe`)로만 노출한다(objc2 바인딩 크레이트는 쓰지 않는다). 전역 탭(모든 프로세스 출력)을 만들고, 비공개 집계 장치에 기본 출력 장치를 서브 장치 겸 메인 서브 장치로, 탭을 탭 목록에 넣어 IOProc으로 읽는다(탭 자동 시작은 쓰지 않는다). Info.plist의 `NSAudioCaptureUsageDescription`으로 첫 탭 생성 시 TCC 프롬프트가 뜬다.
 - **Windows**: `wasapi` 크레이트로 기본 출력 장치 루프백.
 
-기본 출력 장치가 세션 중에 바뀌면(헤드폰 연결·해제, 사운드 설정에서 출력 전환) 캡처 모듈이 스스로 따라간다. macOS 는 `tap.m` 이 `kAudioHardwarePropertyDefaultOutputDevice` 리스너로 집계 장치와 IOProc 만 새 기본 출력으로 재생성한다(탭·콜백 유지, 직렬 큐, 실패 시 다음 알림에서 재시도). Windows 는 읽기 루프가 1초마다 기본 장치 id 를 비교하고, 바뀌었거나 읽기 오류면 새 기본 장치로 다시 연다(실패 시 1초 간격 재시도). 엔진 청커는 프레임의 rate/channels 가 바뀌면 리샘플러를 새로 만든다. UI 알림은 없다(전환 순간의 무음만 남는다). Windows 는 크로스 컴파일(`cargo check --target x86_64-pc-windows-msvc`, 격리 크레이트)까지만 검증했고 실기 검증은 Windows 머신에서 한다.
+기본 출력 장치가 세션 중에 바뀌면(헤드폰 연결·해제, 사운드 설정에서 출력 전환) 캡처 모듈이 스스로 따라간다. macOS 는 `tap.m` 이 `kAudioHardwarePropertyDefaultOutputDevice` 리스너로 집계 장치와 IOProc 만 새 기본 출력으로 재생성한다(탭·콜백 유지, 직렬 큐, 실패 시 다음 알림에서 재시도). Windows 는 읽기 루프가 타임아웃으로 깰 때마다(≈1초) 기본 장치 id 를 비교하고, 바뀌었거나 읽기 오류면 새 기본 장치로 다시 연다(실패 시 1초 간격 재시도). 엔진 청커는 프레임의 rate/channels 가 바뀌면 리샘플러를 새로 만든다. UI 알림은 없다(전환 순간의 무음만 남는다). Windows 는 크로스 컴파일(`cargo check --target x86_64-pc-windows-msvc`, 격리 크레이트)까지만 검증했고 실기 검증은 Windows 머신에서 한다.
 
 권한 확인 API `check_audio_permission()`은 실제로 탭 생성을 시도해 결과를 돌려준다. 거부 시 프론트는 `x-apple.systempreferences:com.apple.preference.security?Privacy_AudioCapture` 딥링크 버튼을 보여준다.
 
@@ -299,7 +299,7 @@ NSIS 인스톨러, 서명 없음. cudart/cublas/cublasLt DLL을 `bundle.resource
    - Windows 캡처는 캡처 모듈만 크로스 타깃 `cargo check`로 확인했다(워크스페이스 전체 check는 `ring`이 막는다). 런타임 검증은 Windows 머신에서.
 2.5. **UI 리디자인 + 백그라운드 온보딩 + 오버레이 수정**: 스펙 docs/superpowers/specs/2026-09-03-phase2.5-ui-onboarding-design.md — 완료(2026-09-03)
 3. **번역**: 로컬 llama, 클라우드 어댑터 4종(Custom은 OpenAI 호환 공용), keyring, 설정 > 번역(키 저장·연결 테스트), 오버레이 한 세트 규칙, 히스토리 번역 저장·검색·내보내기 — 완료(2026-09-03). 백로그는 4단계에서 처리.
-4. **패스쓰루 안정화 + 장치 변경 자가 복구 + 잔여 백로그**: Final 언어 다수결, 원어 고정 == 타겟 시 번역 단계 생략, macOS/Windows 장치 변경 자가 복구, 리샘플러 재생성, 로컬 LLM CPU 폴백 배지, API 키 변경 버튼, 연결 테스트 비동기화. 스펙 docs/superpowers/specs/2026-09-04-phase4-passthrough-device-design.md — 완료(2026-09-04). Windows 재연결은 크로스 `cargo check` 까지, 실행 검증은 Windows 머신에서.
+4. **패스쓰루 안정화 + 장치 변경 자가 복구 + 잔여 백로그**: Final 언어 다수결, 원어 고정 == 타겟 시 번역 단계 생략, macOS/Windows 장치 변경 자가 복구, 리샘플러 재생성, 로컬 LLM CPU 폴백 배지, API 키 변경 버튼, 연결 테스트 비동기화. 스펙 docs/superpowers/specs/2026-09-04-phase4-passthrough-device-design.md — 완료(2026-09-04). Windows 재연결은 크로스 `cargo check` 까지, 실행 검증은 Windows 머신에서. 백로그: 장치 끊김 뒤 타임스탬프가 끊긴 시간만큼 앞당겨진다(`Chunker::consumed` 가 샘플 기준); 집계 장치 재생성이 계속 실패하면 다음 장치 변경까지 무음이고 UI 알림이 없다; Windows 재연결 실패 로그가 1 Hz 로 무한 반복; 원어 고정 == 타겟이어도 `precheck` 가 번역 모델·키를 요구한다.
 
 ## 12. 범위 밖 (1차)
 
