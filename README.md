@@ -64,8 +64,34 @@ macOS 서명 빌드에는 아래 환경변수가 필요하다.
     APPLE_ID=... APPLE_PASSWORD=<앱 암호> APPLE_TEAM_ID=...   # 공증
     yarn tauri build
 
-빌드는 로컬에서만 한다(CI 없음). Windows 빌드는 Windows 머신에서 `yarn tauri build`로 만들며 서명하지 않는다.
-Windows: CUDA Toolkit 설치 후 `cudart64_12.dll`, `cublas64_12.dll`, `cublasLt64_12.dll`을 `src-tauri/resources/cuda/`에 복사하고 `yarn tauri build` — `tauri.windows.conf.json`의 `"resources/cuda/*.dll": "./"` 매핑이 번들에서 exe 옆에 놓는다.
+빌드는 로컬에서만 한다(CI 없음). Windows 빌드는 Windows 머신에서 만들며 서명하지 않는다.
+
+### Windows
+
+`src-tauri/Cargo.toml`이 Windows에서 `cuda` 피처를 강제하므로 CUDA 툴체인이 필수다.
+
+1. **Visual Studio 2022 Build Tools** — "C++를 사용한 데스크톱 개발" 워크로드. CUDA 12.8은 VS 2026(MSVC 14.5x)을 지원하지 않으므로 2022가 따로 있어야 한다.
+2. **CUDA Toolkit 12.8** — VS 2022 설치 *후에* 설치하고 "Visual Studio Integration" 항목을 켠다. 설치기가 `CUDA_PATH`를 잡는다.
+3. **LLVM** — `winget install LLVM.LLVM`(관리자). bindgen이 `libclang.dll`을 쓴다.
+4. **CMake** — `winget install Kitware.CMake`. Windows에서는 mise 대신 시스템 cmake를 쓴다.
+5. **환경변수**(사용자 변수, 설정 후 터미널/IDE 재시작):
+
+       LIBCLANG_PATH=C:\Program Files\LLVM\bin
+       CMAKE_GENERATOR=Visual Studio 17 2022
+       VSLANG=1033                      # MSVC 메시지를 영어로(한글 깨짐 방지)
+
+6. **CUDA 런타임 DLL** — `%CUDA_PATH%\bin`의 `cudart64_12.dll`, `cublas64_12.dll`, `cublasLt64_12.dll`을 `src-tauri/resources/cuda/`에 복사. `tauri.windows.conf.json`의 `"resources/cuda/*.dll": "./"` 매핑이 exe 옆에 놓는다.
+7. **Windows Defender 제외** — 프로젝트 폴더, `%USERPROFILE%\.cargo`. 빼지 않으면 빌드 산출물 스캔으로 EBUSY가 나거나 매우 느리다.
+
+빌드는 **"x64 Native Tools Command Prompt for VS 2022"** 에서 한다. 일반 터미널은 `INCLUDE`가 비어 있어 bindgen이 `stdbool.h`를 못 찾고, 그러면 동봉된 Linux 바인딩으로 대체돼 `12_usize - 16_usize` 오버플로 오류가 난다.
+
+    mise exec -- yarn install
+    mise exec -- yarn tauri dev      # 개발
+    mise exec -- yarn tauri build    # 배포: src-tauri/target/release/bundle/
+
+첫 빌드는 whisper.cpp·llama.cpp를 CUDA로 컴파일하므로 수십 분 걸린다. 개발 머신에서는 `CMAKE_CUDA_ARCHITECTURES=<내 GPU sm>`(예: RTX 40 = 89)으로 줄일 수 있다. 배포 빌드에서는 두지 않는다.
+
+문제 해결: `cargo build 2> build.log` 뒤 `findstr /C:"Unable to generate bindings" build.log`가 잡히면 bindgen 실패이고, 그 이유 줄이 진짜 원인이다.
 
 ## 문서
 
