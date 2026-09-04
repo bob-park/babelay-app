@@ -298,6 +298,7 @@ NSIS 인스톨러, 서명 없음. cudart/cublas/cublasLt DLL을 `bundle.resource
    - Windows 캡처는 캡처 모듈만 크로스 타깃 `cargo check`로 확인했다(워크스페이스 전체 check는 `ring`이 막는다). 런타임 검증은 Windows 머신에서.
 2.5. **UI 리디자인 + 백그라운드 온보딩 + 오버레이 수정**: 스펙 docs/superpowers/specs/2026-09-03-phase2.5-ui-onboarding-design.md — 완료(2026-09-03)
 3. **번역**: 로컬 llama, 클라우드 어댑터 4종(Custom은 OpenAI 호환 공용), keyring, 설정 > 번역(키 저장·연결 테스트), 오버레이 한 세트 규칙, 히스토리 번역 저장·검색·내보내기 — 완료(2026-09-03). 백로그: 장치 변경 감지(§4.1), 로컬 LLM GPU 폴백의 UI 표시 — 로드가 첫 번역으로 미뤄져(§4.3) 세션 시작 시점에는 폴백 여부를 알 수 없다. 알리려면 `Translated`/`Status` 계열 이벤트로 나중에 실어 보내야 한다(지금은 stderr 로그만).
+4. **패스쓰루 안정화 + 장치 변경 자가 복구 + 잔여 백로그**: 스펙 docs/superpowers/specs/2026-09-04-phase4-passthrough-device-design.md — 설계 승인(2026-09-04), 구현 전
 
 ## 12. 범위 밖 (1차)
 
