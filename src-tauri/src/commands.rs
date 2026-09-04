@@ -187,10 +187,11 @@ pub fn delete_api_key(provider: String) -> Result<(), String> {
 /// 연결 테스트 상한. 로컬 모델은 첫 로드가 이 안에 끝나야 한다.
 const TEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(20);
 
-/// 설정 그대로 한 문장을 번역해 본다. 로컬 LLM 로드가 수 초 걸리므로 `async` 커맨드로
-/// 메인 스레드 밖에서 돌리고, 작업 스레드는 상한을 넘기면 버린다(끝나면 스스로 사라진다).
-#[tauri::command(async)]
-pub fn test_translation(app: AppHandle) -> Result<crate::translator::TestResult, String> {
+/// 설정 그대로 한 문장을 번역해 본다. 로컬 LLM 로드가 수 초 걸리므로 워커 스레드에서 돌리고,
+/// 기다리는 쪽도 `spawn_blocking` 으로 보내 런타임 워커를 잡지 않는다. 상한을 넘기면 워커는
+/// 버린다(끝나면 스스로 사라진다).
+#[tauri::command]
+pub async fn test_translation(app: AppHandle) -> Result<crate::translator::TestResult, String> {
     let settings = app.state::<SettingsState>().get();
     let dir = crate::models::models_dir(&app)?;
     let cache = crate::llm::cache(&app);
@@ -198,6 +199,10 @@ pub fn test_translation(app: AppHandle) -> Result<crate::translator::TestResult,
     std::thread::spawn(move || {
         let _ = tx.send(crate::translator::test_translation(&settings, &dir, &cache));
     });
-    rx.recv_timeout(TEST_TIMEOUT)
-        .map_err(|_| "timeout".to_string())
+    tauri::async_runtime::spawn_blocking(move || {
+        rx.recv_timeout(TEST_TIMEOUT)
+            .map_err(|_| "timeout".to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
