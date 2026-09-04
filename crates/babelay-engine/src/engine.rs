@@ -294,7 +294,15 @@ fn chunker_loop(rx: Receiver<Frame>, tx: SyncSender<Job>) {
             }
             continue;
         }
-        let r = resampler.get_or_insert_with(|| Resampler::new(f.rate, f.channels));
+        // 장치가 바뀌면 rate/channels 도 바뀔 수 있다. 첫 프레임에 고정하지 않고 갈아 끼운다
+        // (직전 보간 샘플 하나를 잃는다 — 전환 순간의 수 ms, 무시).
+        if resampler
+            .as_ref()
+            .is_none_or(|r| r.format() != (f.rate, f.channels))
+        {
+            resampler = Some(Resampler::new(f.rate, f.channels));
+        }
+        let r = resampler.as_mut().expect("just set");
         mono.clear();
         r.push(&f.samples, &mut mono);
         for ev in chunker.push(&mono) {
@@ -948,5 +956,45 @@ mod tests {
         v.push("en".into());
         assert_eq!(v.push("ko".into()), "en", "첫 전환 Final 은 아직 en");
         assert_eq!(v.push("ko".into()), "ko", "[en, ko, ko] 부터 ko");
+    }
+
+    /// 장치가 바뀌면 프레임 포맷도 바뀐다. 리샘플러가 첫 프레임에 고정돼 있으면 두 번째 구간의
+    /// 샘플 수가 틀려진다(44.1k 모노를 48k 스테레오로 읽으면 약 1/4 로 줄어든다).
+    #[test]
+    fn chunker_follows_a_frame_format_change() {
+        let (ftx, frx) = mpsc::channel::<Frame>();
+        let (ctx, crx) = mpsc::sync_channel::<Job>(8);
+        let h = std::thread::spawn(move || chunker_loop(frx, ctx));
+        let tone = |rate: u32, ch: u16| -> Vec<f32> {
+            (0..rate as usize * ch as usize)
+                .map(|i| 0.3 * ((i / ch as usize) as f32 * 0.1).sin())
+                .collect()
+        };
+        ftx.send(Frame {
+            samples: tone(48_000, 2),
+            rate: 48_000,
+            channels: 2,
+        })
+        .unwrap();
+        ftx.send(Frame {
+            samples: tone(44_100, 1),
+            rate: 44_100,
+            channels: 1,
+        })
+        .unwrap();
+        drop(ftx);
+        h.join().unwrap();
+        let total: usize = crx
+            .iter()
+            .filter_map(|j| match j.ev {
+                ChunkEvent::Final { pcm, .. } => Some(pcm.len()),
+                _ => None,
+            })
+            .sum();
+        // 1초 + 1초의 말소리 → 16k 에서 약 32000 샘플.
+        assert!(
+            (30_000..=34_000).contains(&total),
+            "final pcm samples = {total}"
+        );
     }
 }

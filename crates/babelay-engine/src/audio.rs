@@ -29,6 +29,11 @@ impl Resampler {
         }
     }
 
+    /// 이 리샘플러가 가정하는 입력 포맷 (rate, channels). 청커가 프레임 포맷 변화를 감지하는 데 쓴다.
+    pub fn format(&self) -> (u32, u16) {
+        (self.src_rate, self.channels)
+    }
+
     /// 인터리브 입력을 모노 16kHz 로 변환해 `out` 에 덧붙인다.
     pub fn push(&mut self, interleaved: &[f32], out: &mut Vec<f32>) {
         // rate 0 이면 step 이 0 이라 보간 루프가 영원히 돈다. 아무것도 내지 않고 나간다.
