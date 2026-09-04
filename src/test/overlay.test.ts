@@ -53,15 +53,19 @@ describe("overlayLines", () => {
   it("both: translation bold on top, source muted below", () => {
     expect(overlayLines("both", "src", "", "tgt")).toEqual([L("tgt"), L("src", true)]);
   });
-  it("source alone is never muted (both without translation, source mode, target fallback)", () => {
-    expect(overlayLines("both", "src", "par", "")).toEqual([L("src"), L("par", true)]);
+  it("source alone is never muted (both after the cap, source mode, target fallback)", () => {
+    expect(overlayLines("both", "src", "par", "")).toEqual([L("src")]);
     expect(overlayLines("source", "src", "par", "tgt")).toEqual([L("src"), L("par", true)]);
     expect(overlayLines("source", "src", "")).toEqual([L("src")]);
     expect(overlayLines("target", "src", "par")).toEqual([L("src")]);
   });
+  it("the live partial shows only in source mode — both/target wait for the translated set", () => {
+    expect(overlayLines("source", "", "par")).toEqual([L("par", true)]);
+    expect(overlayLines("both", "", "par")).toEqual([]);
+    expect(overlayLines("target", "", "par")).toEqual([]);
+  });
   it("target shows only the translation and drops empty lines", () => {
     expect(overlayLines("target", "src", "par", "tgt")).toEqual([L("tgt")]);
-    expect(overlayLines("target", "", "par")).toEqual([]);
     expect(overlayLines("both", "", "", "")).toEqual([]);
   });
 });

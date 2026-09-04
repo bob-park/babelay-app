@@ -5,15 +5,18 @@ import type { DisplayMode } from "./types";
 export interface OverlayLine { text: string; muted: boolean }
 
 /**
- * 표시 모드 → 오버레이 줄(최대 두 줄, 빈 줄은 뺀다). both 는 번역을 굵게 위에, 원문을 작게 아래에.
- * 원문이 혼자 보일 때(원문 모드, 번역이 아직/끝내 없을 때)는 유일한 줄이라 굵은 흰색으로 둔다.
- * target 은 번역이 없으면(대기 만료·실패) 원문으로 내려간다 — 빈 상자보다 낫다.
+ * 표시 모드 → 오버레이 줄(최대 두 줄, 빈 줄은 뺀다).
+ * - source: 원문을 바로, 그 아래 진행 중 부분 자막. 번역은 없다.
+ * - both: 번역이 붙은 세트만 — 번역을 굵게 위에, 원문을 작게 아래에. 부분 자막은 보이지 않는다.
+ * - target: both 와 같은 대기, 번역 줄만.
+ * 원문이 혼자 보일 때(원문 모드, 번역이 끝내 안 와서 풀릴 때)는 유일한 줄이라 굵은 흰색으로 둔다.
+ * both/target 에서 translated 없이 source 만 오는 건 안전 상한이 지난 경우뿐이다 — 빈 상자보다 낫다.
  */
 export function overlayLines(mode: DisplayMode, source: string, partial: string, translated = ""): OverlayLine[] {
   const lines: OverlayLine[] =
-    mode === "target" ? [{ text: translated || source, muted: false }]
+    mode === "source" ? [{ text: source, muted: false }, { text: partial, muted: true }]
     : mode === "both" && translated ? [{ text: translated, muted: false }, { text: source, muted: true }]
-    : [{ text: source, muted: false }, { text: partial, muted: true }];
+    : [{ text: translated || source, muted: false }];
   return lines.filter((l) => l.text);
 }
 
