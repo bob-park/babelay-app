@@ -40,3 +40,14 @@
 html, body, #root { height: 100%; margin: 0; }
 body { color: var(--color-base-content); font-family: var(--font-sans); font-size: 14px; }
 body:not(.overlay) { background: var(--color-base-100); }
+
+/* 사이드바 정지 버튼의 파형 아이콘. 고정 리듬(오디오 레벨과 연동하지 않는다). */
+.eq-bars { display: inline-flex; align-items: center; gap: 2px; height: 12px; }
+.eq-bars i { display: block; width: 2px; border-radius: 1px; background: currentColor; animation: eq-bar 1s ease-in-out infinite; }
+.eq-bars i:nth-child(1) { height: 5px; }
+.eq-bars i:nth-child(2) { height: 12px; animation-delay: .15s; }
+.eq-bars i:nth-child(3) { height: 8px; animation-delay: .3s; }
+.eq-bars i:nth-child(4) { height: 11px; animation-delay: .45s; }
+.eq-bars.paused i { animation: none; opacity: .5; }
+@keyframes eq-bar { 50% { transform: scaleY(.35); } }
+@media (prefers-reduced-motion: reduce) { .eq-bars i { animation: none; } }

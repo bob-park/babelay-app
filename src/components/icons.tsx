@@ -12,6 +12,7 @@ const paths = {
   trash: "M4 7h16 M10 11v6 M14 11v6 M6 7l1 13h10l1-13 M9 7V4h6v3",
   check: "M5 12l4 4L19 7",
   x: "M6 6l12 12 M18 6L6 18",
+  play: "M8 5.5v13l10-6.5z",
 } as const;
 
 export type IconName = keyof typeof paths;

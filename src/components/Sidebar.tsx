@@ -66,16 +66,21 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
 
       <div className="mt-auto flex flex-col gap-1">
         <div className={missing ? "tooltip tooltip-right w-full" : "w-full"} data-tip={missing ? t("errors.modelMissing") : undefined}>
-          <button
-            type="button"
-            className="btn btn-primary btn-sm btn-block gap-1"
-            disabled={view.stopping || missing}
-            aria-label={view.stopping ? t("live.stopping") : view.capturing ? t("live.stop") : t("live.start")}
-            onClick={() => (view.capturing ? stop() : start())}
-          >
-            <span aria-hidden="true">{view.capturing ? "■" : "●"}</span>
-            <span className={label}>{view.stopping ? t("live.stopping") : view.capturing ? t("live.stop") : t("live.start")}</span>
-          </button>
+          {/* 캡처 중: 어두운 버튼 + 무지개 링 + 파형. 정지 중에는 링을 끄고 파형을 멈춘다. */}
+          <div className={view.capturing && !view.stopping ? "aura aura-rainbow block w-full" : "w-full"}>
+            <button
+              type="button"
+              className={`btn btn-sm btn-block gap-1.5 ${view.capturing ? "btn-neutral" : "btn-primary"}`}
+              disabled={view.stopping || missing}
+              aria-label={view.stopping ? t("live.stopping") : view.capturing ? t("live.stop") : t("live.start")}
+              onClick={() => (view.capturing ? stop() : start())}
+            >
+              {view.capturing
+                ? <span aria-hidden="true" className={`eq-bars text-primary ${view.stopping ? "paused" : ""}`}><i /><i /><i /><i /></span>
+                : <Icon name="play" className="h-3.5 w-3.5 fill-current" />}
+              <span className={label}>{view.stopping ? t("live.stopping") : view.capturing ? t("live.stop") : t("live.start")}</span>
+            </button>
+          </div>
         </div>
         <NavLink to="/settings/general" className={navCls} aria-label={t("nav.settings")}>
           <Icon name="general" /><span className={label}>{t("nav.settings")}</span>
