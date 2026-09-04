@@ -86,7 +86,7 @@ babelay-app/
 - **macOS**: Core Audio Process Tap. 탭 생성과 집계 장치 구성은 `cc`로 컴파일하는 ObjC 심(`crates/babelay-engine/csrc/tap.m`)이 맡고, Rust에는 C ABI 세 개(`babelay_tap_start` / `babelay_tap_stop` / `babelay_tap_probe`)로만 노출한다(objc2 바인딩 크레이트는 쓰지 않는다). 전역 탭(모든 프로세스 출력)을 만들고, 비공개 집계 장치에 기본 출력 장치를 서브 장치 겸 메인 서브 장치로, 탭을 탭 목록에 넣어 IOProc으로 읽는다(탭 자동 시작은 쓰지 않는다). Info.plist의 `NSAudioCaptureUsageDescription`으로 첫 탭 생성 시 TCC 프롬프트가 뜬다.
 - **Windows**: `wasapi` 크레이트로 기본 출력 장치 루프백.
 
-기본 출력 장치가 세션 중에 바뀌면(헤드폰 연결·해제 등) 캡처가 멈출 수 있다 — 2단계 제한이다. 장치 변경 감지와 스트림 재시작은 3단계 백로그로 넘긴다. 그때까지는 정지 후 다시 시작하면 새 장치로 붙는다.
+기본 출력 장치가 세션 중에 바뀌면(헤드폰 연결·해제, 사운드 설정에서 출력 전환) 캡처 모듈이 스스로 따라간다. macOS 는 `tap.m` 이 `kAudioHardwarePropertyDefaultOutputDevice` 리스너로 집계 장치와 IOProc 만 새 기본 출력으로 재생성한다(탭·콜백 유지, 직렬 큐, 실패 시 다음 알림에서 재시도). Windows 는 읽기 루프가 1초마다 기본 장치 id 를 비교하고, 바뀌었거나 읽기 오류면 새 기본 장치로 다시 연다(실패 시 1초 간격 재시도). 엔진 청커는 프레임의 rate/channels 가 바뀌면 리샘플러를 새로 만든다. UI 알림은 없다(전환 순간의 무음만 남는다). Windows 는 크로스 컴파일(`cargo check --target x86_64-pc-windows-msvc`, 격리 크레이트)까지만 검증했고 실기 검증은 Windows 머신에서 한다.
 
 권한 확인 API `check_audio_permission()`은 실제로 탭 생성을 시도해 결과를 돌려준다. 거부 시 프론트는 `x-apple.systempreferences:com.apple.preference.security?Privacy_AudioCapture` 딥링크 버튼을 보여준다.
 
@@ -96,10 +96,11 @@ babelay-app/
 - 설정: 모델 경로, 원어(`auto|ko|en|ja`), GPU 토글. GPU 토글 변경은 컨텍스트를 `use_gpu`로 다시 만든다.
 - GPU 초기화 실패 시 CPU로 내려가고 `Status::GpuFallback`을 발행한다.
 - `Partial`은 오버레이에 원문만 흐리게 표시한다. 번역은 `Final`에서만 수행한다.
+- `Final` 의 언어는 Whisper 감지값 하나가 아니라 최근 Final 3개의 다수결로 확정한다(동률이면 이번 감지값). 번역 건너뛰기(원어 == 타겟)와 히스토리 `lang` 은 이 확정값을 쓴다. 원어를 고정했고 타겟과 같으면 번역 단계 자체를 만들지 않는다(`Started.target_lang = null`).
 
 ### 4.3 로컬 번역
 
-- `llama-cpp-2`(`default-features = false, features = ["common"]`; `openmp`는 macOS clang 빌드를 깨뜨려 끈다), 같은 feature 규칙. GPU 토글은 `n_gpu_layers`를 1000 또는 0으로 바꾸고, GPU 로드가 실패하면 0으로 한 번 더 시도한다(폴백은 stderr 로그).
+- `llama-cpp-2`(`default-features = false, features = ["common"]`; `openmp`는 macOS clang 빌드를 깨뜨려 끈다), 같은 feature 규칙. GPU 토글은 `n_gpu_layers`를 1000 또는 0으로 바꾸고, GPU 로드가 실패하면 0으로 한 번 더 시도한다(폴백은 stderr 로그 + `CpuFallback{stage:"translate"}` 이벤트를 세션마다 한 번(`SharedLlm` 인스턴스당 한 번; 캐시된 모델이 폴백본이어도 다음 세션 첫 번역에서 다시 알린다) — Live 헤더 `CPU` 배지).
 - 모델은 첫 번역 시점에 로드하고, 모델이 바뀌기 전까지 세션 종료 후에도 유지한다. 프로세스 전역 캐시(`src-tauri/src/llm.rs`, `LlmCache = Arc<Mutex<Option<{path, gpu, LocalLlm}>>>`, `app.manage`)에 최대 하나를 담고, `translator::build`는 로드 없이 `SharedLlm{cache, path, gpu}`만 만들어 돌려준다 — 그래서 캡처는 GGUF 로드를 기다리지 않고 즉시 시작하고, stop→start 나 연결 테스트는 같은 모델을 다시 읽지 않는다. 경로나 GPU 토글이 다르면 첫 번역에서 갈아 끼운다. 모델 삭제는 파일을 지우기 전에 캐시를 비운다(`llm::evict`; Windows 는 mmap 된 파일을 못 지운다). 시작 전 동기 검사(`precheck`)는 키·파일 존재만 본다.
 - 요청마다 새 컨텍스트(`n_ctx` = 입력 + 최대 생성 + 8, 512~4096), 스레드 수 = min(코어, 8). 프롬프트는 모델 채팅 템플릿으로 system("You are a subtitle translator… Output only the translation, one line") + user(직전 원문 2줄 컨텍스트 + 번역 대상)를 렌더하고, 템플릿이 없으면 ChatML. Qwen3 계열(파일명 판별)은 어시스턴트 턴을 빈 `<think></think>` 블록으로 미리 채워 사고를 끈다(Qwen3.5는 `/no_think`를 무시하고 사고 블록 안에서 생성 예산을 다 쓴다 — 2026-09-04 실측). 샘플러 greedy, 최대 토큰 = max(32, 입력 토큰 × 3), EOG에서 중단.
 - 출력 후처리(`postprocess`, 클라우드와 공용): `<think>…</think>` 제거, 앞뒤 따옴표·공백 제거, 줄바꿈→공백. 빈 결과는 `Empty` 오류.
@@ -112,7 +113,7 @@ babelay-app/
 
 전사 루프는 패닉에 안전하다. `catch_unwind`로 감싸 whisper 쪽이 패닉해도 세션은 `Error{code:"panic"}`을 발행하고 정상적으로 멈춘다.
 
-세션 중 기본 출력 장치가 바뀌면 프레임이 끊길 수 있고 엔진은 이를 감지하지 않는다(2단계 제한, §4.1). 앱 종료 시 드레인은 3초까지만 기다린다 — 오디오 탭은 그 전에 동기로 풀고, 넘기면 전사 꼬리만 잃는다.
+세션 중 기본 출력 장치가 바뀌면 캡처 모듈이 스스로 다시 붙는다(§4.1). 앱 종료 시 드레인은 3초까지만 기다린다 — 오디오 탭은 그 전에 동기로 풀고, 넘기면 전사 꼬리만 잃는다.
 
 ### 4.5 오류
 
@@ -297,8 +298,8 @@ NSIS 인스톨러, 서명 없음. cudart/cublas/cublasLt DLL을 `bundle.resource
 2. **전사 엔진**: 오디오 캡처(mac/win), 청커, whisper, 사양 기반 balanced, GPU 토글, 라이브 페이지, SQLite·히스토리 — 완료(2026-09-03), 런타임 캡처 검증은 coreaudiod 재시작 후 보류
    - Windows 캡처는 캡처 모듈만 크로스 타깃 `cargo check`로 확인했다(워크스페이스 전체 check는 `ring`이 막는다). 런타임 검증은 Windows 머신에서.
 2.5. **UI 리디자인 + 백그라운드 온보딩 + 오버레이 수정**: 스펙 docs/superpowers/specs/2026-09-03-phase2.5-ui-onboarding-design.md — 완료(2026-09-03)
-3. **번역**: 로컬 llama, 클라우드 어댑터 4종(Custom은 OpenAI 호환 공용), keyring, 설정 > 번역(키 저장·연결 테스트), 오버레이 한 세트 규칙, 히스토리 번역 저장·검색·내보내기 — 완료(2026-09-03). 백로그: 장치 변경 감지(§4.1), 로컬 LLM GPU 폴백의 UI 표시 — 로드가 첫 번역으로 미뤄져(§4.3) 세션 시작 시점에는 폴백 여부를 알 수 없다. 알리려면 `Translated`/`Status` 계열 이벤트로 나중에 실어 보내야 한다(지금은 stderr 로그만).
-4. **패스쓰루 안정화 + 장치 변경 자가 복구 + 잔여 백로그**: 스펙 docs/superpowers/specs/2026-09-04-phase4-passthrough-device-design.md — 설계 승인(2026-09-04), 구현 전
+3. **번역**: 로컬 llama, 클라우드 어댑터 4종(Custom은 OpenAI 호환 공용), keyring, 설정 > 번역(키 저장·연결 테스트), 오버레이 한 세트 규칙, 히스토리 번역 저장·검색·내보내기 — 완료(2026-09-03). 백로그는 4단계에서 처리.
+4. **패스쓰루 안정화 + 장치 변경 자가 복구 + 잔여 백로그**: Final 언어 다수결, 원어 고정 == 타겟 시 번역 단계 생략, macOS/Windows 장치 변경 자가 복구, 리샘플러 재생성, 로컬 LLM CPU 폴백 배지, API 키 변경 버튼, 연결 테스트 비동기화. 스펙 docs/superpowers/specs/2026-09-04-phase4-passthrough-device-design.md — 완료(2026-09-04). Windows 재연결은 크로스 `cargo check` 까지, 실행 검증은 Windows 머신에서.
 
 ## 12. 범위 밖 (1차)
 
