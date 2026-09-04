@@ -1,8 +1,9 @@
-//! 로컬 LLM 번역기(llama.cpp). 요청마다 새 컨텍스트를 만들어 greedy 로 디코딩한다.
+//! 로컬 LLM 번역기(llama.cpp). 컨텍스트 하나를 재사용하며 요청마다 KV 캐시만 비우고 greedy 로 디코딩한다.
 use crate::translate::{
     postprocess, system_prompt, user_prompt, TranslateError, TranslateRequest, Translator,
 };
 use llama_cpp_2::context::params::LlamaContextParams;
+use llama_cpp_2::context::LlamaContext;
 use llama_cpp_2::llama_backend::LlamaBackend;
 use llama_cpp_2::llama_batch::LlamaBatch;
 use llama_cpp_2::model::params::LlamaModelParams;
@@ -26,12 +27,20 @@ pub(crate) fn is_qwen3(p: &Path) -> bool {
         .unwrap_or(false)
 }
 
+/// 컨텍스트 길이. 프롬프트(시스템+직전 문맥+원문)와 생성분(입력의 3배)이 이 안에 들어간다.
+const N_CTX: u32 = 4096;
+
 pub struct LocalLlm {
-    model: LlamaModel,
-    threads: i32,
+    // `ctx` 가 `model` 을 빌린다. 필드는 선언 순서대로 드롭되므로 ctx 가 먼저 사라지고,
+    // model 은 Box 라 힙 주소가 고정이다. 그래서 수명을 'static 으로 늘려도 안전하다.
+    ctx: LlamaContext<'static>,
+    model: Box<LlamaModel>,
     qwen3: bool,
     pub gpu_active: bool,
 }
+
+// SAFETY: llama_context 는 스레드 친화성이 없고 &mut 로만 쓰므로 한 번에 한 스레드만 접근한다.
+unsafe impl Send for LocalLlm {}
 
 impl LocalLlm {
     /// GPU 로드가 실패하면 CPU 로 한 번 더 시도한다. 두 번째 값은 그 폴백 여부.
@@ -56,10 +65,20 @@ impl LocalLlm {
             .map(|n| n.get() as i32)
             .unwrap_or(4)
             .min(8);
+        let model = Box::new(model);
+        let params = LlamaContextParams::default()
+            .with_n_ctx(NonZeroU32::new(N_CTX))
+            .with_n_threads(threads)
+            .with_n_threads_batch(threads);
+        // SAFETY: struct 주석 참고. model 은 Box 안에 있고 ctx 보다 늦게 드롭된다.
+        let model_ref: &'static LlamaModel = unsafe { &*(&*model as *const LlamaModel) };
+        let ctx = model_ref
+            .new_context(backend(), params)
+            .map_err(|e| TranslateError::Load(e.to_string()))?;
         Ok((
             Self {
+                ctx,
                 model,
-                threads,
                 qwen3: is_qwen3(path),
                 gpu_active: use_gpu && !fell_back,
             },
@@ -109,17 +128,15 @@ impl Translator for LocalLlm {
         if tokens.is_empty() {
             return Err(TranslateError::Empty);
         }
-        // 번역은 원문보다 크게 길어지지 않는다. 입력 토큰의 3배(최소 32)에서 끊는다.
-        let max_new = (tokens.len() * 3).max(32);
-        let n_ctx = ((tokens.len() + max_new + 8).max(512) as u32).min(4096);
-        let params = LlamaContextParams::default()
-            .with_n_ctx(NonZeroU32::new(n_ctx))
-            .with_n_threads(self.threads)
-            .with_n_threads_batch(self.threads);
-        let mut ctx = self
-            .model
-            .new_context(backend(), params)
-            .map_err(|e| TranslateError::Load(e.to_string()))?;
+        // 번역은 원문보다 크게 길어지지 않는다. 입력 토큰의 3배(최소 32)에서 끊되 컨텍스트를 넘기지 않는다.
+        let max_new = (tokens.len() * 3)
+            .max(32)
+            .min((N_CTX as usize).saturating_sub(tokens.len() + 8));
+        if max_new == 0 {
+            return Err(TranslateError::Request("prompt exceeds context".into()));
+        }
+        let ctx = &mut self.ctx;
+        ctx.clear_kv_cache();
 
         let mut batch = LlamaBatch::new(tokens.len().max(1), 1);
         let last = tokens.len() - 1;
@@ -136,7 +153,7 @@ impl Translator for LocalLlm {
         let mut decoder = encoding_rs::UTF_8.new_decoder();
         let mut out = String::new();
         for pos in (tokens.len() as i32..).take(max_new) {
-            let tok = sampler.sample(&ctx, batch.n_tokens() - 1);
+            let tok = sampler.sample(ctx, batch.n_tokens() - 1);
             if self.model.is_eog_token(tok) {
                 break;
             }
@@ -183,6 +200,16 @@ mod tests {
         assert!(!out.is_empty());
         assert!(!out.contains("<think>"));
         assert!(out.chars().any(|c| ('가'..='힣').contains(&c)));
+        // 같은 컨텍스트로 두 번째 요청: KV 캐시가 비워져 첫 결과가 섞이지 않아야 한다.
+        let started = std::time::Instant::now();
+        let req2 = crate::translate::TranslateRequest {
+            text: "The meeting is over.".into(),
+            ..req
+        };
+        let out2 = t.translate(&req2).unwrap();
+        println!("{out2} ({} ms)", started.elapsed().as_millis());
+        assert!(out2.chars().any(|c| ('가'..='힣').contains(&c)));
+        assert_ne!(out, out2);
     }
 
     #[test]

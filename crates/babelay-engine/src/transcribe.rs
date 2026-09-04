@@ -50,6 +50,7 @@ impl WhisperTranscriber {
         let make = |gpu: bool| {
             let mut p = WhisperContextParameters::default();
             p.use_gpu(gpu);
+            p.flash_attn(gpu); // GPU 디코딩을 크게 앞당긴다. CPU 경로에서는 의미 없다.
             WhisperContext::new_with_params(model, p)
         };
         let (ctx, fell_back) = match make(use_gpu) {
