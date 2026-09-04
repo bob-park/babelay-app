@@ -73,13 +73,13 @@
 ## 5. 로컬 LLM CPU 폴백 표시
 
 - `EngineEvent::CpuFallback { stage: String }` 추가(serde 태그 `cpu_fallback`). 이번 단계에서 `stage` 는 `"translate"` 만 쓴다. Whisper 폴백은 기존 `Started.gpu_fallback` 그대로.
-- `llm.rs`: `Loaded` 에 `fell_back: bool` 을 기록한다. `SharedLlm` 에 `app: AppHandle` 과 `notified: bool` 을 더한다. `translate` 에서 (a) 방금 로드했고 폴백했거나 (b) 캐시에 이미 있는 모델이 폴백본이면, 이 `SharedLlm` 인스턴스에서 한 번만 `app.emit("engine-event", CpuFallback{stage:"translate"})` 를 낸다 — 세션마다 `SharedLlm` 이 새로 만들어지므로 세션마다 한 번이다. 연결 테스트의 `SharedLlm` 도 같은 이벤트를 내지만 프론트가 캡처 중이 아니면 무시한다.
-- `translator::build` 시그니처에 `app: &AppHandle` 추가. 호출자(`session.rs`, `commands.rs`)는 모두 `AppHandle` 을 갖고 있다.
+- `llm.rs`: `Loaded` 에 `fell_back: bool` 을 기록한다. `LlmCache` 가 `Option<AppHandle>` 을 든다(`LlmCache::new(app)`; 테스트의 `Default` 는 `None` = 이벤트 안 냄). `SharedLlm` 에 `notified: bool` 을 더하고 `SharedLlm::new(cache, path, gpu)` 로 만든다. `translate` 에서 (a) 방금 로드했고 폴백했거나 (b) 캐시에 이미 있는 모델이 폴백본이면, 이 `SharedLlm` 인스턴스에서 한 번만 `app.emit("engine-event", CpuFallback{stage:"translate"})` 를 낸다 — 세션마다 `SharedLlm` 이 새로 만들어지므로 세션마다 한 번이다. 연결 테스트의 `SharedLlm` 도 같은 이벤트를 내지만 프론트가 캡처 중이 아니면 무시한다.
+- `translator::build` 시그니처는 그대로(`lib.rs` 가 `LlmCache::new(app.handle().clone())` 으로 등록한다).
 - 프론트 `types.ts` 유니언에 `{ type: "cpu_fallback"; stage: string }`. `session.ts` 리듀서: `capturing` 이면 `gpuFallback: true`, 아니면 무시. Live 헤더의 `CPU` 배지가 그대로 켜진다. 문구 변경 없음.
 
 ## 6. API 키 변경 버튼
 
-`Translation.tsx`: 로컬 state `editing: boolean`. `saved && !editing` 이면 `저장됨` 배지 + `변경` + `삭제`. `변경` 을 누르면 `editing = true` → 입력 상자 + `저장`(기존 `saveKey`; 성공 시 `editing = false`) + `취소`. 프로바이더가 바뀌면 `editing = false`. 로케일 3개에 `translation.change`·`translation.cancel` 추가(기존 키가 있으면 재사용).
+`Translation.tsx`: 로컬 state `editing: boolean`. `saved && !editing` 이면 `저장됨` 배지 + `변경` + `삭제`. `변경` 을 누르면 `editing = true` → 입력 상자 + `저장`(기존 `saveKey`; 성공 시 `editing = false`) + `취소`. 프로바이더가 바뀌면 `editing = false`. 로케일 3개에 `translation.changeKey` 추가, 취소는 기존 `common.cancel`.
 
 ## 7. 연결 테스트 비동기화
 
@@ -87,7 +87,7 @@
 
 ## 8. 테스트
 
-- 엔진: `transcribe_loop` 다수결 — Fake transcriber 가 `[en, en, cy]` 를 돌려줄 때 세 번째 Final 의 `lang == "en"` 이고 번역 큐에 `en` 이 실린다; `[ko, ko, ja]` 에 타겟 `ko` 면 세 번째 Final 이 번역되지 않는다(`Translated` 없음). 첫 Final 은 감지값 그대로.
+- 엔진: 다수결은 `LangVote` 로 분리해 단위 테스트한다 — `[en, en, cy] → en`, 첫 Final 은 감지값 그대로, `[en, ko]` 동률은 이번 값, `[en, en, ko] → en` 뒤 `[en, ko, ko] → ko`. `transcribe_loop` 는 `Final.lang` 과 번역 큐에 같은 확정값을 쓴다(기존 파이프라인 테스트는 Final 하나만 내므로 그대로).
 - 엔진: `chunker_loop` — 48k/2ch 프레임 뒤 44.1k/1ch 프레임을 넣어도 패닉 없이 16k 모노가 이어진다(출력 샘플 수가 두 구간 합에 근사).
 - src-tauri: `session::start` 의 `tgt_lang` 계산을 순수 함수로 빼서 `(source "en", tgt "en") → None`, `("auto", "en") → Some("en")`, `("ko", "en") → Some("en")` 확인.
 - 프론트(vitest): 리듀서 `cpu_fallback` — 캡처 중이면 `gpuFallback` 켜짐, idle 이면 변화 없음. 키 `변경` 버튼은 상태 하나짜리 토글이고 프로젝트에 컴포넌트 테스트 도구(testing-library)가 없으므로 tsc + GUI 체크리스트로 확인한다. 로케일 키 집합 일치 테스트는 기존 것이 잡는다.
