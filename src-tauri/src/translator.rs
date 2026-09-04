@@ -30,6 +30,16 @@ pub fn enabled(settings: &Settings) -> bool {
     settings.overlay.display_mode != "source"
 }
 
+/// 엔진에 넘길 번역 타겟. 번역이 꺼져 있거나, 원어가 고정돼 있고 타겟과 같으면 `None` —
+/// 번역 단계를 만들지 않으므로 `Started.target_lang` 도 null 이고 오버레이가 기다리지 않는다.
+pub fn target(settings: &Settings) -> Option<String> {
+    if !enabled(settings) {
+        return None;
+    }
+    let tgt = resolve_tgt(settings);
+    (settings.asr.source_lang != tgt).then_some(tgt)
+}
+
 /// 히스토리 `translator` 컬럼 값. `local:<model>` / `cloud:<provider>/<model>`.
 pub fn label(settings: &Settings) -> Option<String> {
     if !enabled(settings) {
@@ -219,5 +229,19 @@ mod tests {
             "{err}"
         );
         assert_eq!(label(&s).as_deref(), Some("cloud:custom/gpt-4o-mini"));
+    }
+
+    #[test]
+    fn target_is_none_when_fixed_source_equals_target() {
+        let mut s = Settings::default();
+        s.overlay.subtitle_lang = "en".into();
+        s.asr.source_lang = "en".into();
+        assert_eq!(target(&s), None, "en→en 은 번역 단계를 만들지 않는다");
+        s.asr.source_lang = "auto".into();
+        assert_eq!(target(&s).as_deref(), Some("en"), "auto 는 항상 번역 단계");
+        s.asr.source_lang = "ko".into();
+        assert_eq!(target(&s).as_deref(), Some("en"));
+        s.overlay.display_mode = "source".into();
+        assert_eq!(target(&s), None, "원문만 모드는 번역 없음");
     }
 }

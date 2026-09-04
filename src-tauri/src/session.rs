@@ -79,7 +79,7 @@ pub fn start(app: &AppHandle) -> Result<(), String> {
         model_id: settings.asr.model_id.clone(),
         use_gpu: settings.asr.gpu,
         source_lang: (settings.asr.source_lang != "auto").then(|| settings.asr.source_lang.clone()),
-        tgt_lang: translator::enabled(&settings).then(|| translator::resolve_tgt(&settings)),
+        tgt_lang: translator::target(&settings),
     };
     let gen = {
         let mut phase = lock(app);
