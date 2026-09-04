@@ -236,9 +236,15 @@ int babelay_tap_start(babelay_cb cb, void *user, void **handle_out) {
     };
     h->listener = (void *)CFBridgingRetain(listener);
     AudioObjectPropertyAddress defAddr = kDefaultOutputAddr;
-    AudioObjectAddPropertyListenerBlock(kAudioObjectSystemObject, &defAddr,
-                                        (__bridge dispatch_queue_t)h->queue,
-                                        (__bridge AudioObjectPropertyListenerBlock)h->listener);
+    st = AudioObjectAddPropertyListenerBlock(kAudioObjectSystemObject, &defAddr,
+                                             (__bridge dispatch_queue_t)h->queue,
+                                             (__bridge AudioObjectPropertyListenerBlock)h->listener);
+    if (st != noErr) {
+        // 등록 실패는 캡처를 막지 않는다 — 자동 재생성만 없다. 떼지 않도록 리스너를 놓는다.
+        NSLog(@"babelay: default output listener not registered (%d), no auto-rebuild", (int)st);
+        CFBridgingRelease(h->listener);
+        h->listener = NULL;
+    }
 
     *handle_out = h;
     return 0;
