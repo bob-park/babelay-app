@@ -1,12 +1,12 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { langName } from "../../lib/i18n";
-import { useModels } from "../../lib/models";
+import { SessionBadges } from "../../components/SessionBadges";
+import { translatorLabel, useModels } from "../../lib/models";
 import { clock, useSession } from "../../lib/session";
 import { useSettings } from "../../lib/settings";
 
 export default function Live() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { view } = useSession();
   const { settings, update } = useSettings();
   const models = useModels((s) => s.models);
@@ -17,19 +17,15 @@ export default function Live() {
 
   if (!settings) return null;
   const name = (id: string) => (id ? models.find((m) => m.info.id === id)?.info.name ?? id : "—");
-  const lang = (code: string) => langName(code, t, i18n.language);
   // 캡처 중에는 돌고 있는 세션의 설정을 보여준다 — 설정을 바꿔도 다음 세션부터 적용된다.
   const srcLang = (view.capturing ? view.sourceLang ?? "auto" : settings.asr.source_lang);
   const asrModel = (view.capturing ? view.modelId : null) ?? settings.asr.model_id;
-  const src = srcLang === "auto" ? t("translation.auto") : lang(srcLang);
   // 캡처 중에는 엔진이 실제로 쓰는 목표 언어(started.target_lang)를 보여준다. 정지 중엔 설정값.
   // 원문만 모드는 번역이 없으니 타겟과 번역 모델 배지를 뺀다.
   const translating = settings.overlay.display_mode !== "source";
-  const tgtCode = view.capturing ? view.targetLang : null;
-  const tgt = tgtCode ? lang(tgtCode) : settings.overlay.subtitle_lang === "system" ? t("general.langSystem") : lang(settings.overlay.subtitle_lang);
+  const tgt = !translating ? null : view.capturing ? view.targetLang : settings.overlay.subtitle_lang;
   const tr = settings.translation;
-  const trModel = tr.backend === "local" ? name(tr.local_model) : `${tr.cloud.provider} · ${tr.cloud.model}`;
-  const info = "badge badge-ghost badge-sm";
+  const translator = translating ? translatorLabel(tr.backend === "local" ? `local:${tr.local_model}` : `cloud:${tr.cloud.provider}/${tr.cloud.model}`, name) : null;
 
   return (
     <div className="flex h-full flex-col gap-3">
@@ -43,10 +39,7 @@ export default function Live() {
 
       <div className="flex items-center gap-2 text-xs text-fg-muted">
         <span className={`h-2 w-2 shrink-0 rounded-full ${view.capturing ? "bg-primary" : "bg-fg-muted"}`} />
-        <span className={info}>{src}</span>
-        {translating && <><span aria-hidden="true">→</span><span className={info}>{tgt}</span></>}
-        <span className={info}>{name(asrModel)}</span>
-        {translating && <span className={info}>{trModel}</span>}
+        <SessionBadges src={srcLang} tgt={tgt} asrModel={asrModel} translator={translator} />
         {view.gpuFallback && <span className="badge badge-neutral badge-sm">{t("live.cpuFallback")}</span>}
         {view.lagging && <span className="badge badge-neutral badge-sm">{t("live.lagging")}</span>}
       </div>

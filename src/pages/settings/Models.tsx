@@ -6,6 +6,7 @@ import { SettingGroup, SettingRow } from "../../components/SettingGroup";
 import { useModels } from "../../lib/models";
 import { useSettings } from "../../lib/settings";
 import { api } from "../../lib/tauri";
+import { HwBadges } from "../../components/SessionBadges";
 import type { HwInfo, ModelKind } from "../../lib/types";
 
 export default function Models() {
@@ -25,9 +26,7 @@ export default function Models() {
   return (
     <div className="flex flex-col gap-4">
       {hw && (
-        <div className="text-xs text-fg-muted">
-          {[hw.chip, `${hw.mem_gb} GB`, hw.gpu && `${hw.gpu}${hw.gpu_mem_gb ? ` ${hw.gpu_mem_gb} GB` : ""}`].filter(Boolean).join(" · ")}
-        </div>
+        <div className="flex flex-wrap items-center gap-1"><HwBadges hw={hw} /></div>
       )}
       <SegmentedControl value={kind} onChange={setKind} options={[{ value: "asr", label: t("models.asr") }, { value: "llm", label: t("models.llm") }]} />
       <div className="flex flex-col gap-2">

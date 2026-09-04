@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Icon, type IconName } from "./icons";
+import { HwBadges } from "./SessionBadges";
 import { useModels } from "../lib/models";
 import { useSession } from "../lib/session";
 import { useSettings } from "../lib/settings";
@@ -32,7 +33,6 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     `btn btn-sm justify-center gap-2 ${justify} ${isActive ? "btn-neutral" : "btn-ghost text-fg-muted"}`;
   const missing = !view.capturing && !asrInstalled;
   const openAbout = () => { if (!hw) api.getHwInfo().then(setHw).catch(() => {}); about.current?.showModal(); };
-  const hwLine = hw ? [hw.chip, `${hw.mem_gb} GB`, hw.gpu && `${hw.gpu}${hw.gpu_mem_gb ? ` ${hw.gpu_mem_gb} GB` : ""}`].filter(Boolean).join(" · ") : "";
 
   return (
     <aside className={`relative flex w-14 shrink-0 flex-col gap-1 border-r border-base-300 bg-base-200 p-2 ${wide}`}>
@@ -95,7 +95,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         <div className="modal-box max-w-sm">
           <h3 className="text-lg font-bold">{t("app.name")}</h3>
           <div className="mt-2 text-sm"><span className="text-fg-muted">{t("about.version")}</span> {import.meta.env.PACKAGE_VERSION}</div>
-          {hwLine && <div className="text-sm"><span className="text-fg-muted">{t("about.hardware")}</span> {hwLine}</div>}
+          {hw && <div className="flex flex-wrap items-center gap-1 text-sm"><span className="text-fg-muted">{t("about.hardware")}</span> <HwBadges hw={hw} /></div>}
           <div className="modal-action">
             <form method="dialog"><button className="btn btn-sm">{t("common.close")}</button></form>
           </div>

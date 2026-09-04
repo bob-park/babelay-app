@@ -46,7 +46,7 @@ export type EngineEvent =
   | { type: "error"; code: string; message: string }
   | { type: "stopped" };
 
-export interface SessionSummary { id: number; started_at: number; ended_at: number | null; src_lang: string; tgt_lang: string; asr_model: string; segments: number }
+export interface SessionSummary { id: number; started_at: number; ended_at: number | null; src_lang: string; tgt_lang: string; asr_model: string; translator: string | null; segments: number }
 export interface SegmentRow { id: number; session_id: number; t0_ms: number; t1_ms: number; lang: string; src_text: string; tgt_text: string | null }
 /** 연결 테스트 결과. 실패면 error 에 코드(ERROR_KEYS), text 에 상세. */
 export interface TestTranslationResult { ok: boolean; ms: number; text: string; error: string | null }

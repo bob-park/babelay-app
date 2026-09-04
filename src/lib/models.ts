@@ -16,6 +16,14 @@ export function rowAction(s: ModelStatus): RowAction {
 
 const MB = 1024 * 1024;
 const GB = 1024 * MB;
+/** 히스토리 `translator` 값(`local:<model>` / `cloud:<provider>/<model>`) → 배지 문구. 없으면 null. */
+export function translatorLabel(translator: string | null | undefined, name: (id: string) => string): string | null {
+  if (!translator) return null;
+  if (translator.startsWith("local:")) return name(translator.slice(6));
+  if (translator.startsWith("cloud:")) return translator.slice(6).replace("/", " · ");
+  return translator;
+}
+
 export function formatSize(bytes: number): string {
   return bytes >= GB ? `${(bytes / GB).toFixed(1)} GB` : `${Math.round(bytes / MB)} MB`;
 }

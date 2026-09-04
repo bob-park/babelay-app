@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
+import { SessionBadges } from "../../components/SessionBadges";
+import { translatorLabel, useModels } from "../../lib/models";
 import { clock } from "../../lib/session";
 import { useSettings } from "../../lib/settings";
 import { api } from "../../lib/tauri";
@@ -9,6 +11,8 @@ import type { SegmentRow, SessionSummary } from "../../lib/types";
 export default function History() {
   const { t } = useTranslation();
   const setError = useSettings((s) => s.setError);
+  const models = useModels((s) => s.models);
+  const name = (id: string) => models.find((m) => m.info.id === id)?.info.name ?? id;
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [sel, setSel] = useState<number | null>(null);
   const [segments, setSegments] = useState<SegmentRow[]>([]);
@@ -59,9 +63,12 @@ export default function History() {
   // 검색 결과의 세션이 최근 100개 밖일 수 있다. 요약이 없어도 상세는 연다.
   const current = sessions.find((s) => s.id === sel);
   const sessionLabel = (id: number) => { const s = sessions.find((x) => x.id === id); return s ? when(s.started_at) : `#${id}`; };
+  const badges = (s: SessionSummary) => (
+    <SessionBadges src={s.src_lang || "auto"} tgt={s.tgt_lang || null} asrModel={s.asr_model} translator={translatorLabel(s.translator, name)} />
+  );
   const head = current
-    ? `${when(current.started_at)} · ${duration(current)} · ${current.src_lang.toUpperCase()} → ${current.tgt_lang.toUpperCase()} · ${t("history.segments", { count: current.segments })}`
-    : `#${sel} · ${clock(segments[segments.length - 1]?.t1_ms ?? 0)} · ${t("history.segments", { count: segments.length })}`;
+    ? <>{when(current.started_at)} · {duration(current)} · {t("history.segments", { count: current.segments })}</>
+    : <>#{sel} · {clock(segments[segments.length - 1]?.t1_ms ?? 0)} · {t("history.segments", { count: segments.length })}</>;
 
   return (
     <div className="flex max-w-3xl flex-col gap-4">
@@ -100,7 +107,10 @@ export default function History() {
               <button type="button" className="btn btn-outline btn-sm" onClick={() => remove(sel)}>{t("history.delete")}</button>
             </div>
           </div>
-          <div className="text-xs text-fg-muted">{head}</div>
+          <div className="flex flex-wrap items-center gap-1 text-xs text-fg-muted">
+            <span>{head}</span>
+            {current && badges(current)}
+          </div>
           <div className="flex flex-col gap-2 rounded-box bg-base-200 p-4 text-sm">
             {segments.map((s) => (
               <div key={s.id} className="flex gap-3">
@@ -120,7 +130,8 @@ export default function History() {
           {sessions.map((s) => (
             <button key={s.id} type="button" onClick={() => setSel(s.id)} className="flex flex-wrap items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-base-300">
               <span className="font-semibold">{when(s.started_at)}</span>
-              <span className="text-xs text-fg-muted">{duration(s)} · {s.src_lang.toUpperCase()} → {s.tgt_lang.toUpperCase()} · {t("history.segments", { count: s.segments })}</span>
+              <span className="text-xs text-fg-muted">{duration(s)} · {t("history.segments", { count: s.segments })}</span>
+              <span className="flex flex-wrap items-center gap-1 text-xs text-fg-muted">{badges(s)}</span>
             </button>
           ))}
         </div>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { rowAction, formatSize, ERROR_KEYS } from "../lib/models";
+import { rowAction, formatSize, translatorLabel, ERROR_KEYS } from "../lib/models";
 import en from "../locales/en.json";
 import type { ModelStatus } from "../lib/types";
 
@@ -28,5 +28,17 @@ describe("ERROR_KEYS", () => {
   it("maps every backend code to an existing locale key", () => {
     const errors = (en as { errors: Record<string, string> }).errors;
     for (const key of Object.values(ERROR_KEYS)) expect(errors[key.replace("errors.", "")]).toBeTruthy();
+  });
+});
+
+describe("translatorLabel", () => {
+  const name = (id: string) => (id === "qwen3-1.7b" ? "Qwen3 1.7B" : id);
+  it("resolves local model ids to names and shows cloud as provider · model", () => {
+    expect(translatorLabel("local:qwen3-1.7b", name)).toBe("Qwen3 1.7B");
+    expect(translatorLabel("cloud:openai/gpt-4o-mini", name)).toBe("openai · gpt-4o-mini");
+  });
+  it("is null when the session had no translator", () => {
+    expect(translatorLabel(null, name)).toBeNull();
+    expect(translatorLabel("", name)).toBeNull();
   });
 });

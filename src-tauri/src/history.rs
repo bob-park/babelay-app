@@ -27,6 +27,7 @@ pub struct SessionSummary {
     pub src_lang: String,
     pub tgt_lang: String,
     pub asr_model: String,
+    pub translator: Option<String>,
     pub segments: i64,
 }
 
@@ -135,7 +136,7 @@ impl Db {
     pub fn sessions(&self, limit: u32) -> rusqlite::Result<Vec<SessionSummary>> {
         let conn = self.conn();
         let mut stmt = conn.prepare(
-            "SELECT s.id, s.started_at, s.ended_at, s.src_lang, s.tgt_lang, s.asr_model, COUNT(g.id)
+            "SELECT s.id, s.started_at, s.ended_at, s.src_lang, s.tgt_lang, s.asr_model, s.translator, COUNT(g.id)
              FROM sessions s LEFT JOIN segments g ON g.session_id = s.id
              GROUP BY s.id ORDER BY s.started_at DESC, s.id DESC LIMIT ?1",
         )?;
@@ -147,7 +148,8 @@ impl Db {
                 src_lang: r.get::<_, Option<String>>(3)?.unwrap_or_default(),
                 tgt_lang: r.get::<_, Option<String>>(4)?.unwrap_or_default(),
                 asr_model: r.get::<_, Option<String>>(5)?.unwrap_or_default(),
-                segments: r.get(6)?,
+                translator: r.get(6)?,
+                segments: r.get(7)?,
             })
         })?;
         rows.collect()
@@ -336,6 +338,10 @@ mod tests {
         db.insert_segment(sid, 1200, 2500, "en", "second line")
             .unwrap();
         db.update_translation(row, "안녕 세계").unwrap();
+        assert_eq!(
+            db.sessions(10).unwrap()[0].translator.as_deref(),
+            Some("local:qwen3.5-2b")
+        );
 
         let hits = db.search("세계").unwrap();
         assert_eq!(hits.len(), 1);
