@@ -140,19 +140,21 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
 
     let capture_sc: Shortcut = SHORTCUT_CAPTURE.parse().expect("valid shortcut");
     let overlay_sc: Shortcut = SHORTCUT_OVERLAY.parse().expect("valid shortcut");
-    app.global_shortcut()
-        .on_shortcut(capture_sc, |app, _, ev| {
-            if ev.state() == ShortcutState::Pressed {
-                toggle_capture(app);
-            }
-        })
-        .map_err(std::io::Error::other)?;
-    app.global_shortcut()
-        .on_shortcut(overlay_sc, |app, _, ev| {
-            if ev.state() == ShortcutState::Pressed {
-                let _ = toggle_overlay(app);
-            }
-        })
-        .map_err(std::io::Error::other)?;
+    // Another app may already own the hotkey (Windows rejects duplicates);
+    // the tray menu covers the same actions, so warn instead of failing setup.
+    if let Err(e) = app.global_shortcut().on_shortcut(capture_sc, |app, _, ev| {
+        if ev.state() == ShortcutState::Pressed {
+            toggle_capture(app);
+        }
+    }) {
+        eprintln!("shortcut {SHORTCUT_CAPTURE} unavailable: {e}");
+    }
+    if let Err(e) = app.global_shortcut().on_shortcut(overlay_sc, |app, _, ev| {
+        if ev.state() == ShortcutState::Pressed {
+            let _ = toggle_overlay(app);
+        }
+    }) {
+        eprintln!("shortcut {SHORTCUT_OVERLAY} unavailable: {e}");
+    }
     Ok(())
 }
