@@ -7,7 +7,7 @@ use babelay_engine::engine::EngineEvent;
 use tauri::{
     image::Image,
     menu::{MenuBuilder, MenuItem},
-    tray::TrayIconBuilder,
+    tray::{TrayIconBuilder, TrayIconEvent},
     AppHandle, Emitter, Manager, Wry,
 };
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
@@ -118,6 +118,12 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
         .icon_as_template(true)
         .menu(&menu)
         .show_menu_on_left_click(true)
+        // Windows 관습: 트레이 아이콘 더블클릭 = 창 열기. macOS 는 이 이벤트를 내지 않는다.
+        .on_tray_icon_event(|tray, event| {
+            if matches!(event, TrayIconEvent::DoubleClick { .. }) {
+                let _ = windows::show_main(tray.app_handle());
+            }
+        })
         .on_menu_event(|app, event| match event.id.as_ref() {
             "capture" => toggle_capture(app),
             "overlay" => {
