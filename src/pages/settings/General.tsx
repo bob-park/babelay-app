@@ -3,13 +3,12 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "../../components/icons";
 import { PermissionRow } from "../../components/PermissionRow";
 import { SettingGroup, SettingRow } from "../../components/SettingGroup";
-import { resolveLang } from "../../lib/i18n";
+import { LANG_KEY, resolveLang } from "../../lib/i18n";
 import { useSettings } from "../../lib/settings";
 import { api } from "../../lib/tauri";
 import type { Theme, UiLang } from "../../lib/types";
 
 const select = "select select-sm w-44";
-const LANG_KEY = { ko: "general.langKo", en: "general.langEn", ja: "general.langJa" } as const;
 
 export default function General() {
   const { t } = useTranslation();
