@@ -57,11 +57,11 @@ describe("overlayLines", () => {
     expect(overlayLines("both", "src", "par", "")).toEqual([L("src")]);
     expect(overlayLines("target", "src", "par")).toEqual([L("src")]);
   });
-  it("source mode shows only the live partial in gray, never the confirmed text", () => {
-    expect(overlayLines("source", "src", "par", "tgt")).toEqual([L("par", true)]);
-    expect(overlayLines("source", "src", "")).toEqual([]);
+  it("source mode shows only the confirmed text, bold, never the live partial", () => {
+    expect(overlayLines("source", "src", "par", "tgt")).toEqual([L("src")]);
+    expect(overlayLines("source", "", "par")).toEqual([]);
   });
-  it("the live partial shows only in source mode — both/target wait for the translated set", () => {
+  it("the live partial never shows — both/target wait for the translated set", () => {
     expect(overlayLines("both", "", "par")).toEqual([]);
     expect(overlayLines("target", "", "par")).toEqual([]);
   });
