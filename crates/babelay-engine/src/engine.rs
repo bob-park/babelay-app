@@ -21,6 +21,35 @@ const TRANSLATE_ERROR_INTERVAL: Duration = Duration::from_secs(30);
 /// 번역 프롬프트에 붙이는 직전 원문 수.
 const TRANSLATE_CONTEXT: usize = 2;
 
+/// Final 언어 다수결 창(스펙 4단계 §3.1). Whisper 는 Final 마다 언어를 새로 감지하고 짧은
+/// 발화에서 자주 틀린다 — 한 번의 오감지가 번역 호출(또는 패스쓰루 누락)로 이어지지 않게 한다.
+const LANG_WINDOW: usize = 3;
+
+/// 최근 `LANG_WINDOW` 개 Final 의 감지 언어 다수결. 동률이면 이번 감지값.
+/// ponytail: 언어가 세션 중 실제로 바뀌면 Final 2개만큼 늦게 따라간다. 더 빨리 따라가야 하면 창을 줄인다.
+struct LangVote(VecDeque<String>);
+
+impl LangVote {
+    fn new() -> Self {
+        Self(VecDeque::with_capacity(LANG_WINDOW + 1))
+    }
+
+    /// 이번 감지값을 넣고 확정 언어를 돌려준다.
+    fn push(&mut self, detected: String) -> String {
+        self.0.push_back(detected.clone());
+        if self.0.len() > LANG_WINDOW {
+            self.0.pop_front();
+        }
+        let count = |l: &str| self.0.iter().filter(|x| x.as_str() == l).count();
+        let mine = count(&detected);
+        self.0
+            .iter()
+            .find(|l| count(l) > mine)
+            .cloned()
+            .unwrap_or(detected)
+    }
+}
+
 pub struct EngineConfig {
     pub model_path: PathBuf,
     /// 이 세션이 쓰는 모델 id. `Started` 로 실려 나가 UI 가 실행 중인 설정을 보여준다.
@@ -300,6 +329,7 @@ fn transcribe_loop(
 ) {
     let mut next_id = 1u64;
     let mut lagging = false;
+    let mut vote = LangVote::new();
     for job in rx {
         let waited = job.enqueued.elapsed();
         if waited > LAG_THRESHOLD && !lagging {
@@ -340,14 +370,16 @@ fn transcribe_loop(
                     if let Some(s) = segs.into_iter().next() {
                         let id = next_id;
                         next_id += 1;
+                        // 감지값 하나가 아니라 최근 Final 들의 다수결로 원어를 정한다(오감지 완화).
+                        let lang = vote.push(s.lang);
                         let job = translate_tx
                             .as_ref()
-                            .map(|_| (id, s.text.clone(), s.lang.clone()));
+                            .map(|_| (id, s.text.clone(), lang.clone()));
                         // 원문이 먼저다. 번역 큐 사정이 자막을 늦추면 안 된다.
                         let _ = tx.send(EngineEvent::Final {
                             id,
                             text: s.text,
-                            lang: s.lang,
+                            lang,
                             start_ms,
                             end_ms,
                         });
@@ -891,5 +923,30 @@ mod tests {
         assert_eq!(errors, 1, "연속 실패는 한 번만 보고한다: {events:?}");
         assert!(matches!(events.last(), Some(EngineEvent::Stopped)));
         assert_eq!(count_stopped(&events), 1);
+    }
+
+    #[test]
+    fn lang_vote_majority_overrides_a_single_misdetection() {
+        let mut v = LangVote::new();
+        assert_eq!(v.push("en".into()), "en", "첫 Final 은 감지값 그대로");
+        assert_eq!(v.push("en".into()), "en");
+        assert_eq!(v.push("cy".into()), "en", "[en, en, cy] 다수결은 en");
+    }
+
+    #[test]
+    fn lang_vote_tie_keeps_the_current_detection() {
+        let mut v = LangVote::new();
+        v.push("en".into());
+        assert_eq!(v.push("ko".into()), "ko", "[en, ko] 동률이면 이번 값");
+        assert_eq!(v.push("ja".into()), "ja", "[en, ko, ja] 모두 1표면 이번 값");
+    }
+
+    #[test]
+    fn lang_vote_follows_a_real_switch_after_two_finals() {
+        let mut v = LangVote::new();
+        v.push("en".into());
+        v.push("en".into());
+        assert_eq!(v.push("ko".into()), "en", "첫 전환 Final 은 아직 en");
+        assert_eq!(v.push("ko".into()), "ko", "[en, ko, ko] 부터 ko");
     }
 }
