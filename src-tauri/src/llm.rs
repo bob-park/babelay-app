@@ -1,25 +1,41 @@
 //! 로컬 번역 LLM 캐시. 스펙 §4.3: 첫 번역 시점에 로드하고, 모델(경로 또는 GPU 토글)이
 //! 바뀌기 전까지 세션이 끝나도 프로세스에 남는다 — 캡처 시작이 1.3GB 로드를 기다리지 않고,
 //! stop → start 나 연결 테스트가 같은 모델을 다시 읽지 않는다.
+//! GPU 로드가 실패해 CPU 로 내려갔으면 `EngineEvent::CpuFallback{stage:"translate"}` 를
+//! `engine-event` 로 낸다(4단계 스펙 §5) — 세션(=`SharedLlm` 인스턴스)마다 한 번.
+use babelay_engine::engine::EngineEvent;
 use babelay_engine::translate::local::LocalLlm;
 use babelay_engine::translate::{TranslateError, TranslateRequest, Translator};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 
 struct Loaded {
     path: PathBuf,
     gpu: bool,
+    /// GPU 로드 실패 후 CPU 로 올라온 모델인지. 캐시된 채 다음 세션이 써도 알려야 한다.
+    fell_back: bool,
     llm: LocalLlm,
 }
 
 /// 프로세스 전역 캐시(`app.manage`). 담긴 모델은 최대 하나다.
+/// `app` 이 없으면(테스트의 `Default`) 폴백 이벤트를 내지 않는다.
 #[derive(Default, Clone)]
-pub struct LlmCache(Arc<Mutex<Option<Loaded>>>);
+pub struct LlmCache {
+    slot: Arc<Mutex<Option<Loaded>>>,
+    app: Option<AppHandle>,
+}
 
 impl LlmCache {
+    pub fn new(app: AppHandle) -> Self {
+        Self {
+            slot: Arc::default(),
+            app: Some(app),
+        }
+    }
+
     fn lock(&self) -> MutexGuard<'_, Option<Loaded>> {
-        self.0.lock().unwrap_or_else(|p| p.into_inner())
+        self.slot.lock().unwrap_or_else(|p| p.into_inner())
     }
 }
 
@@ -39,9 +55,22 @@ pub fn evict(app: &AppHandle, path: &Path) {
 
 /// 캐시를 공유하는 번역기. 첫 `translate` 에서 로드하고, 경로나 GPU 설정이 다르면 갈아 끼운다.
 pub struct SharedLlm {
-    pub cache: LlmCache,
-    pub path: PathBuf,
-    pub gpu: bool,
+    cache: LlmCache,
+    path: PathBuf,
+    gpu: bool,
+    /// 폴백 이벤트는 인스턴스마다 한 번.
+    notified: bool,
+}
+
+impl SharedLlm {
+    pub fn new(cache: LlmCache, path: PathBuf, gpu: bool) -> Self {
+        Self {
+            cache,
+            path,
+            gpu,
+            notified: false,
+        }
+    }
 }
 
 impl Translator for SharedLlm {
@@ -63,13 +92,25 @@ impl Translator for SharedLlm {
             *g = Some(Loaded {
                 path: self.path.clone(),
                 gpu: self.gpu,
+                fell_back,
                 llm,
             });
         }
         // 방금 채웠거나 이미 맞는 모델이 들어 있다.
-        match g.as_mut() {
-            Some(l) => l.llm.translate(req),
-            None => Err(TranslateError::Load("llm cache empty".into())),
+        let l = g
+            .as_mut()
+            .ok_or_else(|| TranslateError::Load("llm cache empty".into()))?;
+        if l.fell_back && !self.notified {
+            self.notified = true;
+            if let Some(app) = &self.cache.app {
+                let _ = app.emit(
+                    "engine-event",
+                    EngineEvent::CpuFallback {
+                        stage: "translate".into(),
+                    },
+                );
+            }
         }
+        l.llm.translate(req)
     }
 }

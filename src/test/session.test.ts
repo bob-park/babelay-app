@@ -42,4 +42,13 @@ describe("session reducer", () => {
     v = reduce(v, { type: "final", id: 1, text: "a", lang: "en", start_ms: 0, end_ms: 1 });
     expect(v.lagging).toBe(false);
   });
+  it("cpu_fallback turns on the badge only while capturing", () => {
+    const idle = reduce(initialView, { type: "cpu_fallback", stage: "translate" });
+    expect(idle.gpuFallback).toBe(false);
+    let v = reduce(initialView, { type: "started", gpu_active: true, gpu_fallback: false, model_id: "m", source_lang: null, target_lang: "ko" });
+    v = reduce(v, { type: "cpu_fallback", stage: "translate" });
+    expect(v.gpuFallback).toBe(true);
+    v = reduce(v, { type: "stopped" });
+    expect(v.gpuFallback).toBe(false);
+  });
 });

@@ -24,7 +24,7 @@ pub fn run() {
             let path = app.path().app_config_dir()?.join("settings.json");
             app.manage(SettingsState::new(path));
             app.manage(models::Downloads::default());
-            app.manage(llm::LlmCache::default());
+            app.manage(llm::LlmCache::new(app.handle().clone()));
             app.manage(SessionState::default());
             // 기록은 있으면 좋은 기능이다. 열지 못해도 앱은 떠야 한다.
             match history::open(&app.path().app_local_data_dir()?.join("history.sqlite")) {

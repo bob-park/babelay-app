@@ -41,6 +41,7 @@ export type EngineEvent =
   | { type: "partial"; text: string; lang: string; start_ms: number }
   | { type: "final"; id: number; text: string; lang: string; start_ms: number; end_ms: number }
   | { type: "translated"; id: number; text: string; lang: string }
+  | { type: "cpu_fallback"; stage: string }
   | { type: "lagging"; queued_ms: number }
   | { type: "error"; code: string; message: string }
   | { type: "stopped" };

@@ -129,11 +129,11 @@ pub fn build(
         return Ok(Some(cloud_translator(settings)?));
     }
     let path = local_model_path(settings, models_dir)?;
-    Ok(Some(Box::new(SharedLlm {
-        cache: cache.clone(),
+    Ok(Some(Box::new(SharedLlm::new(
+        cache.clone(),
         path,
-        gpu: settings.asr.gpu,
-    })))
+        settings.asr.gpu,
+    ))))
 }
 
 #[derive(serde::Serialize, Debug)]

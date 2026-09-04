@@ -67,6 +67,9 @@ export function reduce(v: SessionView, ev: EngineEvent): SessionView {
       finals[i] = { ...finals[i], tgt: ev.text };
       return { ...next, finals };
     }
+    case "cpu_fallback":
+      // 로컬 LLM 이 CPU 로 내려갔다. 연결 테스트도 이 이벤트를 내므로 캡처 중일 때만 배지를 켠다.
+      return v.capturing ? { ...next, gpuFallback: true } : next;
     case "lagging":
       return { ...next, lagging: true };
     case "stopped":

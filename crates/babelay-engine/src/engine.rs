@@ -90,6 +90,11 @@ pub enum EngineEvent {
         text: String,
         lang: String,
     },
+    /// GPU 로드가 실패해 CPU 로 내려갔다. `stage` 는 `"translate"`(로컬 LLM, 첫 번역 시점).
+    /// Whisper 폴백은 `Started.gpu_fallback` 으로 나간다.
+    CpuFallback {
+        stage: String,
+    },
     Lagging {
         queued_ms: u64,
     },
