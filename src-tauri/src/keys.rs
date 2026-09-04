@@ -2,7 +2,7 @@
 //! 설정 파일에는 절대 쓰지 않는다. service = 앱 번들 id, user = 프로바이더.
 use keyring::{Entry, Error};
 
-const SERVICE: &str = "com.babelay.app";
+const SERVICE: &str = "org.bobpark.babelay";
 const PROVIDERS: [&str; 5] = ["openai", "anthropic", "gemini", "deepl", "custom"];
 
 fn entry(provider: &str) -> Result<Entry, String> {

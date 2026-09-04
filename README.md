@@ -135,7 +135,7 @@ Hugging Face `ggerganov/whisper.cpp`의 GGML 모델을 앱 안에서 받습니�
 | 설정 `settings.json` | `~/Library/Application Support/org.bobpark.babelay` | `%APPDATA%\org.bobpark.babelay` |
 | 히스토리 `history.sqlite` | 위와 같음 | `%LOCALAPPDATA%\org.bobpark.babelay` |
 | 모델 `models/asr`, `models/llm` | 위와 같음 | `%LOCALAPPDATA%\org.bobpark.babelay` |
-| API 키 | 키체인, 서비스 `com.babelay.app` | 자격 증명 관리자, 서비스 `com.babelay.app` |
+| API 키 | 키체인, 서비스 `org.bobpark.babelay` | 자격 증명 관리자, 서비스 `org.bobpark.babelay` |
 
 ## 시스템 구조
 

@@ -42,7 +42,7 @@ whisper 전사(`ggml-*.bin` 모델 파일 필요):
 
 로컬 LLM 번역(GGUF 모델 파일 필요, 첫 llama.cpp 빌드는 수 분):
 
-    BABELAY_TEST_LLM="$HOME/Library/Application Support/com.babelay.app/models/llm/Qwen3.5-2B-Q4_K_M.gguf" mise exec -- cargo test -p babelay-engine --features metal translates_english_to_korean -- --ignored --nocapture
+    BABELAY_TEST_LLM="$HOME/Library/Application Support/org.bobpark.babelay/models/llm/Qwen3.5-2B-Q4_K_M.gguf" mise exec -- cargo test -p babelay-engine --features metal translates_english_to_korean -- --ignored --nocapture
 
 키체인 라운드트립(macOS 는 접근 프롬프트가 뜰 수 있다):
 
@@ -50,7 +50,7 @@ whisper 전사(`ggml-*.bin` 모델 파일 필요):
 
 ### API 키
 
-클라우드 번역의 API 키는 OS 자격 증명 저장소(macOS Keychain / Windows Credential Manager, 서비스 `com.babelay.app`, 계정 = 프로바이더)에만 저장되고 `settings.json`에는 들어가지 않는다. 설정 › 번역 › 클라우드 API에서 키를 저장한 뒤 `연결 테스트`를 누르면 짧은 문장을 실제로 번역해 응답 시간과 결과를 보여준다(로컬 모델에서도 동작).
+클라우드 번역의 API 키는 OS 자격 증명 저장소(macOS Keychain / Windows Credential Manager, 서비스 `org.bobpark.babelay`, 계정 = 프로바이더)에만 저장되고 `settings.json`에는 들어가지 않는다. 설정 › 번역 › 클라우드 API에서 키를 저장한 뒤 `연결 테스트`를 누르면 짧은 문장을 실제로 번역해 응답 시간과 결과를 보여준다(로컬 모델에서도 동작).
 
 ### macOS 개발 실행과 시스템 오디오 권한
 
