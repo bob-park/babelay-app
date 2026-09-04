@@ -32,7 +32,7 @@
     "provider": "프로바이더", "model": "모델", "baseUrl": "Base URL",
     "providerOpenai": "OpenAI", "providerAnthropic": "Anthropic", "providerGemini": "Google Gemini", "providerDeepl": "DeepL", "providerCustom": "커스텀 (OpenAI 호환)",
     "sourceLang": "원어", "targetLang": "타겟 언어", "auto": "자동 감지",
-    "apiKey": "API 키", "save": "저장", "saved": "저장됨 ●●●●", "deleteKey": "삭제",
+    "apiKey": "API 키", "save": "저장", "saved": "저장됨 ●●●●", "deleteKey": "삭제", "changeKey": "변경",
     "test": "연결 테스트", "testResult": "{{ms}} ms · {{text}}"
   },
   "overlay": {

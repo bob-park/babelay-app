@@ -21,6 +21,8 @@ export default function Translation() {
   const backend = settings?.translation.backend;
   const [key, setKey] = useState("");
   const [saved, setSaved] = useState(false);
+  // 저장된 키를 새 값으로 덮어쓰는 중. 프로바이더가 바뀌면 접는다.
+  const [editing, setEditing] = useState(false);
   const [testing, setTesting] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -28,6 +30,7 @@ export default function Translation() {
   useEffect(() => {
     if (backend !== "cloud") return;
     setKey("");
+    setEditing(false);
     let alive = true;
     api.hasApiKey(provider).then((v) => { if (alive) setSaved(v); }).catch(() => {});
     return () => { alive = false; };
@@ -45,7 +48,7 @@ export default function Translation() {
 
   const saveKey = () => {
     api.setApiKey(provider, key)
-      .then(() => { setKey(""); return api.hasApiKey(provider); })
+      .then(() => { setKey(""); setEditing(false); return api.hasApiKey(provider); })
       .then(setSaved)
       .catch(report);
   };
@@ -100,9 +103,10 @@ export default function Translation() {
             </SettingRow>
           )}
           <SettingRow as="div" label={t("translation.apiKey")}>
-            {saved ? (
+            {saved && !editing ? (
               <>
                 <span className="badge badge-neutral">{t("translation.saved")}</span>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(true)}>{t("translation.changeKey")}</button>
                 <button type="button" className="btn btn-ghost btn-sm" onClick={deleteKey}>{t("translation.deleteKey")}</button>
               </>
             ) : (
@@ -117,6 +121,7 @@ export default function Translation() {
                   onKeyDown={(e) => { if (e.key === "Enter" && key.trim()) saveKey(); }}
                 />
                 <button type="button" className="btn btn-sm btn-primary" disabled={!key.trim()} onClick={saveKey}>{t("translation.save")}</button>
+                {editing && <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setKey(""); setEditing(false); }}>{t("common.cancel")}</button>}
               </>
             )}
           </SettingRow>

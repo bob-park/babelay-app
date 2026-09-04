@@ -32,7 +32,7 @@
     "provider": "プロバイダー", "model": "モデル", "baseUrl": "Base URL",
     "providerOpenai": "OpenAI", "providerAnthropic": "Anthropic", "providerGemini": "Google Gemini", "providerDeepl": "DeepL", "providerCustom": "カスタム (OpenAI 互換)",
     "sourceLang": "音声の言語", "targetLang": "翻訳先の言語", "auto": "自動検出",
-    "apiKey": "API キー", "save": "保存", "saved": "保存済み ●●●●", "deleteKey": "削除",
+    "apiKey": "API キー", "save": "保存", "saved": "保存済み ●●●●", "deleteKey": "削除", "changeKey": "変更",
     "test": "接続テスト", "testResult": "{{ms}} ms · {{text}}"
   },
   "overlay": {

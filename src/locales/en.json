@@ -32,7 +32,7 @@
     "provider": "Provider", "model": "Model", "baseUrl": "Base URL",
     "providerOpenai": "OpenAI", "providerAnthropic": "Anthropic", "providerGemini": "Google Gemini", "providerDeepl": "DeepL", "providerCustom": "Custom (OpenAI compatible)",
     "sourceLang": "Source language", "targetLang": "Target language", "auto": "Auto detect",
-    "apiKey": "API key", "save": "Save", "saved": "Saved ●●●●", "deleteKey": "Delete",
+    "apiKey": "API key", "save": "Save", "saved": "Saved ●●●●", "deleteKey": "Delete", "changeKey": "Change",
     "test": "Test connection", "testResult": "{{ms}} ms · {{text}}"
   },
   "overlay": {
