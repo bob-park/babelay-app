@@ -13,31 +13,39 @@ export function overlayLines(mode: DisplayMode, source: string, partial: string,
   return { primary: source, secondary: partial };
 }
 
-/** 번역을 이만큼 기다린다. 넘으면 원문만 보여준다. */
-export const TRANSLATION_WAIT_MS = 3000;
+/**
+ * 번역 안전 상한. 정상 흐름(1~3초)에서는 걸리지 않고, 번역이 실패했거나 큐에서 버려져 영원히 오지
+ * 않는 문장에서만 원문을 풀어 준다 — 그렇지 않으면 오버레이가 옛 세트에 멈춘다.
+ */
+export const TRANSLATION_WAIT_MS = 15_000;
 
 export interface OverlayPair { source: string; translated: string }
 
-/**
- * 마지막 final 의 번역을 아직 기다리는 중인지. `tgt` 가 null 이거나(번역 안 함) 원어가 타겟과
- * 같으면 번역이 오지 않으므로 기다리지 않는다.
- */
+/** 번역을 더 기다릴 필요가 없는 Final: 번역이 붙었거나, 이 세션은 번역하지 않거나, 원어 == 타겟. */
+function settled(f: Final, tgt: string | null): boolean {
+  return f.tgt !== undefined || tgt === null || f.lang === tgt;
+}
+
+/** 마지막 final 의 번역을 아직 기다리는 중인지(안전 상한 안). */
 function pending(finals: Final[], tgt: string | null, now: number, lastFinalAt: number, waitMs: number): boolean {
   const last = finals[finals.length - 1];
-  return Boolean(last && !last.tgt && tgt !== null && last.lang !== tgt && now - lastFinalAt < waitMs);
+  return Boolean(last && !settled(last, tgt) && now - lastFinalAt < waitMs);
 }
 
 /**
- * 원문과 번역은 한 세트로 바뀐다. 마지막 final 의 번역이 아직 없으면 잠시(waitMs) 직전 세트를
- * 유지하고, 그래도 안 오면 원문만 보여준다.
+ * 오버레이는 번역이 붙은 세트만 보여준다. 새 Final 이 와도 번역이 없으면 화면은 바뀌지 않고,
+ * 번역이 도착하는 순간 원문+번역이 함께 교체된다(가장 최근에 번역이 붙은 Final). 안전 상한이
+ * 지나도 번역이 없으면 그 원문만 보여준다.
  */
 export function pairForOverlay(finals: Final[], tgt: string | null, now: number, lastFinalAt: number, waitMs = TRANSLATION_WAIT_MS): OverlayPair {
   const last = finals[finals.length - 1];
   if (!last) return { source: "", translated: "" };
-  if (last.tgt) return { source: last.text, translated: last.tgt };
-  const prev = finals[finals.length - 2];
-  if (prev && pending(finals, tgt, now, lastFinalAt, waitMs)) return { source: prev.text, translated: prev.tgt ?? "" };
-  return { source: last.text, translated: "" };
+  if (!settled(last, tgt) && now - lastFinalAt >= waitMs) return { source: last.text, translated: "" };
+  for (let i = finals.length - 1; i >= 0; i--) {
+    const f = finals[i];
+    if (settled(f, tgt)) return { source: f.text, translated: f.tgt ?? "" };
+  }
+  return { source: "", translated: "" };
 }
 
 /** 오버레이가 100ms 타이머로 다시 그려야 하는 상태인지(번역 대기 중). */
