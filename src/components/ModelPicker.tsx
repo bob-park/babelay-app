@@ -96,7 +96,8 @@ export function ModelPicker({ applyLabel, onApplied }: Props) {
         <button type="button" className="btn btn-primary btn-sm" disabled={!current || applying} onClick={apply}>{label}</button>
       </div>
 
-      <details open={manual ?? false} onToggle={(e) => setManual(e.currentTarget.open)} className="flex flex-col gap-2">
+      {/* details 에 display 를 덮어쓰면 WebKit 에서 접힘이 깨진다. 레이아웃은 안쪽 div 가 맡는다. */}
+      <details open={manual ?? false} onToggle={(e) => setManual(e.currentTarget.open)}>
         <summary className="cursor-pointer text-sm text-fg-muted">{t("models.pickManually")}</summary>
         <div className="mt-2 flex flex-col gap-2">
           <SegmentedControl value={kind} onChange={setKind} options={[{ value: "asr", label: t("models.asr") }, { value: "llm", label: t("models.llm") }]} />
