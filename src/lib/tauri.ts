@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { DeepPartial, HwInfo, ModelStatus, Provider, SegmentRow, SessionSummary, Settings, TestTranslationResult } from "./types";
+import type { DeepPartial, HwInfo, ModelStatus, PresetStatus, Provider, SegmentRow, SessionSummary, Settings, TestTranslationResult } from "./types";
 
 export const api = {
   getSettings: () => invoke<Settings>("get_settings"),
@@ -11,6 +11,7 @@ export const api = {
   overlaySetAdjustMode: (enabled: boolean) => invoke<void>("overlay_set_adjust_mode", { enabled }),
   overlayCommitPosition: () => invoke<void>("overlay_commit_position"),
   getModels: () => invoke<ModelStatus[]>("get_models"),
+  getPresets: () => invoke<PresetStatus[]>("get_presets"),
   downloadModel: (id: string) => invoke<void>("download_model", { id }),
   cancelDownload: (id: string) => invoke<void>("cancel_download", { id }),
   deleteModel: (id: string) => invoke<void>("delete_model", { id }),

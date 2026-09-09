@@ -33,7 +33,9 @@ export type ModelKind = "asr" | "llm";
 export interface ModelFile { url: string; filename: string; size_bytes: number; sha256: string | null }
 export interface ModelInfo { id: string; kind: ModelKind; name: string; desc_key: string; size_bytes: number; total_bytes: number; speed: 1 | 2 | 3 | 4 | 5; quality: 1 | 2 | 3 | 4 | 5; url: string; filename: string; sha256: string | null; mmproj: ModelFile | null }
 export interface DownloadProgress { received: number; total: number }
-export interface ModelStatus { info: ModelInfo; installed: boolean; in_use: boolean; balanced: boolean; download: DownloadProgress | null }
+export interface ModelStatus { info: ModelInfo; installed: boolean; in_use: boolean; balanced: boolean; fit: "good" | "heavy"; download: DownloadProgress | null }
+export type PresetId = "fast" | "balanced" | "quality";
+export interface PresetStatus { id: PresetId; asr: string; llm: string; total_bytes: number; heavy: boolean }
 export type DownloadState = "downloading" | "done" | "error" | "cancelled";
 export interface DownloadEvent { id: string; received: number; total: number; state: DownloadState; message: string | null }
 

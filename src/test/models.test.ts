@@ -5,7 +5,7 @@ import type { ModelStatus } from "../lib/types";
 
 const base: ModelStatus = {
   info: { id: "small", kind: "asr", name: "Whisper Small", desc_key: "models.desc.small", size_bytes: 466 * 1024 * 1024, total_bytes: 466 * 1024 * 1024, speed: 3, quality: 3, url: "https://x", filename: "s.bin", sha256: null, mmproj: null },
-  installed: false, in_use: false, balanced: true, download: null,
+  installed: false, in_use: false, balanced: true, fit: "good", download: null,
 };
 
 describe("rowAction", () => {
