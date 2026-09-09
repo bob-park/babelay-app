@@ -97,8 +97,8 @@ Whisper 는 Hugging Face `ggerganov/whisper.cpp`의 GGML 모델, Qwen3-ASR 은 `
 | Whisper Medium | 1.5 GB | |
 | Whisper Large v3 Turbo | 1.6 GB | VRAM 16 GB 이상의 기본값 |
 | Whisper Large v3 | 3.1 GB | 가장 정확한 Whisper, 가장 느림 |
-| Qwen3-ASR 0.6B | 1.0 GB | 다국어·소음에 강함, 언어 자동 감지. GPU 권장 |
-| Qwen3-ASR 1.7B | 2.5 GB | 최고 정확도. GPU 16 GB 권장 |
+| Qwen3-ASR 0.6B | 972 MB | 다국어·소음에 강함, 언어 자동 감지. GPU 권장 |
+| Qwen3-ASR 1.7B | 2.3 GB | 최고 정확도. GPU 16 GB 권장 |
 
 ### 🤖 번역 모델
 
@@ -110,8 +110,8 @@ Whisper 는 Hugging Face `ggerganov/whisper.cpp`의 GGML 모델, Qwen3-ASR 은 `
 | Qwen 3.5 2B | 1.4 GB | 균형 |
 | Gemma 3 4B | 2.5 GB | |
 | Qwen 3.5 4B | 2.5 GB | 한·일 강함 |
-| HY-MT1.5 1.8B / 7B | 1.1 GB / 4.6 GB | Tencent 번역 전용 모델 |
-| Hy-MT2 1.8B / 7B | 1.1 GB / 4.6 GB | Tencent 번역 전용 모델, 33개 언어. 1.8B 도 상용 API 수준 |
+| HY-MT1.5 1.8B / 7B | 1.1 GB / 4.3 GB | Tencent 번역 전용 모델 |
+| Hy-MT2 1.8B / 7B | 1.1 GB / 4.3 GB | Tencent 번역 전용 모델, 33개 언어. 1.8B 도 상용 API 수준 |
 
 클라우드 번역은 OpenAI, Anthropic, Google Gemini, DeepL, 그리고 OpenAI 호환 커스텀 엔드포인트를 지원합니다. API 키는 OS 자격 증명 저장소(macOS 키체인, Windows 자격 증명 관리자)에만 저장되고 설정 파일에는 들어가지 않습니다.
 
