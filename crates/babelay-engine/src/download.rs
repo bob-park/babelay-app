@@ -131,6 +131,47 @@ pub fn download(
     Ok(())
 }
 
+/// 모델에 속한 파일을 본체 → mmproj 순서로 받는다. 진행률의 `total` 은 모델 전체 크기이고
+/// `received` 는 앞 파일까지 누적이다. 이미 정확한 크기로 있는 파일은 건너뛴다.
+pub fn download_model(
+    client: &reqwest::blocking::Client,
+    models_dir: &Path,
+    m: &crate::models::ModelInfo,
+    cancel: &AtomicBool,
+    on_progress: &mut dyn FnMut(Progress),
+) -> Result<(), DownloadError> {
+    let total = m.total_bytes;
+    let mut done = 0u64;
+    for f in m.files() {
+        let dest = crate::models::file_path(models_dir, m, &f);
+        let present = fs::metadata(&dest)
+            .map(|md| md.is_file() && md.len() == f.size_bytes)
+            .unwrap_or(false);
+        if !present {
+            download(
+                client,
+                f.url,
+                &dest,
+                f.size_bytes,
+                f.sha256,
+                cancel,
+                &mut |p| {
+                    on_progress(Progress {
+                        received: done + p.received.min(f.size_bytes),
+                        total,
+                    })
+                },
+            )?;
+        }
+        done += f.size_bytes;
+        on_progress(Progress {
+            received: done,
+            total,
+        });
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -361,5 +402,99 @@ mod tests {
         )
         .unwrap_err();
         assert!(matches!(err, DownloadError::Http(_)));
+    }
+
+    fn two_file_model(server: &MockServer) -> crate::models::ModelInfo {
+        let leak = |s: String| -> &'static str { Box::leak(s.into_boxed_str()) };
+        crate::models::ModelInfo {
+            id: "t",
+            kind: crate::models::Kind::Asr,
+            name: "t",
+            desc_key: "models.desc.t",
+            size_bytes: 16,
+            total_bytes: 16 + 6,
+            speed: 3,
+            quality: 3,
+            url: leak(server.url("/main.gguf")),
+            filename: "main.gguf",
+            sha256: None,
+            mmproj: Some(crate::models::ModelFile {
+                url: leak(server.url("/mmproj.gguf")),
+                filename: "mmproj.gguf",
+                size_bytes: 6,
+                sha256: None,
+            }),
+        }
+    }
+
+    #[test]
+    fn download_model_fetches_every_file_with_cumulative_progress() {
+        let server = MockServer::start();
+        server.mock(|w, t| {
+            w.method(GET).path("/main.gguf");
+            t.status(200).header("content-length", "16").body(BODY);
+        });
+        server.mock(|w, t| {
+            w.method(GET).path("/mmproj.gguf");
+            t.status(200).header("content-length", "6").body(&BODY[..6]);
+        });
+        let dir = tempfile::tempdir().unwrap();
+        let m = two_file_model(&server);
+        let mut seen = vec![];
+        download_model(
+            &client(),
+            dir.path(),
+            &m,
+            &AtomicBool::new(false),
+            &mut |p| seen.push((p.received, p.total)),
+        )
+        .unwrap();
+        assert!(crate::models::installed(dir.path(), &m));
+        assert_eq!(
+            dir.path()
+                .join("asr")
+                .join("mmproj.gguf")
+                .metadata()
+                .unwrap()
+                .len(),
+            6
+        );
+        assert_eq!(*seen.last().unwrap(), (22, 22));
+        assert!(
+            seen.iter().all(|(_, t)| *t == 22),
+            "total must be the model total"
+        );
+        assert!(
+            seen.windows(2).all(|w| w[0].0 <= w[1].0),
+            "received never decreases"
+        );
+    }
+
+    #[test]
+    fn download_model_skips_files_already_installed() {
+        let server = MockServer::start();
+        let main = server.mock(|w, t| {
+            w.method(GET).path("/main.gguf");
+            t.status(200).header("content-length", "16").body(BODY);
+        });
+        server.mock(|w, t| {
+            w.method(GET).path("/mmproj.gguf");
+            t.status(200).header("content-length", "6").body(&BODY[..6]);
+        });
+        let dir = tempfile::tempdir().unwrap();
+        let m = two_file_model(&server);
+        let main_path = crate::models::model_path(dir.path(), &m);
+        std::fs::create_dir_all(main_path.parent().unwrap()).unwrap();
+        std::fs::write(&main_path, BODY).unwrap();
+        download_model(
+            &client(),
+            dir.path(),
+            &m,
+            &AtomicBool::new(false),
+            &mut |_| {},
+        )
+        .unwrap();
+        main.assert_hits(0);
+        assert!(crate::models::installed(dir.path(), &m));
     }
 }
