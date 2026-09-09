@@ -1,0 +1,6 @@
+# Windows: whisper-rs-sys 와 llama-cpp-sys-2 가 각자 ggml 을 정적으로 묶어 같은 심볼이 두 벌 들어온다.
+# macOS 의 ld 는 먼저 온 정의를 쓰고 넘어가지만 MSVC 는 LNK2005/LNK1169 로 멈춘다(mtmd 피처 이후 실제 발생).
+# ponytail: MSVC 도 먼저 온 정의를 쓰게 한다(macOS 와 같은 결과, LNK4006 경고는 정상). 근본 해결은 ggml 을 한 벌만
+# 링크하는 것 — llama-cpp-2 의 `dynamic-link` 로 llama/ggml 을 DLL 로 빼거나 whisper 를 llama 의 ggml 위에 올린다.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "link-arg=/FORCE:MULTIPLE"]

@@ -94,7 +94,8 @@ Tauri 는 `.app` 만 공증·스테이플하고 `.dmg` 는 서명만 하므로, 
        VSLANG=1033                      # MSVC 메시지를 영어로(한글 깨짐 방지)
 
 6. **CUDA 런타임 DLL** — `%CUDA_PATH%\bin`의 `cudart64_12.dll`, `cublas64_12.dll`, `cublasLt64_12.dll`을 `src-tauri/resources/cuda/`에 복사. `tauri.windows.conf.json`의 `"resources/cuda/*.dll": "./"` 매핑이 exe 옆에 놓는다.
-7. **Windows Defender 제외** — 프로젝트 폴더, `%USERPROFILE%\.cargo`. 빼지 않으면 빌드 산출물 스캔으로 EBUSY가 나거나 매우 느리다.
+7. **ggml 중복 심볼** — whisper-rs-sys 와 llama-cpp-sys-2 가 각자 ggml 을 묶어 오므로 `.cargo/config.toml` 이 MSVC 에 `/FORCE:MULTIPLE` 을 준다. 링크 중 `LNK4006`(multiply defined) 경고가 수백 줄 나오는 건 정상이고, 이 설정을 지우면 `LNK2005` → `LNK1169` 로 실패한다.
+8. **Windows Defender 제외** — 프로젝트 폴더, `%USERPROFILE%\.cargo`. 빼지 않으면 빌드 산출물 스캔으로 EBUSY가 나거나 매우 느리다.
 
 빌드는 **"x64 Native Tools Command Prompt for VS 2022"** 에서 한다. 일반 터미널은 `INCLUDE`가 비어 있어 bindgen이 `stdbool.h`를 못 찾고, 그러면 동봉된 Linux 바인딩으로 대체돼 `12_usize - 16_usize` 오버플로 오류가 난다.
 
