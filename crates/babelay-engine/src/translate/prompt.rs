@@ -35,3 +35,14 @@ pub fn user_prompt(req: &TranslateRequest) -> String {
     p.push_str(&req.text);
     p
 }
+
+/// HY-MT(Tencent) 전용. 번역 명령 모델이라 system 없이 user 한 턴으로 보내고 문맥은 붙이지 않는다.
+/// ponytail: 문맥 없이 번역. 대명사 오역이 실측되면 Hy-MT2 의 [Background Information] 블록으로 확장.
+pub fn hy_mt_prompt(req: &TranslateRequest) -> String {
+    format!(
+        "Translate the following text into {}. Note that you should only output the translated \
+         result without any additional explanation:\n\n{}",
+        lang_name(&req.tgt),
+        req.text
+    )
+}

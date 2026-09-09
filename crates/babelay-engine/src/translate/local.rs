@@ -1,7 +1,8 @@
 //! 로컬 LLM 번역기(llama.cpp). 컨텍스트 하나를 재사용하며 요청마다 KV 캐시만 비우고 greedy 로 디코딩한다.
 use crate::llama::backend;
 use crate::translate::{
-    postprocess, system_prompt, user_prompt, TranslateError, TranslateRequest, Translator,
+    hy_mt_prompt, postprocess, system_prompt, user_prompt, TranslateError, TranslateRequest,
+    Translator,
 };
 use llama_cpp_2::context::params::LlamaContextParams;
 use llama_cpp_2::context::LlamaContext;
@@ -20,6 +21,14 @@ pub(crate) fn is_qwen3(p: &Path) -> bool {
         .unwrap_or(false)
 }
 
+/// Tencent HY-MT 계열. 파일명으로 판별한다(`Hy-MT2-…`, `HY-MT1.5-…`).
+pub(crate) fn is_hy_mt(p: &Path) -> bool {
+    p.file_name()
+        .and_then(|s| s.to_str())
+        .map(|s| s.to_ascii_lowercase().contains("hy-mt"))
+        .unwrap_or(false)
+}
+
 /// 컨텍스트 길이. 프롬프트(시스템+직전 문맥+원문)와 생성분(입력의 3배)이 이 안에 들어간다.
 const N_CTX: u32 = 4096;
 
@@ -29,6 +38,7 @@ pub struct LocalLlm {
     ctx: LlamaContext<'static>,
     model: Box<LlamaModel>,
     qwen3: bool,
+    hy_mt: bool,
     pub gpu_active: bool,
 }
 
@@ -73,29 +83,36 @@ impl LocalLlm {
                 ctx,
                 model,
                 qwen3: is_qwen3(path),
+                hy_mt: is_hy_mt(path),
                 gpu_active: use_gpu && !fell_back,
             },
             fell_back,
         ))
     }
 
-    /// 모델 채팅 템플릿으로 system+user 를 렌더한다. 템플릿이 없으면 ChatML.
+    /// 모델 채팅 템플릿으로 렌더한다. 템플릿이 없으면 ChatML(HY-MT 는 예외 — 틀린 형식이라 실패시킨다).
     /// Qwen3 계열은 `/no_think` 를 무시하고(Qwen3.5 실측) 사고 블록 안에서 생성 예산을 다 써 버리므로,
     /// 어시스턴트 턴을 빈 `<think></think>` 로 미리 채워 사고를 끈다(템플릿의 enable_thinking=false 와 같은 효과).
     fn render(&self, req: &TranslateRequest) -> Result<String, TranslateError> {
-        let user = user_prompt(req);
+        let msg = |role: &str, content: String| {
+            LlamaChatMessage::new(role.into(), content)
+                .map_err(|e| TranslateError::Request(e.to_string()))
+        };
         let sys = system_prompt(&req.tgt);
-        let msgs = vec![
-            LlamaChatMessage::new("system".into(), sys.clone())
-                .map_err(|e| TranslateError::Request(e.to_string()))?,
-            LlamaChatMessage::new("user".into(), user.clone())
-                .map_err(|e| TranslateError::Request(e.to_string()))?,
-        ];
+        let user = user_prompt(req);
+        let msgs = if self.hy_mt {
+            vec![msg("user", hy_mt_prompt(req))?]
+        } else {
+            vec![msg("system", sys.clone())?, msg("user", user.clone())?]
+        };
         let mut prompt = match self.model.chat_template(None) {
             Ok(tmpl) => self
                 .model
                 .apply_chat_template(&tmpl, &msgs, true)
                 .map_err(|e| TranslateError::Request(e.to_string()))?,
+            Err(e) if self.hy_mt => {
+                return Err(TranslateError::Load(format!("chat template missing: {e}")))
+            }
             Err(_) => format!(
                 "<|im_start|>system\n{sys}<|im_end|>\n<|im_start|>user\n{user}<|im_end|>\n<|im_start|>assistant\n"
             ),
@@ -203,6 +220,19 @@ mod tests {
         println!("{out2} ({} ms)", started.elapsed().as_millis());
         assert!(out2.chars().any(|c| ('가'..='힣').contains(&c)));
         assert_ne!(out, out2);
+    }
+
+    #[test]
+    fn hy_mt_detection_by_filename() {
+        for f in ["/x/Hy-MT2-1.8B-Q4_K_M.gguf", "/x/HY-MT1.5-7B-Q4_K_M.gguf"] {
+            assert!(super::is_hy_mt(std::path::Path::new(f)), "{f}");
+        }
+        assert!(!super::is_hy_mt(std::path::Path::new(
+            "/x/Qwen3.5-2B-Q4_K_M.gguf"
+        )));
+        assert!(!super::is_qwen3(std::path::Path::new(
+            "/x/Hy-MT2-1.8B-Q4_K_M.gguf"
+        )));
     }
 
     #[test]
