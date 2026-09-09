@@ -1,23 +1,16 @@
 //! 로컬 LLM 번역기(llama.cpp). 컨텍스트 하나를 재사용하며 요청마다 KV 캐시만 비우고 greedy 로 디코딩한다.
+use crate::llama::backend;
 use crate::translate::{
     postprocess, system_prompt, user_prompt, TranslateError, TranslateRequest, Translator,
 };
 use llama_cpp_2::context::params::LlamaContextParams;
 use llama_cpp_2::context::LlamaContext;
-use llama_cpp_2::llama_backend::LlamaBackend;
 use llama_cpp_2::llama_batch::LlamaBatch;
 use llama_cpp_2::model::params::LlamaModelParams;
 use llama_cpp_2::model::{AddBos, LlamaChatMessage, LlamaModel};
 use llama_cpp_2::sampling::LlamaSampler;
 use std::num::NonZeroU32;
 use std::path::Path;
-use std::sync::OnceLock;
-
-/// 프로세스당 한 번만 초기화한다(두 번 init 하면 llama.cpp 가 에러를 낸다).
-fn backend() -> &'static LlamaBackend {
-    static BACKEND: OnceLock<LlamaBackend> = OnceLock::new();
-    BACKEND.get_or_init(|| LlamaBackend::init().expect("llama backend"))
-}
 
 /// Qwen3 계열은 thinking 을 끄기 위해 어시스턴트 턴을 빈 think 블록으로 미리 채운다. 파일명으로 판별한다.
 pub(crate) fn is_qwen3(p: &Path) -> bool {

@@ -9,7 +9,7 @@ cc = "1"
 
 [dependencies]
 # openmp 기본 feature 는 macOS clang 에서 빌드가 깨질 수 있어 끈다.
-llama-cpp-2 = { version = "0.1.156", default-features = false, features = ["common"] }
+llama-cpp-2 = { version = "0.1.156", default-features = false, features = ["common", "mtmd"] }
 encoding_rs = "0.8" # llama-cpp-2 token_to_piece 의 스트리밍 UTF-8 디코더
 serde = { version = "1", features = ["derive"] }
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
