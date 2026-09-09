@@ -114,7 +114,7 @@ pub struct PresetStatus {
     pub asr: &'static str,
     pub llm: &'static str,
     pub total_bytes: u64,
-    /// 두 모델 중 하나라도 이 기기에서 버거우면 true.
+    /// 두 모델 중 하나라도 버겁거나, 둘을 함께 올린 용량이 예산을 넘으면 true.
     pub heavy: bool,
 }
 
@@ -124,15 +124,18 @@ pub fn presets() -> Vec<PresetStatus> {
         .iter()
         .map(|p| {
             let models = [find(p.asr), find(p.llm)];
+            let total_bytes: u64 = models.iter().flatten().map(|m| m.total_bytes).sum();
             PresetStatus {
                 id: p.id,
                 asr: p.asr,
                 llm: p.llm,
-                total_bytes: models.iter().flatten().map(|m| m.total_bytes).sum(),
+                total_bytes,
+                // 두 모델은 동시에 올라간다. 각각 Good 이어도 합치면 예산을 넘을 수 있다.
                 heavy: models
                     .iter()
                     .flatten()
-                    .any(|m| hardware::fit(h, m) == Fit::Heavy),
+                    .any(|m| hardware::fit(h, m) == Fit::Heavy)
+                    || total_bytes > hardware::budget_bytes(h),
             }
         })
         .collect()
