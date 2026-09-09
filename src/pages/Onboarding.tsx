@@ -46,7 +46,7 @@ export default function Onboarding() {
   // 모델 단계의 "다음": 미설치면 뒤에서 받기 시작하고 바로 넘어간다.
   const nextFromModel = (kind: ModelKind) => {
     const chosen = kind === "asr" ? asr : llm;
-    if (chosen && !chosen.installed && !chosen.download) enqueue(chosen.info.id);
+    if (chosen && !chosen.installed && !chosen.download) enqueue(chosen.info.id, { replaceKind: true });
     if (kind === "llm") setSkippedLlm(false);
     next();
   };

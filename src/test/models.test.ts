@@ -15,6 +15,10 @@ describe("rowAction", () => {
   it("in use → delete", () => expect(rowAction({ ...base, installed: true, in_use: true })).toBe("delete"));
   it("in use but not installed → download", () => expect(rowAction({ ...base, in_use: true })).toBe("download"));
   it("downloading wins over installed flag", () => expect(rowAction({ ...base, installed: true, download: { received: 1, total: 2 } })).toBe("cancel"));
+  it("queued → queued unless downloading", () => {
+    expect(rowAction(base, true)).toBe("queued");
+    expect(rowAction({ ...base, download: { received: 1, total: 2 } }, true)).toBe("cancel");
+  });
 });
 
 describe("formatSize", () => {

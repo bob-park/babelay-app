@@ -32,12 +32,28 @@ describe("download queue", () => {
     expect(useModels.getState().queue).toEqual([]);
   });
 
-  it("queues while another download is active, replacing the same kind", async () => {
+  it("queues in order while another download is active", async () => {
     useModels.setState({ models: [model("small", "asr", { received: 1, total: 10 }), model("qwen", "llm"), model("gemma", "llm")] });
     await useModels.getState().enqueue("qwen");
     await useModels.getState().enqueue("gemma");
+    await useModels.getState().enqueue("qwen");
     expect(h.api.downloadModel).not.toHaveBeenCalled();
+    expect(useModels.getState().queue).toEqual(["qwen", "gemma"]);
+  });
+
+  it("replaceKind swaps waiting models of the same kind", async () => {
+    useModels.setState({ models: [model("small", "asr", { received: 1, total: 10 }), model("qwen", "llm"), model("gemma", "llm")] });
+    await useModels.getState().enqueue("qwen", { replaceKind: true });
+    await useModels.getState().enqueue("gemma", { replaceKind: true });
     expect(useModels.getState().queue).toEqual(["gemma"]);
+  });
+
+  it("remove drops a waiting model from the queue first", async () => {
+    h.api.deleteModel.mockResolvedValue(undefined);
+    useModels.setState({ queue: ["qwen", "gemma"] });
+    await useModels.getState().remove("qwen");
+    expect(useModels.getState().queue).toEqual(["gemma"]);
+    expect(h.api.deleteModel).toHaveBeenCalledWith("qwen");
   });
 
   it("starts the next queued model after the active one finishes", async () => {
