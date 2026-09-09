@@ -327,8 +327,29 @@ mod tests {
         assert!(prompt(Some("Korean")).ends_with("language Korean<asr_text>"));
     }
 
+    /// 16 kHz 모노 16비트 PCM WAV → f32 샘플. `data` 청크만 찾아 읽는다(테스트 전용, 의존성 없이).
+    fn read_wav_16k_mono(path: &str) -> Vec<f32> {
+        let b = std::fs::read(path).unwrap();
+        let u32at = |i: usize| u32::from_le_bytes(b[i..i + 4].try_into().unwrap()) as usize;
+        let mut i = 12; // RIFF 헤더(12바이트) 다음부터 청크가 이어진다.
+        while i + 8 <= b.len() {
+            let size = u32at(i + 4);
+            if &b[i..i + 4] == b"data" {
+                let end = (i + 8 + size).min(b.len());
+                return b[i + 8..end]
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|c| i16::from_le_bytes(*c) as f32 / 32768.0)
+                    .collect();
+            }
+            i += 8 + size + (size & 1); // 청크는 짝수 바이트 경계에 맞춰진다.
+        }
+        panic!("no data chunk in {path}");
+    }
+
     #[test]
-    #[ignore = "needs BABELAY_TEST_ASR_GGUF=<Qwen3-ASR-*.gguf> and BABELAY_TEST_ASR_MMPROJ=<mmproj-*.gguf>"]
+    #[ignore = "needs BABELAY_TEST_ASR_GGUF=<Qwen3-ASR-*.gguf> and BABELAY_TEST_ASR_MMPROJ=<mmproj-*.gguf> (+ optional BABELAY_TEST_ASR_WAV=<16k mono s16 wav>)"]
     fn loads_and_transcribes_silence_without_panicking() {
         use crate::transcribe::Transcriber;
         let model = std::env::var("BABELAY_TEST_ASR_GGUF").unwrap();
@@ -346,5 +367,19 @@ mod tests {
         assert!(segs.len() <= 1);
         // 짧은 입력도 패딩되어 패닉/에러 없이 지나가야 한다. 언어 강제 경로도 한 번.
         assert!(t.transcribe(&[0.0f32; 100], Some("ko")).is_ok());
+        // 실제 영어 음성이 있으면 프롬프트/`<asr_text>` 규약이 GGUF 와 맞는지까지 확인한다.
+        if let Ok(wav) = std::env::var("BABELAY_TEST_ASR_WAV") {
+            let pcm = read_wav_16k_mono(&wav);
+            let started = std::time::Instant::now();
+            let segs = t.transcribe(&pcm, None).unwrap();
+            eprintln!(
+                "speech: {segs:?} ({} samples, {} ms)",
+                pcm.len(),
+                started.elapsed().as_millis()
+            );
+            let seg = segs.first().expect("speech must produce a segment");
+            assert!(!seg.text.trim().is_empty());
+            assert_eq!(seg.lang, "en");
+        }
     }
 }
