@@ -36,6 +36,10 @@ whisper 전사(`ggml-*.bin` 모델 파일 필요):
 
     BABELAY_TEST_MODEL=<ggml-*.bin 경로> mise exec -- cargo test -p babelay-engine --features metal transcribes_synthetic -- --ignored
 
+Qwen3-ASR 전사(llama.cpp mtmd, 본체 GGUF 와 mmproj 두 파일 필요. `BABELAY_TEST_ASR_WAV` 로 16 kHz 모노 16-bit WAV 를 주면 무음 대신 그 파일을 전사한다):
+
+    BABELAY_TEST_ASR_GGUF=<Qwen3-ASR-*.gguf> BABELAY_TEST_ASR_MMPROJ=<mmproj-*.gguf> mise exec -- cargo test -p babelay-engine --features metal loads_and_transcribes_silence -- --ignored --nocapture
+
 엔드투엔드(실제 탭 + Whisper, GUI 없음): 음악 대신 `say`가 문장을 읽고 자막 이벤트가 출력된다.
 
     BABELAY_TEST_MODEL=<path to ggml-*.bin> mise exec -- cargo run -p babelay-engine --features metal --example e2e
