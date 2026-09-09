@@ -58,9 +58,9 @@
     "timeout": "Timed out"
   },
   "onboarding": {
-    "next": "Next", "back": "Back", "skip": "Skip", "finish": "Get started", "skipped": "Skipped",
-    "step": { "language": "Language", "permission": "Permission", "asr": "Transcript", "llm": "Translation", "done": "Done" },
-    "title": { "language": "Language", "permission": "Allow system audio capture", "asr": "Transcript model", "llm": "Translation model", "done": "All set" },
+    "next": "Next", "back": "Back", "finish": "Get started",
+    "step": { "language": "Language", "permission": "Permission", "models": "Models", "done": "Done" },
+    "title": { "language": "Language", "permission": "Allow system audio capture", "models": "Set up models", "done": "All set" },
     "check": { "asr": "Transcript model", "llm": "Translation model" }
   }
 }
