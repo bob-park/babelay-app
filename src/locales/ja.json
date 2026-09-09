@@ -58,9 +58,9 @@
     "timeout": "タイムアウト"
   },
   "onboarding": {
-    "next": "次へ", "back": "戻る", "skip": "スキップ", "finish": "始める", "skipped": "スキップ済み",
-    "step": { "language": "言語", "permission": "権限", "asr": "Transcript", "llm": "翻訳", "done": "完了" },
-    "title": { "language": "言語", "permission": "システム音声のキャプチャを許可", "asr": "Transcript モデル", "llm": "翻訳モデル", "done": "準備完了" },
+    "next": "次へ", "back": "戻る", "finish": "始める",
+    "step": { "language": "言語", "permission": "権限", "models": "モデル", "done": "完了" },
+    "title": { "language": "言語", "permission": "システム音声のキャプチャを許可", "models": "モデルの準備", "done": "準備完了" },
     "check": { "asr": "Transcript モデル", "llm": "翻訳モデル" }
   }
 }

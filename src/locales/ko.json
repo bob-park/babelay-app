@@ -58,9 +58,9 @@
     "timeout": "응답 시간 초과"
   },
   "onboarding": {
-    "next": "다음", "back": "이전", "skip": "건너뛰기", "finish": "시작하기", "skipped": "건너뜀",
-    "step": { "language": "언어", "permission": "권한", "asr": "Transcript", "llm": "번역", "done": "완료" },
-    "title": { "language": "언어", "permission": "시스템 오디오 캡처 허용", "asr": "Transcript 모델", "llm": "번역 모델", "done": "준비 완료" },
+    "next": "다음", "back": "이전", "finish": "시작하기",
+    "step": { "language": "언어", "permission": "권한", "models": "모델", "done": "완료" },
+    "title": { "language": "언어", "permission": "시스템 오디오 캡처 허용", "models": "모델 준비", "done": "준비 완료" },
     "check": { "asr": "Transcript 모델", "llm": "번역 모델" }
   }
 }
