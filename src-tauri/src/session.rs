@@ -1,7 +1,7 @@
 //! 캡처 세션 수명 관리. 엔진 핸들을 들고 있고, 엔진 이벤트를 창으로 중계한다.
 use crate::{models::models_dir, settings::Settings, settings::SettingsState, translator};
 use babelay_engine::engine::{start_default, EngineConfig, EngineEvent, EngineHandle};
-use babelay_engine::models::{find, installed, model_path};
+use babelay_engine::models::{file_path, find, installed, model_path};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{
@@ -76,6 +76,7 @@ pub fn start(app: &AppHandle) -> Result<(), String> {
     translator::precheck(&settings, &dir)?;
     let cfg = EngineConfig {
         model_path: model_path(&dir, m),
+        mmproj_path: m.mmproj.map(|f| file_path(&dir, m, &f)),
         model_id: settings.asr.model_id.clone(),
         use_gpu: settings.asr.gpu,
         source_lang: (settings.asr.source_lang != "auto").then(|| settings.asr.source_lang.clone()),
