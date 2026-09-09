@@ -18,12 +18,16 @@
     "granted": "許可済み", "denied": "拒否", "unknown": "未確認"
   },
   "models": {
-    "desc": { "tiny": "最速・精度は低い", "base": "速い・短い文向け", "small": "速度と精度のバランス", "medium": "高精度", "large_v3_turbo": "高精度・多言語に強い", "large_v3": "最高精度", "gemma3_1b": "最速・単純な文向け", "qwen3_5_2b": "バランス良好", "gemma3_4b": "より自然な文", "qwen3_5_4b": "最高品質・日中韓に強い", "qwen3_1_7b": "速い・軽い翻訳", "qwen3_4b": "高品質・メモリに余裕が必要" },
+    "desc": { "tiny": "最速・精度は低い", "base": "速い・短い文向け", "small": "速度と精度のバランス", "medium": "高精度", "large_v3_turbo": "高精度・多言語に強い", "large_v3": "最高精度", "gemma3_1b": "最速・単純な文向け", "qwen3_5_2b": "バランス良好", "gemma3_4b": "より自然な文", "qwen3_5_4b": "最高品質・日中韓に強い", "qwen3_1_7b": "速い・軽い翻訳", "qwen3_4b": "高品質・メモリに余裕が必要", "qwen3_asr_0_6b": "多言語・雑音に強い · GPU 推奨", "qwen3_asr_1_7b": "最高精度 · GPU 16 GB 推奨", "hy_mt1_5_1_8b": "翻訳専用・速い", "hy_mt1_5_7b": "翻訳専用・高品質", "hy_mt2_1_8b": "翻訳専用・商用 API 級", "hy_mt2_7b": "翻訳専用・最高品質" },
     "badgeInstalled": "インストール済み", "badgeInUse": "使用中", "badgeRecommended": "おすすめ", "notInstalled": "未インストール",
     "asr": "Transcript", "llm": "翻訳", "downloading": "ダウンロード中", "cancel": "キャンセル", "queued": "待機中",
     "speed1": "とても遅い", "speed2": "遅い", "speed3": "普通", "speed4": "速い", "speed5": "とても速い",
     "gpuMac": "Apple Silicon アクセラレーション", "gpuWin": "NVIDIA GPU アクセラレーション",
-    "download": "ダウンロード", "select": "選択", "delete": "削除", "confirmDelete": "{{name}} を削除しますか？ ({{size}})"
+    "download": "ダウンロード", "select": "選択", "delete": "削除", "confirmDelete": "{{name}} を削除しますか？ ({{size}})",
+    "presets": "プリセット",
+    "preset": { "fast": { "name": "高速", "desc": "遅延最小 · CPU でも可" }, "balanced": { "name": "バランス", "desc": "この端末に最適" }, "quality": { "name": "高精度", "desc": "最も正確 · 余裕のある GPU が必要" } },
+    "presetApply": "{{name}}に設定してダウンロード", "presetSet": "{{name}}に設定", "pickManually": "手動で選ぶ",
+    "quality": "品質", "speed": "速度", "badgeHeavy": "重い可能性"
   },
   "downloads": { "downloading": "{{name}} をダウンロード中", "next": "次: {{name}}" },
   "translation": {
