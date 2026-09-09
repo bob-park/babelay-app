@@ -1,7 +1,9 @@
 //! 전사기 트레이트와 공통 타입. 구현체는 `whisper`(whisper.cpp)와 `qwen3asr`(llama.cpp mtmd).
 
+pub mod qwen3asr;
 pub mod whisper;
 
+pub use qwen3asr::Qwen3AsrTranscriber;
 pub use whisper::WhisperTranscriber;
 
 /// 16 kHz 기준 최소 입력 길이. whisper-rs는 빈 입력을 거부하고 whisper.cpp는 100ms
