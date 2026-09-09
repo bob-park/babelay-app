@@ -102,6 +102,11 @@ pub fn get_models(app: AppHandle) -> Result<Vec<crate::models::ModelStatus>, Str
 }
 
 #[tauri::command]
+pub fn get_presets() -> Vec<crate::models::PresetStatus> {
+    crate::models::presets()
+}
+
+#[tauri::command]
 pub fn download_model(app: AppHandle, id: String) -> Result<(), String> {
     crate::models::start(&app, &id)
 }

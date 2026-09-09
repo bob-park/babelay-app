@@ -1,7 +1,7 @@
 use crate::settings::{Settings, SettingsState};
 use babelay_engine::{
     download::{download_model, DownloadError, Progress},
-    hardware::{self, HwInfo},
+    hardware::{self, Fit, HwInfo},
     models::{file_path, find, installed, ModelInfo},
 };
 use serde::Serialize;
@@ -27,6 +27,7 @@ pub struct ModelStatus {
     pub installed: bool,
     pub in_use: bool,
     pub balanced: bool,
+    pub fit: Fit,
     pub download: Option<DownloadProgress>,
 }
 
@@ -94,6 +95,7 @@ pub fn list(app: &AppHandle) -> Result<Vec<ModelStatus>, String> {
             installed: installed(&dir, m),
             in_use: in_use(&settings, m),
             balanced: m.id == balanced.asr || m.id == balanced.llm,
+            fit: hardware::fit(hw(), m),
             download: active
                 .as_ref()
                 .filter(|a| a.id == m.id)
@@ -104,6 +106,36 @@ pub fn list(app: &AppHandle) -> Result<Vec<ModelStatus>, String> {
                 }),
         })
         .collect())
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct PresetStatus {
+    pub id: &'static str,
+    pub asr: &'static str,
+    pub llm: &'static str,
+    pub total_bytes: u64,
+    /// 두 모델 중 하나라도 이 기기에서 버거우면 true.
+    pub heavy: bool,
+}
+
+pub fn presets() -> Vec<PresetStatus> {
+    let h = hw();
+    hardware::presets(h)
+        .iter()
+        .map(|p| {
+            let models = [find(p.asr), find(p.llm)];
+            PresetStatus {
+                id: p.id,
+                asr: p.asr,
+                llm: p.llm,
+                total_bytes: models.iter().flatten().map(|m| m.total_bytes).sum(),
+                heavy: models
+                    .iter()
+                    .flatten()
+                    .any(|m| hardware::fit(h, m) == Fit::Heavy),
+            }
+        })
+        .collect()
 }
 
 pub fn start(app: &AppHandle, id: &str) -> Result<(), String> {

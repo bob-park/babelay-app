@@ -55,6 +55,7 @@ pub fn run() {
             commands::overlay_set_adjust_mode,
             commands::overlay_commit_position,
             commands::get_models,
+            commands::get_presets,
             commands::get_hw_info,
             commands::start_capture,
             commands::stop_capture,
