@@ -49,6 +49,9 @@ export function ModelPicker({ applyLabel, onApplied }: Props) {
     setApplying(true);
     try {
       await update({ asr: { model_id: current.asr }, translation: { local_model: current.llm } });
+      // update 는 실패해도 되돌리고 resolve 한다. 저장이 확인된 뒤에만 다운로드·다음 단계로 넘어간다.
+      const s = useSettings.getState().settings;
+      if (s?.asr.model_id !== current.asr || s?.translation.local_model !== current.llm) return;
       for (const id of [current.asr, current.llm]) {
         const m = byId(id);
         if (m && !m.installed) await enqueue(id, { replaceKind: true });
