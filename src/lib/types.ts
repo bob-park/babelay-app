@@ -30,7 +30,8 @@ export interface Settings {
 export type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] };
 
 export type ModelKind = "asr" | "llm";
-export interface ModelInfo { id: string; kind: ModelKind; name: string; desc_key: string; size_bytes: number; speed: 1 | 2 | 3 | 4 | 5; url: string; filename: string; sha256: string | null }
+export interface ModelFile { url: string; filename: string; size_bytes: number; sha256: string | null }
+export interface ModelInfo { id: string; kind: ModelKind; name: string; desc_key: string; size_bytes: number; total_bytes: number; speed: 1 | 2 | 3 | 4 | 5; quality: 1 | 2 | 3 | 4 | 5; url: string; filename: string; sha256: string | null; mmproj: ModelFile | null }
 export interface DownloadProgress { received: number; total: number }
 export interface ModelStatus { info: ModelInfo; installed: boolean; in_use: boolean; balanced: boolean; download: DownloadProgress | null }
 export type DownloadState = "downloading" | "done" | "error" | "cancelled";

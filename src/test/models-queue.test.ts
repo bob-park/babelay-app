@@ -13,7 +13,7 @@ vi.mock("../lib/tauri", () => ({ api: h.api }));
 import { useModels } from "../lib/models";
 
 const model = (id: string, kind: "asr" | "llm", download: ModelStatus["download"] = null): ModelStatus => ({
-  info: { id, kind, name: id, desc_key: "models.desc.small", size_bytes: 10, speed: 3, url: "https://x", filename: id, sha256: null },
+  info: { id, kind, name: id, desc_key: "models.desc.small", size_bytes: 10, total_bytes: 10, speed: 3, quality: 3, url: "https://x", filename: id, sha256: null, mmproj: null },
   installed: false, in_use: false, balanced: false, download,
 });
 const flush = () => new Promise((r) => setTimeout(r, 0));
