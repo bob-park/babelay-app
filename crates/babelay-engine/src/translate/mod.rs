@@ -82,6 +82,20 @@ mod tests {
     }
 
     #[test]
+    fn hy_mt_prompt_is_a_single_instruction_without_context() {
+        let req = TranslateRequest {
+            text: "Good morning.".into(),
+            src: "en".into(),
+            tgt: "ko".into(),
+            context: vec!["Previous line".into()],
+        };
+        let p = hy_mt_prompt(&req);
+        assert!(p.starts_with("Translate the following text into Korean."));
+        assert!(p.ends_with("explanation:\n\nGood morning."));
+        assert!(!p.contains("Previous line"));
+    }
+
+    #[test]
     fn user_prompt_includes_context_block_only_when_present() {
         let no = TranslateRequest {
             text: "Hello".into(),
