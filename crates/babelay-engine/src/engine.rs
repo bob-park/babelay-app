@@ -1,11 +1,13 @@
 //! 캡처 → 청커 → 전사 → (번역) 파이프라인 오케스트레이션.
 use crate::audio::{ChunkEvent, Chunker, Resampler};
 use crate::capture::{default_source, AudioSource, Frame};
-use crate::transcribe::{Segment, TranscribeError, Transcriber, WhisperTranscriber};
+use crate::transcribe::{
+    Qwen3AsrTranscriber, Segment, TranscribeError, Transcriber, WhisperTranscriber,
+};
 use crate::translate::{TranslateRequest, Translator};
 use std::collections::VecDeque;
 use std::panic::AssertUnwindSafe;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender, SyncSender};
 use std::sync::Arc;
@@ -52,6 +54,8 @@ impl LangVote {
 
 pub struct EngineConfig {
     pub model_path: PathBuf,
+    /// Qwen3-ASR 의 오디오 인코더 파일. whisper 는 None.
+    pub mmproj_path: Option<PathBuf>,
     /// 이 세션이 쓰는 모델 id. `Started` 로 실려 나가 UI 가 실행 중인 설정을 보여준다.
     pub model_id: String,
     pub use_gpu: bool,
@@ -179,6 +183,20 @@ impl EngineHandle {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Backend {
+    Whisper,
+    Qwen3Asr,
+}
+
+/// `.gguf` 면 llama.cpp(Qwen3-ASR), 그 외(`.bin`)는 whisper.cpp.
+pub(crate) fn backend_for(model: &Path) -> Backend {
+    match model.extension().and_then(|e| e.to_str()) {
+        Some(e) if e.eq_ignore_ascii_case("gguf") => Backend::Qwen3Asr,
+        _ => Backend::Whisper,
+    }
+}
+
 /// 패닉 페이로드에서 사람이 읽을 메시지를 뽑는다.
 fn panic_msg(e: &(dyn std::any::Any + Send)) -> String {
     e.downcast_ref::<&str>()
@@ -192,13 +210,26 @@ pub fn start_default(
     translator: Option<Box<dyn Translator>>,
     tx: Sender<EngineEvent>,
 ) -> Result<EngineHandle, String> {
-    let (t, fell_back) =
-        WhisperTranscriber::load(&cfg.model_path, cfg.use_gpu).map_err(|e| e.to_string())?;
-    let gpu_active = t.gpu_active;
+    let (transcriber, gpu_active, fell_back): (Box<dyn Transcriber>, bool, bool) =
+        match backend_for(&cfg.model_path) {
+            Backend::Qwen3Asr => {
+                let mmproj = cfg.mmproj_path.as_deref().ok_or("mmproj missing")?;
+                let (t, fb) = Qwen3AsrTranscriber::load(&cfg.model_path, mmproj, cfg.use_gpu)
+                    .map_err(|e| e.to_string())?;
+                let g = t.gpu_active;
+                (Box::new(t), g, fb)
+            }
+            Backend::Whisper => {
+                let (t, fb) = WhisperTranscriber::load(&cfg.model_path, cfg.use_gpu)
+                    .map_err(|e| e.to_string())?;
+                let g = t.gpu_active;
+                (Box::new(t), g, fb)
+            }
+        };
     start(
         cfg,
         default_source(),
-        Box::new(t),
+        transcriber,
         translator,
         gpu_active,
         fell_back,
@@ -618,9 +649,25 @@ mod tests {
         }
     }
 
+    #[test]
+    fn backend_is_chosen_by_extension() {
+        use std::path::Path;
+        assert_eq!(
+            backend_for(Path::new("/m/asr/ggml-small.bin")),
+            Backend::Whisper
+        );
+        assert_eq!(
+            backend_for(Path::new("/m/asr/Qwen3-ASR-0.6B-Q8_0.gguf")),
+            Backend::Qwen3Asr
+        );
+        assert_eq!(backend_for(Path::new("/m/asr/X.GGUF")), Backend::Qwen3Asr);
+        assert_eq!(backend_for(Path::new("unused")), Backend::Whisper);
+    }
+
     fn cfg(tgt: Option<&str>) -> EngineConfig {
         EngineConfig {
             model_path: "unused".into(),
+            mmproj_path: None,
             model_id: "test-model".into(),
             use_gpu: false,
             source_lang: None,

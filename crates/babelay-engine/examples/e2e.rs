@@ -11,6 +11,7 @@ fn main() {
     let (tx, rx) = mpsc::channel();
     let cfg = EngineConfig {
         model_path: model.into(),
+        mmproj_path: None,
         model_id: "test".into(),
         use_gpu: true,
         source_lang: Some("en".into()),
