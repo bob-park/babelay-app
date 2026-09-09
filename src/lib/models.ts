@@ -5,10 +5,11 @@ import { api } from "./tauri";
 import { useSettings } from "./settings";
 import type { DownloadEvent, DownloadState, ModelStatus } from "./types";
 
-export type RowAction = "download" | "cancel" | "select" | "delete";
+export type RowAction = "download" | "cancel" | "queued" | "select" | "delete";
 
-export function rowAction(s: ModelStatus): RowAction {
+export function rowAction(s: ModelStatus, queued = false): RowAction {
   if (s.download) return "cancel";
+  if (queued) return "queued";
   if (!s.installed) return "download";
   if (s.in_use) return "delete";
   return "select";
@@ -34,7 +35,7 @@ interface ModelsStore {
   queue: string[];
   refresh: () => Promise<void>;
   download: (id: string) => Promise<void>;
-  enqueue: (id: string) => Promise<void>;
+  enqueue: (id: string, opts?: { replaceKind?: boolean }) => Promise<void>;
   dequeue: (id: string) => void;
   cancel: (id: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
@@ -78,25 +79,26 @@ export const useModels = create<ModelsStore>((set, get) => ({
     try { await api.downloadModel(id); await get().refresh(); } catch (e) { report(e); }
   },
   queue: [],
-  enqueue: async (id) => {
+  enqueue: async (id, opts) => {
     const s = get();
     const activeId = starting ?? s.models.find((m) => m.download)?.info.id ?? null;
-    if (activeId === id) return;                 // 이미 받는 중이면 무시
+    if (activeId === id || s.queue.includes(id)) return; // 이미 받는 중이거나 대기 중이면 무시
     if (!activeId) {
       starting = id;
       try { await s.download(id); } finally { starting = null; }
       return;
     }
     const kindOf = (x: string) => s.models.find((m) => m.info.id === x)?.info.kind;
-    const kind = kindOf(id);
-    // 온보딩에서 마음을 바꾸면 같은 종류의 대기 항목은 새 선택으로 갈아끼운다.
-    set({ queue: [...s.queue.filter((q) => q !== id && kindOf(q) !== kind), id] });
+    // 프리셋을 바꾸면 같은 종류의 대기 항목은 새 선택으로 갈아끼운다. 그 외에는 뒤에 붙인다.
+    const kept = opts?.replaceKind ? s.queue.filter((q) => kindOf(q) !== kindOf(id)) : s.queue;
+    set({ queue: [...kept, id] });
   },
   dequeue: (id) => set({ queue: get().queue.filter((q) => q !== id) }),
   cancel: async (id) => {
     try { await api.cancelDownload(id); } catch (e) { report(e); }
   },
   remove: async (id) => {
+    get().dequeue(id);
     try { await api.deleteModel(id); await get().refresh(); } catch (e) { report(e); }
   },
   bind: () => {

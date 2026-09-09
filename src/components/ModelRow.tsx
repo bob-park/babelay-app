@@ -13,10 +13,9 @@ interface Props {
 
 export function ModelRow({ status, selected, onSelect }: Props) {
   const { t } = useTranslation();
-  const { download, cancel, remove } = useModels();
-  // 슬롯은 하나뿐이라 다른 모델을 받는 중이면 백엔드가 "busy" 로 거절한다.
-  const busy = useModels((st) => st.models.some((m) => m.download));
-  const action = rowAction(status);
+  const { enqueue, dequeue, cancel, remove } = useModels();
+  const queued = useModels((st) => st.queue.includes(status.info.id));
+  const action = rowAction(status, queued);
   const [confirm, setConfirm] = useState(false);
   const { info } = status;
   const pct = status.download ? Math.round((status.download.received / Math.max(1, status.download.total)) * 100) : null;
@@ -31,8 +30,9 @@ export function ModelRow({ status, selected, onSelect }: Props) {
     </button>
   );
   const button = {
-    download: <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => download(info.id)}>{t("models.download")}</button>,
+    download: <button type="button" className="btn btn-primary btn-sm" onClick={() => enqueue(info.id)}>{t("models.download")}</button>,
     cancel: <button type="button" className="btn btn-ghost btn-sm" onClick={() => cancel(info.id)}>{t("models.cancel")}</button>,
+    queued: <button type="button" className="btn btn-ghost btn-sm gap-1" onClick={() => dequeue(info.id)}>{t("models.queued")}<Icon name="x" className="h-3 w-3" /></button>,
     select: (
       <div className="flex flex-wrap gap-1">
         <button type="button" className="btn btn-primary btn-sm" onClick={onSelect}>{t("models.select")}</button>
