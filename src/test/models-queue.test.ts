@@ -42,10 +42,14 @@ describe("download queue", () => {
   });
 
   it("replaceKind swaps waiting models of the same kind", async () => {
-    useModels.setState({ models: [model("small", "asr", { received: 1, total: 10 }), model("qwen", "llm"), model("gemma", "llm")] });
+    // 다른 종류(asr)의 대기 항목은 남고, 같은 종류(llm)만 교체된다.
+    useModels.setState({
+      models: [model("small", "asr", { received: 1, total: 10 }), model("small2", "asr"), model("qwen", "llm"), model("gemma", "llm")],
+      queue: ["small2"],
+    });
     await useModels.getState().enqueue("qwen", { replaceKind: true });
     await useModels.getState().enqueue("gemma", { replaceKind: true });
-    expect(useModels.getState().queue).toEqual(["gemma"]);
+    expect(useModels.getState().queue).toEqual(["small2", "gemma"]);
   });
 
   it("remove drops a waiting model from the queue first", async () => {
