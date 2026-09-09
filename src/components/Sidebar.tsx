@@ -8,6 +8,7 @@ import { useSession } from "../lib/session";
 import { useSettings } from "../lib/settings";
 import { api } from "../lib/tauri";
 import type { HwInfo } from "../lib/types";
+import logo from "../../assets/icon.svg";
 
 interface Item { to: string; icon: IconName; label: string }
 
@@ -37,7 +38,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
   return (
     <aside className={`relative flex w-14 shrink-0 flex-col gap-1 border-r border-base-300 bg-base-200 p-2 ${wide}`}>
       <div className={`mb-1 flex items-center justify-center gap-2 px-1 pt-1 font-bold ${justify}`}>
-        <span className="h-5 w-5 shrink-0 rounded-md bg-primary" />
+        <img src={logo} alt="" className="h-6 w-6 shrink-0" />
         <span className={label}>{t("app.name")}</span>
       </div>
       {!collapsed && (
