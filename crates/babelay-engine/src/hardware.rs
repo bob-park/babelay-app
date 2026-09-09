@@ -117,20 +117,25 @@ pub enum Fit {
     Heavy,
 }
 
-/// 이 기기에서 버거울지 경험칙으로 판정한다.
-/// 예산: NVIDIA 는 VRAM/2, Apple Silicon(통합 메모리)은 RAM/3, CPU 전용은 RAM/4.
-/// CPU 전용에서 Qwen3-ASR(mmproj 있는 모델)는 실시간을 못 따라가므로 항상 Heavy.
+/// 이 기기가 모델에 내줄 수 있는 메모리 예산(바이트).
+/// NVIDIA 는 VRAM/2, Apple Silicon(통합 메모리)은 RAM/3, CPU 전용은 RAM/4.
 /// ponytail: 단순 경험칙. 로드 실패·지연 실측 후 비율을 조정한다.
-pub fn fit(hw: &HwInfo, m: &ModelInfo) -> Fit {
-    let (budget_gb, cpu_only) = match (hw.gpu.is_some(), hw.gpu_mem_gb) {
-        (true, Some(vram)) => (vram / 2, false),
-        (true, None) => (hw.mem_gb / 3, false),
-        (false, _) => (hw.mem_gb / 4, true),
+pub fn budget_bytes(hw: &HwInfo) -> u64 {
+    let gb = match (hw.gpu.is_some(), hw.gpu_mem_gb) {
+        (true, Some(vram)) => vram / 2,
+        (true, None) => hw.mem_gb / 3,
+        (false, _) => hw.mem_gb / 4,
     };
-    if cpu_only && m.mmproj.is_some() {
+    (gb as u64) << 30
+}
+
+/// 이 기기에서 버거울지 경험칙으로 판정한다.
+/// CPU 전용에서 Qwen3-ASR(mmproj 있는 모델)는 실시간을 못 따라가므로 항상 Heavy.
+pub fn fit(hw: &HwInfo, m: &ModelInfo) -> Fit {
+    if hw.gpu.is_none() && m.mmproj.is_some() {
         return Fit::Heavy;
     }
-    if m.total_bytes > (budget_gb as u64) << 30 {
+    if m.total_bytes > budget_bytes(hw) {
         Fit::Heavy
     } else {
         Fit::Good
@@ -227,6 +232,26 @@ mod tests {
         // CPU 전용은 Qwen3-ASR 가 항상 Heavy, 작은 모델은 Good
         assert_eq!(fit(&hw(false, 64, None), qwen_asr), Fit::Heavy);
         assert_eq!(fit(&hw(false, 4, None), small), Fit::Good);
+    }
+
+    #[test]
+    fn budget_bytes_follows_the_device_class() {
+        const GIB: u64 = 1 << 30;
+        assert_eq!(budget_bytes(&hw(true, 16, None)), 5 * GIB); // Apple: RAM/3
+        assert_eq!(budget_bytes(&hw(true, 64, Some(8))), 4 * GIB); // NVIDIA: VRAM/2
+        assert_eq!(budget_bytes(&hw(false, 16, None)), 4 * GIB); // CPU 전용: RAM/4
+    }
+
+    /// 품질 프리셋은 두 모델을 동시에 올린다. 각각은 Good 이어도 합치면 예산을 넘는다.
+    #[test]
+    fn quality_preset_models_fit_alone_but_not_together() {
+        use crate::models::find;
+        let h = hw(true, 16, None);
+        let asr = find("qwen3-asr-1.7b").unwrap();
+        let llm = find("hy-mt2-7b").unwrap();
+        assert_eq!(fit(&h, asr), Fit::Good);
+        assert_eq!(fit(&h, llm), Fit::Good);
+        assert!(asr.total_bytes + llm.total_bytes > budget_bytes(&h));
     }
 
     #[test]
