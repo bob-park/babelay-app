@@ -5,6 +5,17 @@ import type { ModelStatus } from "../lib/types";
 import { ConfirmModal } from "./ConfirmModal";
 import { Icon } from "./icons";
 
+/** 1~5 등급을 점 5개로. 품질은 초록, 속도는 회색. */
+function Meter({ value, accent, label }: { value: number; accent?: boolean; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1" aria-label={label}>
+      <span className="inline-flex gap-0.5">
+        {[1, 2, 3, 4, 5].map((i) => <span key={i} className={`h-1.5 w-1.5 rounded-[2px] ${i <= value ? (accent ? "bg-primary" : "bg-fg-muted") : "bg-neutral"}`} />)}
+      </span>
+    </span>
+  );
+}
+
 interface Props {
   status: ModelStatus;
   selected: boolean;
@@ -20,9 +31,10 @@ export function ModelRow({ status, selected, onSelect }: Props) {
   const { info } = status;
   const pct = status.download ? Math.round((status.download.received / Math.max(1, status.download.total)) * 100) : null;
 
+  const size = formatSize(info.total_bytes);
   const meta = status.download
-    ? `${formatSize(info.size_bytes)} · ${t("models.downloading")} · ${pct}% · ${formatSize(status.download.received)} / ${formatSize(status.download.total)}`
-    : `${formatSize(info.size_bytes)} · ${t(info.desc_key)}`;
+    ? `${size} · ${t("models.downloading")} · ${pct}% · ${formatSize(status.download.received)} / ${formatSize(status.download.total)}`
+    : size;
 
   const deleteBtn = (
     <button type="button" className="btn btn-ghost btn-sm gap-1" aria-label={t("models.delete")} onClick={() => setConfirm(true)}>
@@ -57,22 +69,25 @@ export function ModelRow({ status, selected, onSelect }: Props) {
           {status.in_use && status.installed && <span className="badge badge-primary badge-sm">{t("models.badgeInUse")}</span>}
           {status.installed && !status.in_use && <span className="badge badge-neutral badge-sm">{t("models.badgeInstalled")}</span>}
           {status.balanced && <span className="badge badge-neutral badge-sm">{t("models.badgeRecommended")}</span>}
+          {status.fit === "heavy" && <span className="badge badge-warning badge-sm">{t("models.badgeHeavy")}</span>}
         </div>
-        <div className="mt-0.5 flex items-center gap-2 text-xs text-fg-muted">
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-fg-muted">
           <span className="truncate">{meta}</span>
           {!status.download && (
-            <span className="inline-flex gap-0.5" aria-label={t(`models.speed${info.speed}`)}>
-              {[1, 2, 3, 4, 5].map((i) => <span key={i} className={`h-1.5 w-1.5 rounded-[2px] ${i <= info.speed ? "bg-fg-muted" : "bg-neutral"}`} />)}
-            </span>
+            <>
+              <span className="inline-flex items-center gap-1">{t("models.quality")} <Meter value={info.quality} accent label={`${t("models.quality")} ${info.quality}/5`} /></span>
+              <span className="inline-flex items-center gap-1">{t("models.speed")} <Meter value={info.speed} label={t(`models.speed${info.speed}`)} /></span>
+            </>
           )}
         </div>
+        <div className="text-xs text-fg-muted">{t(info.desc_key)}</div>
         {status.download && <progress className="progress progress-primary mt-2 h-1 w-full" value={status.download.received} max={Math.max(1, status.download.total)} />}
       </div>
       <div onClick={(e) => e.stopPropagation()}>
         {button}
         <ConfirmModal
           open={confirm}
-          message={t("models.confirmDelete", { name: info.name, size: formatSize(info.size_bytes) })}
+          message={t("models.confirmDelete", { name: info.name, size: formatSize(info.total_bytes) })}
           onCancel={() => setConfirm(false)}
           onConfirm={() => { setConfirm(false); remove(info.id); }}
         />

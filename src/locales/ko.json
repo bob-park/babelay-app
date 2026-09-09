@@ -18,12 +18,16 @@
     "granted": "허용됨", "denied": "거부됨", "unknown": "확인 안 됨"
   },
   "models": {
-    "desc": { "tiny": "가장 빠름 · 정확도 낮음", "base": "빠름 · 짧은 문장에 적합", "small": "속도·정확도 균형", "medium": "높은 정확도", "large_v3_turbo": "높은 정확도 · 다국어 강함", "large_v3": "최고 정확도", "gemma3_1b": "가장 빠름 · 단순 문장", "qwen3_5_2b": "속도·품질 균형", "gemma3_4b": "더 자연스러운 문장", "qwen3_5_4b": "최고 품질 · 한·일 강함", "qwen3_1_7b": "빠름 · 가벼운 번역", "qwen3_4b": "높은 품질 · 메모리 여유 필요" },
+    "desc": { "tiny": "가장 빠름 · 정확도 낮음", "base": "빠름 · 짧은 문장에 적합", "small": "속도·정확도 균형", "medium": "높은 정확도", "large_v3_turbo": "높은 정확도 · 다국어 강함", "large_v3": "최고 정확도", "gemma3_1b": "가장 빠름 · 단순 문장", "qwen3_5_2b": "속도·품질 균형", "gemma3_4b": "더 자연스러운 문장", "qwen3_5_4b": "최고 품질 · 한·일 강함", "qwen3_1_7b": "빠름 · 가벼운 번역", "qwen3_4b": "높은 품질 · 메모리 여유 필요", "qwen3_asr_0_6b": "다국어·소음에 강함 · GPU 권장", "qwen3_asr_1_7b": "최고 정확도 · GPU 16 GB 권장", "hy_mt1_5_1_8b": "번역 전용 · 빠름", "hy_mt1_5_7b": "번역 전용 · 높은 품질", "hy_mt2_1_8b": "번역 전용 · 상용 API급", "hy_mt2_7b": "번역 전용 · 최고 품질" },
     "badgeInstalled": "설치됨", "badgeInUse": "사용 중", "badgeRecommended": "추천", "notInstalled": "미설치",
     "asr": "Transcript", "llm": "번역", "downloading": "다운로드 중", "cancel": "취소", "queued": "대기 중",
     "speed1": "매우 느림", "speed2": "느림", "speed3": "보통", "speed4": "빠름", "speed5": "매우 빠름",
     "gpuMac": "Apple Silicon 가속", "gpuWin": "NVIDIA GPU 가속",
-    "download": "다운로드", "select": "선택", "delete": "삭제", "confirmDelete": "{{name}}을(를) 삭제할까요? ({{size}})"
+    "download": "다운로드", "select": "선택", "delete": "삭제", "confirmDelete": "{{name}}을(를) 삭제할까요? ({{size}})",
+    "presets": "프리셋",
+    "preset": { "fast": { "name": "빠름", "desc": "지연 최소 · CPU도 무난" }, "balanced": { "name": "균형", "desc": "이 기기 기준 최적" }, "quality": { "name": "정확", "desc": "가장 정확 · 넉넉한 GPU 필요" } },
+    "presetApply": "{{name}}으로 설정하고 받기", "presetSet": "{{name}}으로 설정", "pickManually": "직접 고르기",
+    "quality": "품질", "speed": "속도", "badgeHeavy": "버거울 수 있음"
   },
   "downloads": { "downloading": "{{name}} 다운로드 중", "next": "다음: {{name}}" },
   "translation": {
