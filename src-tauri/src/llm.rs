@@ -37,6 +37,18 @@ impl LlmCache {
     fn lock(&self) -> MutexGuard<'_, Option<Loaded>> {
         self.slot.lock().unwrap_or_else(|p| p.into_inner())
     }
+
+    /// 담긴 모델을 내린다. 종료 경로에서 부른다 — Metal 버퍼를 쥔 llama 컨텍스트가 살아 있는 채로
+    /// `exit()` 가 돌면 ggml 의 정적 소멸자가 `GGML_ASSERT([rsets->data count] == 0)` 로 abort 한다.
+    pub fn clear(&self) {
+        *self.lock() = None;
+    }
+
+    /// 모델이 들어 있는지. 테스트용.
+    #[cfg(test)]
+    fn is_loaded(&self) -> bool {
+        self.lock().is_some()
+    }
 }
 
 pub fn cache(app: &AppHandle) -> LlmCache {
@@ -112,5 +124,41 @@ impl Translator for SharedLlm {
             }
         }
         l.llm.translate(req)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn clear_empties_the_slot() {
+        let c = LlmCache::default();
+        assert!(!c.is_loaded());
+        c.clear();
+        assert!(!c.is_loaded());
+        // 모델 없이 슬롯이 찬 상태를 만들 수 없으니 clear 가 잠금을 오염시키지 않는 것까지만 본다.
+        let c2 = c.clone();
+        c2.clear();
+        assert!(!c.is_loaded());
+    }
+
+    #[test]
+    #[ignore = "needs BABELAY_TEST_LLM=<gguf>; loads a real model, clears, then checks the slot is empty"]
+    fn clear_drops_a_loaded_model() {
+        let path = PathBuf::from(std::env::var("BABELAY_TEST_LLM").unwrap());
+        let c = LlmCache::default();
+        let mut t = SharedLlm::new(c.clone(), path, true);
+        let req = TranslateRequest {
+            text: "Good morning.".into(),
+            src: "en".into(),
+            tgt: "ko".into(),
+            context: vec![],
+        };
+        t.translate(&req).unwrap();
+        assert!(c.is_loaded());
+        c.clear();
+        assert!(!c.is_loaded());
+        // 여기서 프로세스가 exit 해도 abort 하지 않아야 한다(수동 확인: 앱 종료).
     }
 }

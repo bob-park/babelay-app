@@ -79,6 +79,9 @@ pub fn run() {
         .run(|app, event| {
             if let tauri::RunEvent::Exit = event {
                 session::stop_on_exit(app);
+                // 번역 모델 캐시는 세션이 끝나도 남는다. Metal 버퍼를 쥔 채 exit() 가 돌면
+                // ggml 정적 소멸자가 abort 하므로 여기서 내린다.
+                llm::cache(app).clear();
             }
         });
 }
