@@ -1,8 +1,8 @@
 use crate::settings::{Settings, SettingsState};
 use babelay_engine::{
-    download::{download, DownloadError, Progress},
+    download::{download_model, DownloadError, Progress},
     hardware::{self, HwInfo},
-    models::{find, installed, model_path, ModelInfo},
+    models::{file_path, find, installed, ModelInfo},
 };
 use serde::Serialize;
 use std::{
@@ -126,7 +126,7 @@ pub fn start(app: &AppHandle, id: &str) -> Result<(), String> {
             cancel: cancel.clone(),
             progress: DownloadProgress {
                 received: 0,
-                total: m.size_bytes,
+                total: m.total_bytes,
             },
         });
     }
@@ -135,7 +135,6 @@ pub fn start(app: &AppHandle, id: &str) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
         // 패닉으로 빠져나가도 슬롯은 비운다. 안 비우면 이후 요청이 영영 "busy".
         let _clear = ClearActive(app2.clone());
-        let dest = model_path(&dir, m);
         let mut last = Instant::now()
             .checked_sub(Duration::from_secs(1))
             .unwrap_or_else(Instant::now);
@@ -161,15 +160,7 @@ pub fn start(app: &AppHandle, id: &str) -> Result<(), String> {
                 );
             }
         };
-        let result = download(
-            &client,
-            m.url,
-            &dest,
-            m.size_bytes,
-            m.sha256,
-            &cancel,
-            &mut on_progress,
-        );
+        let result = download_model(&client, &dir, m, &cancel, &mut on_progress);
         let (state, message) = match &result {
             Ok(()) => ("done", None),
             Err(DownloadError::Cancelled) => ("cancelled", None),
@@ -182,7 +173,7 @@ pub fn start(app: &AppHandle, id: &str) -> Result<(), String> {
             .map(|a| a.progress)
             .unwrap_or(DownloadProgress {
                 received: 0,
-                total: m.size_bytes,
+                total: m.total_bytes,
             });
         let _ = app2.emit(
             "model-download",
@@ -236,14 +227,17 @@ pub fn delete(app: &AppHandle, id: &str) -> Result<(), String> {
     {
         return Err("busy".into());
     }
-    let path = model_path(&models_dir(app)?, m);
-    // 캐시가 mmap 으로 쥐고 있으면 Windows 에서 삭제가 실패한다. 먼저 내린다.
-    crate::llm::evict(app, &path);
-    let mut part = path.as_os_str().to_owned();
-    part.push(".part");
-    for p in [path, PathBuf::from(part)] {
-        if p.exists() {
-            std::fs::remove_file(&p).map_err(|e| e.to_string())?;
+    let dir = models_dir(app)?;
+    for f in m.files() {
+        let path = file_path(&dir, m, &f);
+        // 캐시가 mmap 으로 쥐고 있으면 Windows 에서 삭제가 실패한다. 먼저 내린다.
+        crate::llm::evict(app, &path);
+        let mut part = path.as_os_str().to_owned();
+        part.push(".part");
+        for p in [path, PathBuf::from(part)] {
+            if p.exists() {
+                std::fs::remove_file(&p).map_err(|e| e.to_string())?;
+            }
         }
     }
     let state = app.state::<SettingsState>();
