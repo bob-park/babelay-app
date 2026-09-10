@@ -38,7 +38,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEMwRDY0MzFDRUEzMzlBQzMKUldURG1qUHFIRVBXd0tqcXNiZm5JM2FSbXNpd0N6V2pGd2RvS0c2a2FnZFZocWIvK2FKeHhpNWgK",
       "endpoints": ["https://github.com/bob-park/babelay-app/releases/latest/download/latest.json"],
       "windows": { "installMode": "passive" }
     }
