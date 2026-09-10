@@ -35,9 +35,9 @@ export default function General() {
       <div className="flex justify-end">
         {/* 툴팁 본문은 kbd 로, 스크린리더용 텍스트는 따로. */}
         <div className="tooltip tooltip-left">
-          <div className="tooltip-content flex flex-col gap-2 p-2 text-left">
-            <div className="flex items-center justify-between gap-4 text-xs"><span>{t("general.shortcutCapture")}</span>{keys("S")}</div>
-            <div className="flex items-center justify-between gap-4 text-xs"><span>{t("general.shortcutOverlay")}</span>{keys("O")}</div>
+          <div className="tooltip-content flex flex-col gap-2.5 px-4 py-3 text-left">
+            <div className="flex items-center justify-between gap-6 text-xs"><span>{t("general.shortcutCapture")}</span>{keys("S")}</div>
+            <div className="flex items-center justify-between gap-6 text-xs"><span>{t("general.shortcutOverlay")}</span>{keys("O")}</div>
           </div>
           <button type="button" className="btn btn-circle btn-ghost btn-sm" aria-label={t("general.shortcuts")} aria-describedby="shortcuts-tip"><Icon name="help" /><span id="shortcuts-tip" className="sr-only">{shortcutsText}</span></button>
         </div>
