@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { DownloadToast } from "../components/DownloadToast";
-import { ErrorBar } from "../components/ErrorBar";
 import { Icon } from "../components/icons";
 import { ModelPicker } from "../components/ModelPicker";
 import { PermissionIcon, PermissionRow, type Perm } from "../components/PermissionRow";
@@ -9,6 +7,7 @@ import { SettingGroup } from "../components/SettingGroup";
 import { useModels } from "../lib/models";
 import { api } from "../lib/tauri";
 import { useSettings } from "../lib/settings";
+import { showError } from "../lib/toast";
 import type { UiLang } from "../lib/types";
 
 type Step = "language" | "permission" | "models" | "done";
@@ -16,7 +15,7 @@ const ALL: Step[] = ["language", "permission", "models", "done"];
 
 export default function Onboarding() {
   const { t } = useTranslation();
-  const { settings, update, setError } = useSettings();
+  const { settings, update } = useSettings();
   const { models, refresh, queue } = useModels();
   const [steps, setSteps] = useState<Step[]>(ALL);
   const [idx, setIdx] = useState(0);
@@ -54,13 +53,11 @@ export default function Onboarding() {
 
   return (
     <div className="flex h-full flex-col gap-4 p-6">
-      <DownloadToast />
       <ul className="steps w-full text-xs">
         {steps.map((s, i) => (
           <li key={s} className={`step ${i <= cur ? "step-primary" : ""}`} data-content={i < cur ? "✓" : String(i + 1)}>{t(`onboarding.step.${s}`)}</li>
         ))}
       </ul>
-      <ErrorBar />
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 overflow-hidden">
         <h2 className="text-2xl font-bold">{t(`onboarding.title.${step}`)}</h2>
 
@@ -81,7 +78,7 @@ export default function Onboarding() {
           <button type="button" className="btn btn-ghost btn-sm" onClick={back} disabled={cur === 0}>{t("onboarding.back")}</button>
           <div className="flex gap-2">
             {(step === "language" || step === "permission") && <button type="button" className="btn btn-primary btn-sm" onClick={next}>{t("onboarding.next")}</button>}
-            {step === "done" && <button type="button" className="btn btn-primary btn-sm" disabled={!asr?.installed} onClick={() => api.finishOnboarding().catch(setError)}>{t("onboarding.finish")}</button>}
+            {step === "done" && <button type="button" className="btn btn-primary btn-sm" disabled={!asr?.installed} onClick={() => api.finishOnboarding().catch(showError)}>{t("onboarding.finish")}</button>}
           </div>
         </div>
       </div>

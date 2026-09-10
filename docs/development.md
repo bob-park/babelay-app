@@ -62,13 +62,21 @@ Qwen3-ASR 전사(llama.cpp mtmd, 본체 GGUF 와 mmproj 두 파일 필요. `BABE
 
 ## 빌드
 
-macOS 서명 빌드에는 아래 환경변수가 필요하다.
+서명 빌드에 필요한 값은 `~/.config/babelay/sign.env` 에 둔다(`KEY=VALUE` env 형식, export 없이). 내용은 아래 여섯 줄이다.
 
-    APPLE_SIGNING_IDENTITY="Developer ID Application: <이름> (<TEAM_ID>)"
-    APPLE_ID=... APPLE_PASSWORD=<앱 암호> APPLE_TEAM_ID=...   # 공증
+    APPLE_SIGNING_IDENTITY=      # Developer ID Application: <이름> (<TEAM_ID>)
+    APPLE_ID=                    # 공증 Apple ID
+    APPLE_PASSWORD=              # 앱 암호
+    APPLE_TEAM_ID=
+
+    TAURI_SIGNING_PRIVATE_KEY=   # 업데이터 개인키 파일 경로 또는 내용 (아래 "업데이터 서명 키")
+    TAURI_SIGNING_PRIVATE_KEY_PASSWORD=
+
+읽어서 빌드한다.
+
+    set -a; source ~/.config/babelay/sign.env; set +a
     yarn tauri build
 
-값은 `~/.config/babelay/sign.env`(export 형식)에 두고 `set -a; source ~/.config/babelay/sign.env; set +a` 로 읽는다.
 이 변수 없이 빌드하면 번들이 서명되지 않아 내려받은 사용자에게 "손상된 앱" 으로 뜬다(Apple Silicon Gatekeeper).
 Tauri 는 `.app` 만 공증·스테이플하고 `.dmg` 는 서명만 하므로, 릴리스에 올리기 전에 dmg 도 한 번 더 공증한다.
 
@@ -77,7 +85,37 @@ Tauri 는 `.app` 만 공증·스테이플하고 `.dmg` 는 서명만 하므로, 
     xcrun stapler staple target/release/bundle/dmg/Babelay_<버전>_aarch64.dmg
     spctl --assess --type open --context context:primary-signature -v target/release/bundle/dmg/Babelay_<버전>_aarch64.dmg   # accepted 여야 한다
 
-빌드는 로컬에서만 한다(CI 없음). Windows 빌드는 Windows 머신에서 만들며 서명하지 않는다.
+빌드는 로컬에서만 한다(CI 없음). Windows 빌드는 Windows 머신에서 만들며 Apple 서명은 없다.
+
+### 업데이터 서명 키 (최초 1회)
+
+앱 내 자동 업데이트는 minisign 서명을 검증한다. 서명은 끌 수 없다.
+
+    yarn tauri signer generate -w ~/.tauri/babelay.key
+
+공개키(`~/.tauri/babelay.key.pub` 내용)를 `src-tauri/tauri.conf.json` 의 `plugins.updater.pubkey` 에 넣는다. 개인키 경로와 비밀번호는 위 `sign.env` 의 `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` 에 넣는다. Windows 빌드 기계에도 같은 두 변수가 필요하다.
+
+**개인키를 잃으면 이미 설치된 앱에 업데이트를 보낼 수 없다.** 백업한다. 변수 없이 빌드하면 `.sig` 가 만들어지지 않아 업데이트로 배포할 수 없다.
+
+### 릴리스 절차
+
+1. 버전을 올린다: `package.json`, `Cargo.toml`(루트·`src-tauri`·`crates/babelay-engine`), `src-tauri/tauri.conf.json`. `v<버전>` 태그를 민다.
+2. 각 기계에서 `yarn tauri build`. `bundle.createUpdaterArtifacts` 가 켜져 있어 아래가 나온다.
+   - macOS `src-tauri/target/release/bundle/`: `dmg/Babelay_<버전>_aarch64.dmg`(위 공증·스테이플 후), `macos/Babelay.app.tar.gz`, `macos/Babelay.app.tar.gz.sig`
+   - Windows: `nsis/Babelay_<버전>_x64-setup.exe`, `nsis/Babelay_<버전>_x64-setup.exe.sig`
+3. 릴리스를 만들고 위 파일을 모두 올린다. 순서는 상관없다.
+
+       gh release create v<버전> --generate-notes <파일들>     # 처음
+       gh release upload v<버전> <파일들>                       # 다른 기계에서 추가
+
+4. 아무 기계에서나 한 번:
+
+       node scripts/latest-json.mjs v<버전>
+
+   릴리스의 `.sig` 를 내려받아 `latest.json` 을 조립해 올린다. 있는 플랫폼만 들어가므로 한쪽만 올라온 상태에서 돌려도 되고, 나머지를 올린 뒤 다시 돌리면 덮어쓴다. 공개키(plugins.updater.pubkey)가 비어 있으면 스크립트가 업로드 전에 멈춘다.
+5. 릴리스를 게시하면 `releases/latest/download/latest.json` 이 이 버전을 가리키고, 설치된 앱이 다음 확인(시작 10초 후, 이후 24시간마다)에서 알린다.
+
+0.2.0 이전 설치본에는 업데이터가 없으므로 그 사용자는 한 번 직접 설치해야 한다.
 
 ### Windows
 

@@ -2,7 +2,7 @@
   "app": { "name": "Babelay" },
   "common": { "dismiss": "閉じる", "confirm": "確認", "cancel": "キャンセル", "close": "閉じる" },
   "nav": { "live": "ライブ", "history": "履歴", "settings": "設定", "collapse": "サイドバーを閉じる", "expand": "サイドバーを開く", "search": "履歴を検索", "about": "情報" },
-  "about": { "version": "バージョン", "hardware": "ハードウェア" },
+  "about": { "version": "バージョン", "hardware": "ハードウェア", "chip": "チップ", "memory": "メモリ", "graphics": "グラフィックス" },
   "live": { "start": "開始", "stop": "停止", "overlay": "オーバーレイ", "overlayOn": "オン", "overlayOff": "オフ", "stopping": "停止中…", "cpuFallback": "CPU", "lagging": "遅延" },
   "history": { "empty": "まだセッションがありません。", "search": "検索", "exportTxt": "TXT", "exportSrt": "SRT", "delete": "削除", "saved": "保存済み: {{path}}", "segments": "{{count}} セグメント" },
   "settings": { "general": "一般", "models": "モデル", "translation": "翻訳", "overlay": "オーバーレイ" },
@@ -10,7 +10,11 @@
     "theme": "テーマ", "themeSystem": "システム", "themeDark": "ダーク", "themeLight": "ライト",
     "language": "言語", "langSystem": "システム既定", "langKo": "韓国語", "langEn": "英語", "langJa": "日本語",
     "shortcuts": "ショートカット", "shortcutCapture": "キャプチャ開始 / 停止", "shortcutOverlay": "オーバーレイ表示 / 非表示",
-    "permission": "権限"
+    "permission": "権限", "autostart": "ログイン時に自動起動", "updates": "アップデート"
+  },
+  "update": {
+    "auto": "自動的に確認", "version": "現在のバージョン", "check": "今すぐ確認", "checking": "確認中…",
+    "latest": "最新の状態", "available": "v{{version}} が利用可能", "install": "インストール", "installing": "インストール中…", "pending": "アップデート待ち"
   },
   "permission": {
     "name": "システムオーディオ録音", "path": "macOS · プライバシーとセキュリティ › システムオーディオ録音",

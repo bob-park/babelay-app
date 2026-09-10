@@ -16,7 +16,7 @@ export default function Settings() {
   if (!isTab(tab)) return <Navigate to="/settings/general" replace />;
   const body = { general: <General />, models: <Models />, translation: <Translation />, overlay: <Overlay /> }[tab];
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-4">
+    <div className="flex h-full w-full max-w-3xl flex-col gap-4">
       <h2 className="text-2xl font-bold">{t("nav.settings")}</h2>
       <div role="tablist" className="tabs tabs-border">
         {TABS.map((k) => (
@@ -25,7 +25,8 @@ export default function Settings() {
           </NavLink>
         ))}
       </div>
-      {body}
+      {/* 탭은 고정, 본문만 스크롤. 스크롤 영역을 위로 늘리고 같은 만큼 패딩을 줘서 맨 위 툴팁이 잘리지 않게 한다. */}
+      <div className="-mt-6 min-h-0 flex-1 overflow-auto pt-6">{body}</div>
     </div>
   );
 }

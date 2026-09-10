@@ -9,10 +9,12 @@ mod session;
 mod settings;
 mod translator;
 mod tray;
+mod updater;
 mod windows;
 
 use session::SessionState;
 use settings::SettingsState;
+use tauri::AppHandle;
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -20,12 +22,19 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        // 인자 없음: 자동 실행 때도 직접 실행과 같이 메인 창을 띄운다.
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
         .setup(|app| {
             let path = app.path().app_config_dir()?.join("settings.json");
             app.manage(SettingsState::new(path));
             app.manage(models::Downloads::default());
             app.manage(llm::LlmCache::new(app.handle().clone()));
             app.manage(SessionState::default());
+            app.manage(updater::UpdateState::default());
             // 기록은 있으면 좋은 기능이다. 열지 못해도 앱은 떠야 한다.
             match history::open(&app.path().app_local_data_dir()?.join("history.sqlite")) {
                 Ok(db) => {
@@ -43,6 +52,7 @@ pub fn run() {
             }
             overlay::create(&handle, &settings).map_err(std::io::Error::other)?;
             tray::build(&handle)?;
+            updater::spawn_periodic(handle.clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -72,16 +82,24 @@ pub fn run() {
             commands::has_api_key,
             commands::delete_api_key,
             commands::test_translation,
+            commands::update_status,
+            commands::check_update,
+            commands::install_update,
+            commands::get_autostart,
+            commands::set_autostart,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
-        // 종료 시 엔진을 세운다. 오디오 탭이 살아 있는 채로 프로세스가 죽으면 안 된다.
         .run(|app, event| {
             if let tauri::RunEvent::Exit = event {
-                session::stop_on_exit(app);
-                // 번역 모델 캐시는 세션이 끝나도 남는다. Metal 버퍼를 쥔 채 exit() 가 돌면
-                // ggml 정적 소멸자가 abort 하므로 여기서 내린다.
-                llm::cache(app).clear();
+                shutdown(app);
             }
         });
+}
+
+/// 종료·재시작 전에 엔진을 세운다. 오디오 탭이 살아 있는 채로 프로세스가 죽으면 안 되고,
+/// 번역 모델이 Metal 버퍼를 쥔 채 exit() 가 돌면 ggml 정적 소멸자가 abort 한다.
+pub fn shutdown(app: &AppHandle) {
+    session::stop_on_exit(app);
+    llm::cache(app).clear();
 }

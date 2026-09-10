@@ -7,6 +7,7 @@ import { useSession } from "./lib/session";
 import { useModels } from "./lib/models";
 import { applyTheme } from "./lib/theme";
 import { initI18n, resolveLang } from "./lib/i18n";
+import { Toasts } from "./components/Toasts";
 
 // 세션 스토어는 세 창 모두가 붙는다(오버레이도 자막을 그린다).
 const MainApp = React.lazy(() => import("./pages/MainApp"));
@@ -45,7 +46,12 @@ function Root() {
 
   if (!ready || !settings) return null;
   const page = label === "overlay" ? <OverlayWindow /> : label === "onboarding" ? <Onboarding /> : <MainApp />;
-  return <React.Suspense fallback={null}>{page}</React.Suspense>;
+  return (
+    <React.Suspense fallback={null}>
+      {page}
+      {label !== "overlay" && <Toasts />}
+    </React.Suspense>
+  );
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

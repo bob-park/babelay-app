@@ -1,11 +1,12 @@
 import { create } from "zustand";
 import { listen } from "@tauri-apps/api/event";
 import { api } from "./tauri";
+import { showError } from "./toast";
 import type { DeepPartial, Settings } from "./types";
 
 export const defaultSettings: Settings = {
   version: 1,
-  general: { theme: "system", ui_language: "system", onboarding_done: false },
+  general: { theme: "system", ui_language: "system", onboarding_done: false, auto_update: true },
   asr: { model_id: "small", gpu: true, source_lang: "auto" },
   translation: {
     backend: "local",
@@ -42,15 +43,10 @@ export const mergeSettings = (base: Settings, patch: DeepPartial<Settings>): Set
 
 interface SettingsStore {
   settings: Settings | null;
-  error: string | null;
   load: () => Promise<void>;
   update: (patch: DeepPartial<Settings>) => Promise<void>;
-  setError: (e: unknown) => void;
-  clearError: () => void;
   subscribeBackend: () => () => void;
 }
-
-const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 // 인플라이트 update 수와 그 패치의 합. settings-changed는 호출자에게도 되돌아오므로
 // 아직 디스크에 닿지 않은 필드는 에코 위에 다시 덮어야 낙관적 상태가 살아남는다.
@@ -60,13 +56,13 @@ let pendingPatch: DeepPartial<Settings> | null = null;
 
 export const useSettings = create<SettingsStore>((set, get) => ({
   settings: null,
-  error: null,
   load: async () => {
     try {
       set({ settings: await api.getSettings() });
     } catch (e) {
-      // 설정을 못 읽어도 셸은 띄운다. 기본값 + 오류 배너.
-      set({ settings: get().settings ?? defaultSettings, error: message(e) });
+      // 설정을 못 읽어도 셸은 띄운다. 기본값 + 오류 토스트.
+      set({ settings: get().settings ?? defaultSettings });
+      showError(e);
     }
   },
   update: async (patch) => {
@@ -77,14 +73,13 @@ export const useSettings = create<SettingsStore>((set, get) => ({
     try {
       await api.patchSettings(patch);
     } catch (e) {
-      set({ settings: prev, error: message(e) });
+      set({ settings: prev });
+      showError(e);
     } finally {
       pending--;
       if (pending === 0) pendingPatch = null;
     }
   },
-  setError: (e) => set({ error: message(e) }),
-  clearError: () => set({ error: null }),
   subscribeBackend: () => {
     const p = listen<Settings>("settings-changed", (e) => {
       set({ settings: pendingPatch ? mergeSettings(e.payload, pendingPatch) : e.payload });

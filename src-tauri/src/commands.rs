@@ -211,3 +211,32 @@ pub async fn test_translation(app: AppHandle) -> Result<crate::translator::TestR
     .await
     .map_err(|e| e.to_string())?
 }
+
+#[tauri::command]
+pub fn update_status(app: AppHandle) -> Option<crate::updater::UpdateInfo> {
+    crate::updater::status(&app)
+}
+
+#[tauri::command]
+pub async fn check_update(app: AppHandle) -> Result<Option<crate::updater::UpdateInfo>, String> {
+    crate::updater::check(&app).await
+}
+
+#[tauri::command]
+pub async fn install_update(app: AppHandle) -> Result<(), String> {
+    crate::updater::install(&app).await
+}
+
+// 자동 실행 여부의 진실은 OS 등록(LaunchAgent / 레지스트리)이다. settings.json 에는 두지 않는다.
+#[tauri::command]
+pub fn get_autostart(app: AppHandle) -> Result<bool, String> {
+    use tauri_plugin_autostart::ManagerExt;
+    app.autolaunch().is_enabled().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn set_autostart(app: AppHandle, enabled: bool) -> Result<(), String> {
+    use tauri_plugin_autostart::ManagerExt;
+    let m = app.autolaunch();
+    if enabled { m.enable() } else { m.disable() }.map_err(|e| e.to_string())
+}

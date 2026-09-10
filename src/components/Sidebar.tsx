@@ -2,11 +2,11 @@ import { useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Icon, type IconName } from "./icons";
-import { HwBadges } from "./SessionBadges";
 import { useModels } from "../lib/models";
 import { useSession } from "../lib/session";
 import { useSettings } from "../lib/settings";
 import { api } from "../lib/tauri";
+import { useUpdate } from "../lib/update";
 import type { HwInfo } from "../lib/types";
 import logo from "../../assets/icon.svg";
 
@@ -18,6 +18,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
   const { view, start, stop } = useSession();
   const modelId = useSettings((s) => s.settings?.asr.model_id);
   const asrInstalled = useModels((s) => s.models.some((m) => m.info.id === modelId && m.installed));
+  const pending = useUpdate((s) => s.info !== null && s.progress === null);
   const [q, setQ] = useState("");
   const [hw, setHw] = useState<HwInfo | null>(null);
   const about = useRef<HTMLDialogElement>(null);
@@ -84,7 +85,11 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
           </div>
         </div>
         <NavLink to="/settings/general" className={navCls} aria-label={t("nav.settings")}>
-          <Icon name="general" /><span className={label}>{t("nav.settings")}</span>
+          <span className="indicator">
+            {pending && <span role="status" className="indicator-item h-1.5 w-1.5 rounded-full bg-primary" aria-label={t("update.pending")} />}
+            <Icon name="general" />
+          </span>
+          <span className={label}>{t("nav.settings")}</span>
         </NavLink>
         <button type="button" className={`btn btn-ghost btn-sm justify-center gap-2 text-fg-muted ${justify}`} onClick={openAbout} aria-label={t("nav.about")}>
           <Icon name="info" /><span className={label}>{t("nav.about")}</span>
@@ -93,11 +98,21 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       </div>
 
       <dialog ref={about} className="modal">
-        <div className="modal-box max-w-sm">
-          <h3 className="text-lg font-bold">{t("app.name")}</h3>
-          <div className="mt-2 text-sm"><span className="text-fg-muted">{t("about.version")}</span> {import.meta.env.PACKAGE_VERSION}</div>
-          {hw && <div className="flex flex-wrap items-center gap-1 text-sm"><span className="text-fg-muted">{t("about.hardware")}</span> <HwBadges hw={hw} /></div>}
-          <div className="modal-action">
+        <div className="modal-box max-w-xs">
+          {/* macOS "이 Mac에 관하여" 식: 아이콘, 이름, 버전을 가운데 두고 아래에 라벨/값 표. */}
+          <div className="flex flex-col items-center gap-1 text-center">
+            <img src={logo} alt="" className="h-16 w-16" />
+            <h3 className="mt-2 text-lg font-bold">{t("app.name")}</h3>
+            <div className="text-xs text-fg-muted">{t("about.version")} {import.meta.env.PACKAGE_VERSION}</div>
+          </div>
+          {hw && (
+            <dl className="mx-auto mt-5 grid w-fit grid-cols-[auto_auto] gap-x-4 gap-y-1 text-sm">
+              <dt className="text-right text-fg-muted">{t("about.chip")}</dt><dd>{hw.chip}</dd>
+              <dt className="text-right text-fg-muted">{t("about.memory")}</dt><dd>{hw.mem_gb} GB</dd>
+              {hw.gpu && <><dt className="text-right text-fg-muted">{t("about.graphics")}</dt><dd>{hw.gpu}{hw.gpu_mem_gb ? ` · ${hw.gpu_mem_gb} GB` : ""}</dd></>}
+            </dl>
+          )}
+          <div className="modal-action justify-center">
             <form method="dialog"><button className="btn btn-sm">{t("common.close")}</button></form>
           </div>
         </div>

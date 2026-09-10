@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { DeepPartial, HwInfo, ModelStatus, PresetStatus, Provider, SegmentRow, SessionSummary, Settings, TestTranslationResult } from "./types";
+import type { DeepPartial, HwInfo, ModelStatus, PresetStatus, Provider, SegmentRow, SessionSummary, Settings, TestTranslationResult, UpdateInfo } from "./types";
 
 export const api = {
   getSettings: () => invoke<Settings>("get_settings"),
@@ -28,4 +28,9 @@ export const api = {
   hasApiKey: (provider: Provider) => invoke<boolean>("has_api_key", { provider }),
   deleteApiKey: (provider: Provider) => invoke<void>("delete_api_key", { provider }),
   testTranslation: () => invoke<TestTranslationResult>("test_translation"),
+  updateStatus: () => invoke<UpdateInfo | null>("update_status"),
+  checkUpdate: () => invoke<UpdateInfo | null>("check_update"),
+  installUpdate: () => invoke<void>("install_update"),
+  getAutostart: () => invoke<boolean>("get_autostart"),
+  setAutostart: (enabled: boolean) => invoke<void>("set_autostart", { enabled }),
 };

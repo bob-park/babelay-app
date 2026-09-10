@@ -39,6 +39,7 @@ pub struct General {
     pub theme: String,       // system | dark | light
     pub ui_language: String, // system | ko | en | ja
     pub onboarding_done: bool,
+    pub auto_update: bool, // 주기적으로 새 버전을 확인할지. 설치는 언제나 사용자 클릭.
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -97,6 +98,7 @@ impl Default for General {
             theme: "system".into(),
             ui_language: "system".into(),
             onboarding_done: false,
+            auto_update: true,
         }
     }
 }
@@ -209,6 +211,7 @@ mod tests {
         let path = dir.path().join("settings.json");
         let mut s = Settings::default();
         s.general.theme = "dark".into();
+        s.general.auto_update = false;
         s.asr.gpu = false;
         s.translation.cloud.base_url = "x".into();
         s.overlay.font_size = 33;
@@ -230,6 +233,7 @@ mod tests {
         assert_eq!(s.general.theme, "system");
         assert_eq!(s.general.ui_language, "system");
         assert!(!s.general.onboarding_done);
+        assert!(s.general.auto_update);
 
         assert_eq!(s.asr.model_id, "small");
         assert!(s.asr.gpu);

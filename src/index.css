@@ -30,6 +30,22 @@
   --size-field: 0.25rem; --size-selector: 0.25rem; --border: 1px; --depth: 0; --noise: 0;
 }
 
+/* react-toastify 는 theme="light" 로 고정하고 색만 daisyUI 변수에 붙인다 → 다크/라이트를 자동으로 따라간다.
+   라이브러리 CSS 는 런타임에 <head> 뒤쪽으로 주입되므로 :root 하나로는 진다. :root:root 으로 특이도를 올린다. */
+:root:root {
+  --toastify-color-light: var(--color-neutral);
+  --toastify-text-color-light: var(--color-neutral-content);
+  --toastify-color-info: var(--color-info);
+  --toastify-color-success: var(--color-success);
+  --toastify-color-warning: var(--color-warning);
+  --toastify-color-error: var(--color-error);
+  --toastify-color-progress-light: var(--color-primary);
+  --toastify-toast-bd-radius: var(--radius-box);
+  --toastify-font-family: inherit;
+}
+/* 닫기 ✕ 는 color 가 변수가 아니라 #000 하드코딩이다. 다크에서 안 보이므로 여기서 덮는다. */
+:root:root .Toastify__close-button--light { color: var(--color-neutral-content); opacity: .7; }
+
 @theme {
   --color-fg-muted: #8a8a8a;
   --breakpoint-wide: 800px;

@@ -5,12 +5,13 @@ import { SegmentedControl } from "../../components/SegmentedControl";
 import { SettingGroup, SettingRow } from "../../components/SettingGroup";
 import { api } from "../../lib/tauri";
 import { useSettings } from "../../lib/settings";
+import { showError } from "../../lib/toast";
 import { overlayLines } from "../../lib/overlay";
 import type { DisplayMode } from "../../lib/types";
 
 export default function OverlaySettings() {
   const { t } = useTranslation();
-  const { settings, update, setError } = useSettings();
+  const { settings, update } = useSettings();
   const [adjust, setAdjust] = useState(false);
 
   // 트레이·단축키로도 조정 모드가 꺼지므로 백엔드가 진실이다.
@@ -19,11 +20,11 @@ export default function OverlaySettings() {
     return () => { un.then((f) => f()); };
   }, []);
   // 페이지를 떠날 때는 무조건 끈다(이미 꺼져 있으면 무해).
-  useEffect(() => () => { api.overlaySetAdjustMode(false).catch(setError); }, []);
+  useEffect(() => () => { api.overlaySetAdjustMode(false).catch(showError); }, []);
 
   if (!settings) return null;
   const o = settings.overlay;
-  const toggleAdjust = () => { const next = !adjust; setAdjust(next); api.overlaySetAdjustMode(next).catch((e) => { setAdjust(!next); setError(e); }); };
+  const toggleAdjust = () => { const next = !adjust; setAdjust(next); api.overlaySetAdjustMode(next).catch((e) => { setAdjust(!next); showError(e); }); };
 
   return (
     <div className="flex flex-col gap-4">
