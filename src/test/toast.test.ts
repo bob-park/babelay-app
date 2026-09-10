@@ -9,10 +9,10 @@ beforeEach(() => vi.clearAllMocks());
 describe("showError", () => {
   it("uses Error.message", () => {
     showError(new Error("disk full"));
-    expect(toast.error).toHaveBeenCalledWith("disk full");
+    expect(toast.error).toHaveBeenCalledWith("disk full", { toastId: "disk full" });
   });
   it("stringifies non-Error values", () => {
     showError("busy_stopping");
-    expect(toast.error).toHaveBeenCalledWith("busy_stopping");
+    expect(toast.error).toHaveBeenCalledWith("busy_stopping", { toastId: "busy_stopping" });
   });
 });

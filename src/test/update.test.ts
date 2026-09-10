@@ -43,7 +43,7 @@ describe("useUpdate", () => {
   it("check failure surfaces as an error toast", async () => {
     vi.mocked(api.checkUpdate).mockRejectedValueOnce(new Error("offline"));
     await useUpdate.getState().check();
-    expect(toast.error).toHaveBeenCalledWith("offline");
+    expect(toast.error).toHaveBeenCalledWith("offline", { toastId: "offline" });
     expect(useUpdate.getState().checking).toBe(false);
   });
 
@@ -57,14 +57,14 @@ describe("useUpdate", () => {
     expect(useUpdate.getState().progress).toEqual(prog);
     await p;
     expect(useUpdate.getState().progress).toBeNull();
-    expect(toast.error).toHaveBeenCalledWith("sig");
+    expect(toast.error).toHaveBeenCalledWith("sig", { toastId: "sig" });
   });
 
   it("tray-triggered errors also surface", async () => {
     useUpdate.getState().subscribe();
     await Promise.resolve();
     h.listeners["update-error"]({ payload: "no_update" });
-    expect(toast.error).toHaveBeenCalledWith("no_update");
+    expect(toast.error).toHaveBeenCalledWith("no_update", { toastId: "no_update" });
   });
 
   it("ignores a busy rejection from a second install click", async () => {

@@ -48,7 +48,7 @@ describe("useSettings.update", () => {
 
     await useSettings.getState().update({ overlay: { font_size: 40 } });
     expect(useSettings.getState().settings).toBe(defaultSettings);
-    expect(toast.error).toHaveBeenCalledWith("disk full");
+    expect(toast.error).toHaveBeenCalledWith("disk full", { toastId: "disk full" });
   });
 
   it("sends only the patch, not the whole document", async () => {

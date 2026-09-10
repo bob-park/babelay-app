@@ -6,7 +6,6 @@ import { api } from "../lib/tauri";
 import { awaitingTranslation, overlayLines, pairForOverlay } from "../lib/overlay";
 import { useSession } from "../lib/session";
 import { useSettings } from "../lib/settings";
-import { showError } from "../lib/toast";
 
 // 마지막 이벤트 후 이만큼 지나면 자막을 지운다.
 const IDLE_MS = 6000;
@@ -51,7 +50,8 @@ function startWidthResize(e: ReactPointerEvent<HTMLDivElement>) {
       // 마지막 프레임이 밀렸을 수 있다. 커밋 전에 최종 폭을 확정한다.
       cancelAnimationFrame(raf);
       raf = 0;
-      const commit = () => api.overlayCommitPosition().catch(showError);
+      // 오버레이 창에는 토스트 컨테이너가 없다. 띄워봐야 큐에만 쌓인다.
+      const commit = () => api.overlayCommitPosition().catch(() => {});
       if (pending !== null) win.setSize(new PhysicalSize(pending, h0)).then(commit, commit);
       else commit();
     };
@@ -100,7 +100,8 @@ export default function OverlayWindow() {
     const commit = () => {
       window.clearTimeout(timer.current);
       timer.current = window.setTimeout(
-        () => api.overlayCommitPosition().catch(showError),
+        // 오버레이 창에는 토스트 컨테이너가 없다.
+        () => api.overlayCommitPosition().catch(() => {}),
         300,
       );
     };
