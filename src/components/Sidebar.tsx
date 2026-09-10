@@ -7,6 +7,7 @@ import { useModels } from "../lib/models";
 import { useSession } from "../lib/session";
 import { useSettings } from "../lib/settings";
 import { api } from "../lib/tauri";
+import { useUpdate } from "../lib/update";
 import type { HwInfo } from "../lib/types";
 import logo from "../../assets/icon.svg";
 
@@ -18,6 +19,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
   const { view, start, stop } = useSession();
   const modelId = useSettings((s) => s.settings?.asr.model_id);
   const asrInstalled = useModels((s) => s.models.some((m) => m.info.id === modelId && m.installed));
+  const pending = useUpdate((s) => s.info !== null);
   const [q, setQ] = useState("");
   const [hw, setHw] = useState<HwInfo | null>(null);
   const about = useRef<HTMLDialogElement>(null);
@@ -84,7 +86,11 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
           </div>
         </div>
         <NavLink to="/settings/general" className={navCls} aria-label={t("nav.settings")}>
-          <Icon name="general" /><span className={label}>{t("nav.settings")}</span>
+          <span className="indicator">
+            {pending && <span className="badge badge-primary badge-xs indicator-item" aria-label={t("update.pending")} />}
+            <Icon name="general" />
+          </span>
+          <span className={label}>{t("nav.settings")}</span>
         </NavLink>
         <button type="button" className={`btn btn-ghost btn-sm justify-center gap-2 text-fg-muted ${justify}`} onClick={openAbout} aria-label={t("nav.about")}>
           <Icon name="info" /><span className={label}>{t("nav.about")}</span>

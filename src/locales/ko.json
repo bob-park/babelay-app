@@ -10,7 +10,11 @@
     "theme": "테마", "themeSystem": "시스템", "themeDark": "다크", "themeLight": "라이트",
     "language": "언어", "langSystem": "시스템 기본", "langKo": "한국어", "langEn": "영어", "langJa": "일본어",
     "shortcuts": "단축키", "shortcutCapture": "캡처 시작 / 정지", "shortcutOverlay": "오버레이 표시 / 숨김",
-    "permission": "권한"
+    "permission": "권한", "autostart": "로그인 시 자동 실행", "updates": "업데이트"
+  },
+  "update": {
+    "auto": "자동으로 확인", "version": "현재 버전", "check": "지금 확인", "checking": "확인 중…",
+    "latest": "최신 버전", "available": "v{{version}} 사용 가능", "install": "설치", "installing": "설치 중…", "pending": "업데이트 대기 중"
   },
   "permission": {
     "name": "시스템 오디오 녹음", "path": "macOS · 개인정보 보호 및 보안 › 시스템 오디오 녹음",

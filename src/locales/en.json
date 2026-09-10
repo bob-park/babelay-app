@@ -10,7 +10,11 @@
     "theme": "Theme", "themeSystem": "System", "themeDark": "Dark", "themeLight": "Light",
     "language": "Language", "langSystem": "System default", "langKo": "Korean", "langEn": "English", "langJa": "Japanese",
     "shortcuts": "Shortcuts", "shortcutCapture": "Start / stop capture", "shortcutOverlay": "Show / hide overlay",
-    "permission": "Permission"
+    "permission": "Permission", "autostart": "Launch at login", "updates": "Updates"
+  },
+  "update": {
+    "auto": "Check automatically", "version": "Current version", "check": "Check now", "checking": "Checking…",
+    "latest": "Up to date", "available": "v{{version}} available", "install": "Install", "installing": "Installing…", "pending": "Update pending"
   },
   "permission": {
     "name": "System Audio Recording", "path": "macOS · Privacy & Security › System Audio Recording",

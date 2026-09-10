@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { HashRouter, Navigate, Route, Routes } from "react-router";
 import { DownloadToast } from "../components/DownloadToast";
 import { ErrorBar } from "../components/ErrorBar";
@@ -6,6 +6,7 @@ import { Sidebar } from "../components/Sidebar";
 import Live from "./main/Live";
 import History from "./main/History";
 import Settings from "./Settings";
+import { useUpdate } from "../lib/update";
 
 const KEY = "babelay.sidebar";
 
@@ -18,6 +19,7 @@ export default function MainApp() {
     setCollapsed(next);
     try { localStorage.setItem(KEY, next ? "collapsed" : "expanded"); } catch { /* ignore */ }
   };
+  useEffect(() => useUpdate.getState().subscribe(), []);
 
   return (
     <HashRouter>
