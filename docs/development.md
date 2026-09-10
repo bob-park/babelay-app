@@ -62,13 +62,21 @@ Qwen3-ASR 전사(llama.cpp mtmd, 본체 GGUF 와 mmproj 두 파일 필요. `BABE
 
 ## 빌드
 
-macOS 서명 빌드에는 아래 환경변수가 필요하다.
+서명 빌드에 필요한 값은 `~/.config/babelay/sign.env` 에 둔다(`KEY=VALUE` env 형식, export 없이). 내용은 아래 여섯 줄이다.
 
-    APPLE_SIGNING_IDENTITY="Developer ID Application: <이름> (<TEAM_ID>)"
-    APPLE_ID=... APPLE_PASSWORD=<앱 암호> APPLE_TEAM_ID=...   # 공증
+    APPLE_SIGNING_IDENTITY=      # Developer ID Application: <이름> (<TEAM_ID>)
+    APPLE_ID=                    # 공증 Apple ID
+    APPLE_PASSWORD=              # 앱 암호
+    APPLE_TEAM_ID=
+
+    TAURI_SIGNING_PRIVATE_KEY=   # 업데이터 개인키 파일 경로 또는 내용 (아래 "업데이터 서명 키")
+    TAURI_SIGNING_PRIVATE_KEY_PASSWORD=
+
+읽어서 빌드한다.
+
+    set -a; source ~/.config/babelay/sign.env; set +a
     yarn tauri build
 
-값은 `~/.config/babelay/sign.env`(`KEY=VALUE` env 형식, export 없이)에 두고 `set -a; source ~/.config/babelay/sign.env; set +a` 로 읽는다.
 이 변수 없이 빌드하면 번들이 서명되지 않아 내려받은 사용자에게 "손상된 앱" 으로 뜬다(Apple Silicon Gatekeeper).
 Tauri 는 `.app` 만 공증·스테이플하고 `.dmg` 는 서명만 하므로, 릴리스에 올리기 전에 dmg 도 한 번 더 공증한다.
 
@@ -85,10 +93,7 @@ Tauri 는 `.app` 만 공증·스테이플하고 `.dmg` 는 서명만 하므로, 
 
     yarn tauri signer generate -w ~/.tauri/babelay.key
 
-공개키(`~/.tauri/babelay.key.pub` 내용)를 `src-tauri/tauri.conf.json` 의 `plugins.updater.pubkey` 에 넣는다. 개인키와 비밀번호는 `~/.config/babelay/sign.env` 에 추가한다. Windows 빌드 기계에도 같은 두 변수가 필요하다.
-
-    TAURI_SIGNING_PRIVATE_KEY=<개인키 파일 경로 또는 내용>
-    TAURI_SIGNING_PRIVATE_KEY_PASSWORD=<비밀번호>
+공개키(`~/.tauri/babelay.key.pub` 내용)를 `src-tauri/tauri.conf.json` 의 `plugins.updater.pubkey` 에 넣는다. 개인키 경로와 비밀번호는 위 `sign.env` 의 `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` 에 넣는다. Windows 빌드 기계에도 같은 두 변수가 필요하다.
 
 **개인키를 잃으면 이미 설치된 앱에 업데이트를 보낼 수 없다.** 백업한다. 변수 없이 빌드하면 `.sig` 가 만들어지지 않아 업데이트로 배포할 수 없다.
 
