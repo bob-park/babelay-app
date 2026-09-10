@@ -19,7 +19,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
   const { view, start, stop } = useSession();
   const modelId = useSettings((s) => s.settings?.asr.model_id);
   const asrInstalled = useModels((s) => s.models.some((m) => m.info.id === modelId && m.installed));
-  const pending = useUpdate((s) => s.info !== null);
+  const pending = useUpdate((s) => s.info !== null && s.progress === null);
   const [q, setQ] = useState("");
   const [hw, setHw] = useState<HwInfo | null>(null);
   const about = useRef<HTMLDialogElement>(null);
@@ -87,7 +87,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         </div>
         <NavLink to="/settings/general" className={navCls} aria-label={t("nav.settings")}>
           <span className="indicator">
-            {pending && <span className="badge badge-primary badge-xs indicator-item" aria-label={t("update.pending")} />}
+            {pending && <span role="status" className="badge badge-primary badge-xs indicator-item" aria-label={t("update.pending")} />}
             <Icon name="general" />
           </span>
           <span className={label}>{t("nav.settings")}</span>

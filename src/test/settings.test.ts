@@ -1,7 +1,10 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { toast } from "react-toastify";
 import { mergeSettings, defaultSettings, useSettings } from "../lib/settings";
 import { api } from "../lib/tauri";
 import type { Settings } from "../lib/types";
+
+vi.mock("react-toastify", () => ({ toast: Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn(), info: vi.fn(), update: vi.fn(), dismiss: vi.fn(), isActive: vi.fn(() => false) }) }));
 
 vi.mock("../lib/tauri", () => ({
   api: { getSettings: vi.fn(), patchSettings: vi.fn() },
@@ -17,6 +20,8 @@ vi.mock("@tauri-apps/api/event", () => ({
     return Promise.resolve(() => {});
   },
 }));
+
+beforeEach(() => vi.clearAllMocks());
 
 describe("mergeSettings", () => {
   it("applies nested patch without touching siblings", () => {
@@ -38,19 +43,16 @@ describe("mergeSettings", () => {
 
 describe("useSettings.update", () => {
   it("rolls back and surfaces the error when the backend rejects", async () => {
-    useSettings.setState({ settings: defaultSettings, error: null });
+    useSettings.setState({ settings: defaultSettings });
     vi.mocked(api.patchSettings).mockRejectedValueOnce(new Error("disk full"));
 
     await useSettings.getState().update({ overlay: { font_size: 40 } });
     expect(useSettings.getState().settings).toBe(defaultSettings);
-    expect(useSettings.getState().error).toBe("disk full");
-
-    useSettings.getState().clearError();
-    expect(useSettings.getState().error).toBeNull();
+    expect(toast.error).toHaveBeenCalledWith("disk full");
   });
 
   it("sends only the patch, not the whole document", async () => {
-    useSettings.setState({ settings: defaultSettings, error: null });
+    useSettings.setState({ settings: defaultSettings });
     vi.mocked(api.patchSettings).mockResolvedValueOnce(undefined);
 
     await useSettings.getState().update({ overlay: { font_size: 40 } });
@@ -78,7 +80,7 @@ describe("useSettings.update", () => {
   });
 
   it("keeps a backend-originated field from an echo that arrives mid-write", async () => {
-    useSettings.setState({ settings: defaultSettings, error: null });
+    useSettings.setState({ settings: defaultSettings });
     const unsub = useSettings.getState().subscribeBackend();
 
     let finish!: () => void;

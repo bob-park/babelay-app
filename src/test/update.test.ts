@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { toast } from "react-toastify";
 import { useUpdate } from "../lib/update";
-import { useSettings } from "../lib/settings";
 import { api } from "../lib/tauri";
 import type { UpdateInfo, UpdateProgress } from "../lib/types";
+
+vi.mock("react-toastify", () => ({ toast: Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn(), info: vi.fn(), update: vi.fn(), dismiss: vi.fn(), isActive: vi.fn(() => false) }) }));
 
 vi.mock("../lib/tauri", () => ({
   api: { updateStatus: vi.fn(), checkUpdate: vi.fn(), installUpdate: vi.fn() },
@@ -20,7 +22,7 @@ const info: UpdateInfo = { version: "0.3.0", notes: "" };
 
 beforeEach(() => {
   useUpdate.setState({ info: null, progress: null, checking: false, checked: false });
-  useSettings.setState({ error: null });
+  vi.clearAllMocks();
   vi.mocked(api.updateStatus).mockResolvedValue(null);
 });
 
@@ -38,10 +40,10 @@ describe("useUpdate", () => {
     expect(useUpdate.getState()).toMatchObject({ info: null, checked: true, checking: false });
   });
 
-  it("check failure lands in the settings error bar", async () => {
+  it("check failure surfaces as an error toast", async () => {
     vi.mocked(api.checkUpdate).mockRejectedValueOnce(new Error("offline"));
     await useUpdate.getState().check();
-    expect(useSettings.getState().error).toBe("offline");
+    expect(toast.error).toHaveBeenCalledWith("offline");
     expect(useUpdate.getState().checking).toBe(false);
   });
 
@@ -55,14 +57,14 @@ describe("useUpdate", () => {
     expect(useUpdate.getState().progress).toEqual(prog);
     await p;
     expect(useUpdate.getState().progress).toBeNull();
-    expect(useSettings.getState().error).toBe("sig");
+    expect(toast.error).toHaveBeenCalledWith("sig");
   });
 
   it("tray-triggered errors also surface", async () => {
     useUpdate.getState().subscribe();
     await Promise.resolve();
     h.listeners["update-error"]({ payload: "no_update" });
-    expect(useSettings.getState().error).toBe("no_update");
+    expect(toast.error).toHaveBeenCalledWith("no_update");
   });
 
   it("ignores a busy rejection from a second install click", async () => {
@@ -71,7 +73,7 @@ describe("useUpdate", () => {
     vi.mocked(api.installUpdate).mockRejectedValueOnce(new Error("busy"));
     await useUpdate.getState().install();
     expect(useUpdate.getState().progress).toEqual(prog);
-    expect(useSettings.getState().error).toBeNull();
+    expect(toast.error).not.toHaveBeenCalled();
   });
 
   it("ignores a raw busy string from invoke", async () => {
@@ -80,7 +82,7 @@ describe("useUpdate", () => {
     vi.mocked(api.installUpdate).mockRejectedValueOnce("busy");
     await useUpdate.getState().install();
     expect(useUpdate.getState().progress).toEqual(prog);
-    expect(useSettings.getState().error).toBeNull();
+    expect(toast.error).not.toHaveBeenCalled();
   });
 
   it("ignores busy while an install is running", async () => {
@@ -90,6 +92,6 @@ describe("useUpdate", () => {
     h.listeners["update-progress"]({ payload: prog });
     h.listeners["update-error"]({ payload: "busy" });
     expect(useUpdate.getState().progress).toEqual(prog);
-    expect(useSettings.getState().error).toBeNull();
+    expect(toast.error).not.toHaveBeenCalled();
   });
 });

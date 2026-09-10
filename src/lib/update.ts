@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { listen } from "@tauri-apps/api/event";
 import { api } from "./tauri";
-import { useSettings } from "./settings";
+import { showError } from "./toast";
 import type { UpdateInfo, UpdateProgress } from "./types";
 
 // 확인은 Rust 가 주기적으로 돈다. 여기는 결과 표시와 버튼뿐.
@@ -15,10 +15,10 @@ interface UpdateStore {
   subscribe: () => () => void;
 }
 
-// 업데이트 오류도 설정 오류 배너 하나로 보여준다. 배너를 하나 더 만들 이유가 없다.
-const fail = (e: unknown) => useSettings.getState().setError(e);
+// 업데이트 오류도 다른 오류와 같은 토스트로 보여준다.
+const fail = showError;
 
-// 설치 중 두 번째 설치 요청. 사용자가 알 일이 아니니 배너도 진행률도 건드리지 않는다.
+// 설치 중 두 번째 설치 요청. 사용자가 알 일이 아니니 토스트도 진행률도 건드리지 않는다.
 // invoke 는 문자열로, 이벤트는 payload 로 같은 "busy" 를 준다.
 const isBusy = (e: unknown) => (e instanceof Error ? e.message : String(e)) === "busy";
 

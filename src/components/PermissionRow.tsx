@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "./icons";
 import { SettingGroup } from "./SettingGroup";
 import { api } from "../lib/tauri";
-import { useSettings } from "../lib/settings";
+import { showError } from "../lib/toast";
 
 export type Perm = "granted" | "denied" | "unknown";
 
@@ -18,9 +18,8 @@ export function PermissionIcon({ perm }: { perm: Perm | null }) {
 // 권한 조회는 실제 탭을 만들어 TCC 프롬프트를 띄운다. 마운트당 한 번만.
 export function PermissionRow({ onStatus }: { onStatus?: (p: Perm) => void }) {
   const { t } = useTranslation();
-  const setError = useSettings((s) => s.setError);
   const [perm, setPerm] = useState<Perm | null>(null);
-  const check = () => api.checkAudioPermission().then((p) => { setPerm(p); onStatus?.(p); }).catch(setError);
+  const check = () => api.checkAudioPermission().then((p) => { setPerm(p); onStatus?.(p); }).catch(showError);
   useEffect(() => { check(); }, []);
 
   return (
@@ -36,7 +35,7 @@ export function PermissionRow({ onStatus }: { onStatus?: (p: Perm) => void }) {
       </SettingGroup>
       <div className="flex flex-wrap gap-2">
         <button type="button" className={`btn btn-sm ${perm === "denied" ? "btn-neutral" : "btn-primary"}`} onClick={check}>{t("permission.check")}</button>
-        <button type="button" className={`btn btn-sm ${perm === "denied" ? "btn-primary" : "btn-outline"}`} onClick={() => api.openPrivacySettings().catch(setError)}>{t("permission.openSettings")}</button>
+        <button type="button" className={`btn btn-sm ${perm === "denied" ? "btn-primary" : "btn-outline"}`} onClick={() => api.openPrivacySettings().catch(showError)}>{t("permission.openSettings")}</button>
       </div>
     </div>
   );

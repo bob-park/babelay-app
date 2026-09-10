@@ -1,16 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "react-toastify";
 import { useSearchParams } from "react-router";
 import { SessionBadges } from "../../components/SessionBadges";
 import { translatorLabel, useModels } from "../../lib/models";
 import { clock } from "../../lib/session";
-import { useSettings } from "../../lib/settings";
 import { api } from "../../lib/tauri";
+import { showError } from "../../lib/toast";
 import type { SegmentRow, SessionSummary } from "../../lib/types";
 
 export default function History() {
   const { t } = useTranslation();
-  const setError = useSettings((s) => s.setError);
   const models = useModels((s) => s.models);
   const name = (id: string) => models.find((m) => m.info.id === id)?.info.name ?? id;
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
@@ -21,18 +21,15 @@ export default function History() {
   // 사이드바 검색은 ?q= 로 들어온다. 파라미터가 바뀌면 검색어도 따라간다.
   useEffect(() => { const v = params.get("q"); if (v !== null) setQ(v); }, [params]);
   const [hits, setHits] = useState<SegmentRow[] | null>(null);
-  const [saved, setSaved] = useState<string | null>(null);
-  const toastTimer = useRef<number | undefined>(undefined);
 
   // history 커맨드는 DB 상태가 없으면 "state not managed"로 거절한다. 원문 대신 사람 말로.
   const fail = (e: unknown) => {
     const msg = e instanceof Error ? e.message : String(e);
-    setError(msg.includes("state not managed") ? t("errors.historyUnavailable") : msg);
+    showError(msg.includes("state not managed") ? t("errors.historyUnavailable") : msg);
   };
 
   const load = () => api.historySessions(100).then(setSessions).catch(fail);
   useEffect(() => { load(); }, []);
-  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
   // 늦게 온 이전 세션의 조각이 지금 화면을 덮지 않게 한다.
   useEffect(() => {
@@ -50,12 +47,8 @@ export default function History() {
     return () => window.clearTimeout(id);
   }, [q]);
 
-  const toast = (path: string) => {
-    setSaved(path);
-    window.clearTimeout(toastTimer.current);
-    toastTimer.current = window.setTimeout(() => setSaved(null), 2000);
-  };
-  const exportAs = (id: number, format: "txt" | "srt") => api.historyExport(id, format).then(toast).catch(fail);
+  const exportAs = (id: number, format: "txt" | "srt") =>
+    api.historyExport(id, format).then((path) => toast.success(t("history.saved", { path }))).catch(fail);
   const remove = (id: number) => api.historyDelete(id).then(() => { setSel(null); load(); }).catch(fail);
 
   const when = (epoch: number) => new Date(epoch * 1000).toLocaleString();
@@ -82,8 +75,6 @@ export default function History() {
           className="input input-sm w-56 rounded-full"
         />
       </div>
-
-      {saved && <div className="rounded-md bg-neutral px-3 py-2 text-xs text-fg-muted">{t("history.saved", { path: saved })}</div>}
 
       {hits ? (
         <div className="flex flex-col gap-1">

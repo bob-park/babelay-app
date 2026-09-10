@@ -6,6 +6,7 @@ import { SettingGroup, SettingRow } from "../../components/SettingGroup";
 import { LANG_KEY, resolveLang } from "../../lib/i18n";
 import { useSettings } from "../../lib/settings";
 import { api } from "../../lib/tauri";
+import { showError } from "../../lib/toast";
 import { useUpdate } from "../../lib/update";
 import type { Theme, UiLang } from "../../lib/types";
 
@@ -16,13 +17,12 @@ export default function General() {
   const { settings, update } = useSettings();
   const [platform, setPlatform] = useState<string | null>(null);
   useEffect(() => { api.getPlatform().then(setPlatform).catch(() => {}); }, []);
-  const setError = useSettings((s) => s.setError);
   const { info, progress, checking, checked, check, install } = useUpdate();
   const [autostart, setAutostart] = useState<boolean | null>(null);
   useEffect(() => { api.getAutostart().then(setAutostart).catch(() => {}); }, []);
   const toggleAutostart = (on: boolean) => {
     setAutostart(on);
-    api.setAutostart(on).catch((e) => { setAutostart(!on); setError(e); });
+    api.setAutostart(on).catch((e) => { setAutostart(!on); showError(e); });
   };
   if (!settings) return null;
   const systemLang = t(LANG_KEY[resolveLang("system", navigator.language)]);
@@ -61,10 +61,7 @@ export default function General() {
         </SettingRow>
         <SettingRow label={`${t("update.version")} ${import.meta.env.PACKAGE_VERSION}`} as="div">
           {progress ? (
-            <>
-              <span className="text-xs">{t("update.installing")}</span>
-              {progress.total ? <progress className="progress progress-primary h-1 w-24" value={progress.received} max={progress.total} /> : <progress className="progress progress-primary h-1 w-24" />}
-            </>
+            <span className="text-xs">{t("update.installing")}</span>
           ) : info ? (
             <>
               <span className="text-xs">{t("update.available", { version: info.version })}</span>

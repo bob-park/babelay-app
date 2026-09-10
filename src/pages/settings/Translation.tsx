@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "react-toastify";
 import { Link } from "react-router";
 import { SegmentedControl } from "../../components/SegmentedControl";
 import { SettingGroup, SettingRow } from "../../components/SettingGroup";
@@ -10,8 +11,6 @@ import type { Provider, SourceLang, TestTranslationResult, UiLang } from "../../
 
 const input = "input input-sm w-56";
 const PROVIDERS: Provider[] = ["openai", "anthropic", "gemini", "deepl", "custom"];
-// 테스트 결과 배너는 잠시만 보여준다.
-const RESULT_MS = 5000;
 
 export default function Translation() {
   const { t } = useTranslation();
@@ -24,7 +23,6 @@ export default function Translation() {
   // 저장된 키를 새 값으로 덮어쓰는 중. 프로바이더가 바뀌면 접는다.
   const [editing, setEditing] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
 
   // 프로바이더마다 키가 따로 있다. 바뀌면 다시 묻고, 입력 중이던 키는 버린다.
   useEffect(() => {
@@ -35,12 +33,6 @@ export default function Translation() {
     api.hasApiKey(provider).then((v) => { if (alive) setSaved(v); }).catch(() => {});
     return () => { alive = false; };
   }, [provider, backend]);
-
-  useEffect(() => {
-    if (!result) return;
-    const id = window.setTimeout(() => setResult(null), RESULT_MS);
-    return () => window.clearTimeout(id);
-  }, [result]);
 
   if (!settings) return null;
   const tr = settings.translation;
@@ -63,10 +55,10 @@ export default function Translation() {
   const test = () => {
     setTesting(true);
     api.testTranslation()
-      .then((r: TestTranslationResult) => setResult(r.ok
-        ? { ok: true, text: t("translation.testResult", { ms: r.ms, text: r.text }) }
-        : { ok: false, text: failText(r.error, r.text) }))
-      .catch((e: unknown) => { const m = e instanceof Error ? e.message : String(e); setResult({ ok: false, text: failText(m, "") }); })
+      .then((r: TestTranslationResult) => (r.ok
+        ? toast.success(t("translation.testResult", { ms: r.ms, text: r.text }))
+        : toast.error(failText(r.error, r.text))))
+      .catch((e: unknown) => { const m = e instanceof Error ? e.message : String(e); toast.error(failText(m, "")); })
       .finally(() => setTesting(false));
   };
 
@@ -146,9 +138,6 @@ export default function Translation() {
           {testing && <span className="loading loading-spinner loading-xs" />}
           {t("translation.test")}
         </button>
-        {result && (
-          <div role="status" className={`alert py-1 text-sm ${result.ok ? "alert-success" : "alert-error"}`}>{result.text}</div>
-        )}
       </div>
     </div>
   );

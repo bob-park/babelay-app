@@ -2,7 +2,7 @@ import { create } from "zustand";
 import i18next from "i18next";
 import { listen } from "@tauri-apps/api/event";
 import { api } from "./tauri";
-import { useSettings } from "./settings";
+import { showError } from "./toast";
 import type { DownloadEvent, DownloadState, ModelStatus } from "./types";
 
 export type RowAction = "download" | "cancel" | "queued" | "select" | "delete";
@@ -63,7 +63,7 @@ export const ERROR_KEYS: Record<string, string> = {
 
 export const report = (e: unknown) => {
   const key = ERROR_KEYS[e instanceof Error ? e.message : String(e)];
-  useSettings.getState().setError(key ? i18next.t(key) : e);
+  showError(key ? i18next.t(key) : e);
 };
 
 // 모듈 스코프. download() 를 부른 뒤 첫 진행 이벤트가 오기 전까지의 창을 막는다.
