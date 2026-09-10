@@ -32,9 +32,9 @@ export default function General() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
+      <div className="flex justify-start">
         {/* 툴팁 본문은 kbd 로, 스크린리더용 텍스트는 따로. */}
-        <div className="tooltip tooltip-left">
+        <div className="tooltip tooltip-right">
           <div className="tooltip-content flex flex-col gap-2.5 px-4 py-3 text-left">
             <div className="flex items-center justify-between gap-6 text-xs"><span>{t("general.shortcutCapture")}</span>{keys("S")}</div>
             <div className="flex items-center justify-between gap-6 text-xs"><span>{t("general.shortcutOverlay")}</span>{keys("O")}</div>
