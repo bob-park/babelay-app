@@ -18,12 +18,13 @@ function DownloadBody() {
   const active = models.find((m) => m.download);
   const name = (id: string) => models.find((m) => m.info.id === id)?.info.name ?? id;
   return (
-    <div className="text-sm">
+    <div className="relative pr-7 text-sm">
+      {/* 취소는 오른쪽 위에 고정. 제목이 길어져도 버튼 아래로 들어가지 않게 본문에 오른쪽 여백. */}
       {active?.download && (
-        <div className="flex items-center justify-between gap-2">
-          <span className="truncate font-semibold">{t("downloads.downloading", { name: active.info.name })}</span>
-          <button type="button" className="btn btn-ghost btn-xs" aria-label={t("models.cancel")} onClick={() => cancel(active.info.id)}>✕</button>
-        </div>
+        <button type="button" className="btn btn-ghost btn-xs absolute -right-1 -top-1" aria-label={t("models.cancel")} onClick={() => cancel(active.info.id)}>✕</button>
+      )}
+      {active?.download && (
+        <div className="truncate font-semibold">{t("downloads.downloading", { name: active.info.name })}</div>
       )}
       {active?.download && (
         <div className="text-xs opacity-70">
