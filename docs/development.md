@@ -68,7 +68,7 @@ macOS 서명 빌드에는 아래 환경변수가 필요하다.
     APPLE_ID=... APPLE_PASSWORD=<앱 암호> APPLE_TEAM_ID=...   # 공증
     yarn tauri build
 
-값은 `~/.config/babelay/sign.env`(export 형식)에 두고 `set -a; source ~/.config/babelay/sign.env; set +a` 로 읽는다.
+값은 `~/.config/babelay/sign.env`(`KEY=VALUE` env 형식, export 없이)에 두고 `set -a; source ~/.config/babelay/sign.env; set +a` 로 읽는다.
 이 변수 없이 빌드하면 번들이 서명되지 않아 내려받은 사용자에게 "손상된 앱" 으로 뜬다(Apple Silicon Gatekeeper).
 Tauri 는 `.app` 만 공증·스테이플하고 `.dmg` 는 서명만 하므로, 릴리스에 올리기 전에 dmg 도 한 번 더 공증한다.
 
