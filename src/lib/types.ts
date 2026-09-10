@@ -54,3 +54,5 @@ export interface SegmentRow { id: number; session_id: number; t0_ms: number; t1_
 /** 연결 테스트 결과. 실패면 error 에 코드(ERROR_KEYS), text 에 상세. */
 export interface TestTranslationResult { ok: boolean; ms: number; text: string; error: string | null }
 export interface HwInfo { chip: string; mem_gb: number; gpu: string | null; gpu_mem_gb: number | null }
+export interface UpdateInfo { version: string; notes: string }
+export interface UpdateProgress { received: number; total: number | null }
