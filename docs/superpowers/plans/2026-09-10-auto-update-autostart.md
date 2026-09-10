@@ -1224,3 +1224,253 @@ Expected: 모두 통과. `fmt --check` 가 실패하면 `mise exec -- cargo fmt 
 - 스펙 §1: Task 1·2·3. §2: Task 5·6. §3: Task 4·6. §4: Task 7·8. 오류 처리(주기 확인은 로그만, 수동은 배너, 설치 실패 시 Update 유지): Task 2 `spawn_periodic`/`install`, Task 5 `fail`. 테스트 절: Task 1·2·3·5·7 에 각각 있음.
 - 이름 일치: `relabel_update`(Task 2 호출, Task 3 정의), `on_tray_click`(Task 2 정의, Task 3 호출), `UpdateInfo{version, notes}` ↔ TS `UpdateInfo`, 이벤트 이름 세 개, 커맨드 다섯 개 ↔ `api` 키.
 - `shutdown` 은 `lib.rs` 의 `pub fn` 이고 `updater.rs` 는 `crate::shutdown` 으로 부른다.
+
+---
+
+### Task 10: 알림을 react-toastify 로 통일 (추가 요구사항, Task 6 뒤·Task 7 앞에 실행)
+
+**요구:** 오류 배너(`ErrorBar`), 모델 다운로드 진행(`DownloadToast`), 히스토리 내보내기 완료 안내, 번역 연결 테스트 결과, 업데이트 발견 알림(설치 버튼), 업데이트 설치 진행률 — 전부 react-toastify 토스트로. 스토어는 토스트를 모른다(순수 유지, 테스트 그대로). 토스트를 띄우는 곳은 두 파일뿐: 오류는 `src/lib/toast.ts` 의 `showError`, 나머지는 `src/components/Toasts.tsx` 가 스토어를 관찰해 띄운다.
+
+**Files:**
+- Modify: `package.json` (`react-toastify` 의존성)
+- Create: `src/lib/toast.ts` (`showError`)
+- Create: `src/components/Toasts.tsx` (`<Toasts />`: `ToastContainer` + 다운로드·업데이트 토스트 동기화)
+- Delete: `src/components/ErrorBar.tsx`, `src/components/DownloadToast.tsx`
+- Modify: `src/lib/settings.ts` (`error/setError/clearError` 제거, load 실패는 `showError`)
+- Modify: `src/lib/update.ts` (`fail` → `showError`)
+- Modify: `src/lib/models.ts` (`report` → `showError`), `src/lib/session.ts` (`report` 가 `showError` 사용 — session.ts 의 report 정의 위치를 확인해 같은 방식으로)
+- Modify: `src/main.tsx` (오버레이 창이 아니면 `<Toasts />` 렌더)
+- Modify: `src/pages/MainApp.tsx`, `src/pages/Onboarding.tsx` (`ErrorBar`/`DownloadToast` 제거, `setError` → `showError`)
+- Modify: `src/components/PermissionRow.tsx`, `src/pages/OverlayWindow.tsx`, `src/pages/settings/Overlay.tsx`, `src/pages/settings/General.tsx`, `src/pages/main/History.tsx`, `src/pages/settings/Translation.tsx` (호출부 교체·인라인 알림 제거)
+- Modify: `src/index.css` (toastify CSS 변수를 daisyUI 색에 매핑)
+- Modify: `src/test/settings.test.ts`, `src/test/update.test.ts` (오류 단언을 mocked `toast.error` 호출로)
+- Create: `src/test/toast.test.ts`
+
+**Interfaces:**
+- Produces: `showError(e: unknown): void` — `Error` 면 `.message`, 아니면 `String(e)` 로 `toast.error(text)`. 모든 기존 `setError`/`report` 호출부가 이걸 쓴다.
+- `useSettings` 에서 `error`, `setError`, `clearError` 가 사라진다.
+- 토스트 id 상수: `"download"`, `"update-available"`, `"update-install"` (Toasts.tsx 내부).
+
+- [ ] **Step 1: 의존성**
+
+```bash
+yarn add react-toastify
+```
+v11 이상이어야 한다(CSS 자동 주입). `package.json` 에 `"react-toastify": "^11"` 이 들어갔는지 확인.
+
+- [ ] **Step 2: 실패하는 테스트 — showError**
+
+`src/test/toast.test.ts`:
+
+```ts
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { toast } from "react-toastify";
+import { showError } from "../lib/toast";
+
+vi.mock("react-toastify", () => ({ toast: Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn(), info: vi.fn() }) }));
+
+beforeEach(() => vi.clearAllMocks());
+
+describe("showError", () => {
+  it("uses Error.message", () => {
+    showError(new Error("disk full"));
+    expect(toast.error).toHaveBeenCalledWith("disk full");
+  });
+  it("stringifies non-Error values", () => {
+    showError("busy_stopping");
+    expect(toast.error).toHaveBeenCalledWith("busy_stopping");
+  });
+});
+```
+
+Run: `yarn test src/test/toast.test.ts` → FAIL (모듈 없음)
+
+- [ ] **Step 3: showError**
+
+`src/lib/toast.ts`:
+
+```ts
+import { toast } from "react-toastify";
+
+// 오류 알림의 단일 입구. 스토어와 페이지는 이 함수만 알고 토스트 라이브러리는 모른다.
+export const showError = (e: unknown) => {
+  toast.error(e instanceof Error ? e.message : String(e));
+};
+```
+
+Run: `yarn test src/test/toast.test.ts` → 2 passed
+
+- [ ] **Step 4: 스토어에서 error 상태 제거**
+
+`src/lib/settings.ts`:
+- `import { showError } from "./toast";`
+- `SettingsStore` 에서 `error`, `setError`, `clearError` 세 줄 삭제.
+- 구현에서 `error: null,`, `setError: ...`, `clearError: ...` 삭제.
+- `load` 의 catch: `set({ settings: get().settings ?? defaultSettings }); showError(e);`
+- `update` 의 catch: `set({ settings: prev }); showError(e);`
+- `message` 헬퍼가 더 이상 안 쓰이면 삭제.
+
+`src/lib/update.ts`: `import { useSettings } from "./settings";` 를 `import { showError } from "./toast";` 로, `const fail = (e: unknown) => useSettings.getState().setError(e);` 를 `const fail = showError;` 로.
+
+`src/lib/models.ts` 와 `src/lib/session.ts` 의 `report`: `useSettings.getState().setError(...)` 를 `showError(...)` 로(각 파일에 `import { showError } from "./toast";`). `useSettings` import 가 그 파일에서 다른 용도로 안 쓰이면 지운다.
+
+- [ ] **Step 5: 기존 테스트 갱신**
+
+`src/test/settings.test.ts` 와 `src/test/update.test.ts`:
+- 파일 상단에 `vi.mock("react-toastify", () => ({ toast: Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn(), info: vi.fn(), update: vi.fn(), dismiss: vi.fn(), isActive: vi.fn(() => false) }) }));` 와 `import { toast } from "react-toastify";` 추가.
+- `useSettings.setState({ ..., error: null })` 에서 `error: null` 제거. `expect(useSettings.getState().error).toBe("disk full")` → `expect(toast.error).toHaveBeenCalledWith("disk full")`. `expect(...error).toBeNull()` → `expect(toast.error).not.toHaveBeenCalled()`. `beforeEach` 에 `vi.clearAllMocks()` (또는 `vi.mocked(toast.error).mockClear()`) 추가.
+- update.test.ts 의 `useSettings` import 가 더 이상 안 쓰이면 제거.
+
+Run: `yarn test src/test/settings.test.ts src/test/update.test.ts` → 모두 통과
+
+- [ ] **Step 6: 호출부 교체**
+
+각 파일에서 `useSettings` 의 `setError` 사용을 `showError` 로:
+- `src/components/PermissionRow.tsx`: `const setError = useSettings((s) => s.setError);` 삭제, `.catch(setError)` → `.catch(showError)` (2곳). import 교체.
+- `src/pages/OverlayWindow.tsx`: `.catch(useSettings.getState().setError)` → `.catch(showError)` (2곳). `useSettings` 는 settings 읽기에 계속 쓰이므로 import 유지, `showError` import 추가.
+- `src/pages/settings/Overlay.tsx`: `const { settings, update, setError } = useSettings();` → `const { settings, update } = useSettings();`, `setError` → `showError` (2곳).
+- `src/pages/settings/General.tsx`: `const setError = useSettings((s) => s.setError);` 삭제, `setError(e)` → `showError(e)`. 또한 설치 중 인라인 `<progress>` 를 없애고 `{t("update.installing")}` 텍스트만 남긴다(진행률은 토스트가 보여준다).
+- `src/pages/Onboarding.tsx`: `const { settings, update, setError } = useSettings();` → `const { settings, update } = useSettings();`, `.catch(setError)` → `.catch(showError)`, `<DownloadToast />` 와 `<ErrorBar />` 줄과 import 제거.
+- `src/pages/MainApp.tsx`: `<DownloadToast />`, `<ErrorBar />` 줄과 import 제거.
+- `src/pages/main/History.tsx`: `setError` → `showError` (fail 안), `saved` state·`toastTimer`·`toast` 함수·`useEffect(() => () => window.clearTimeout(...))`·`{saved && ...}` 렌더 삭제. `exportAs` 는 `.then((path) => toast.success(t("history.saved", { path })))` (`import { toast } from "react-toastify";`). `useRef` import 가 남지 않으면 정리.
+- `src/pages/settings/Translation.tsx`: `result` state 와 인라인 `<div role="status" className="alert ...">` 삭제. `test()` 는 성공이면 `toast.success(t("translation.testResult", { ms: r.ms, text: r.text }))`, 실패면 `toast.error(failText(r.error, r.text))`, catch 는 `toast.error(failText(m, ""))`. `report` 가 그 파일에서 `setError` 였다면 `showError` 로.
+- `src/components/ErrorBar.tsx`, `src/components/DownloadToast.tsx` 삭제 (`git rm`).
+
+Run: `yarn tsc --noEmit` → `setError`/`error` 참조가 남아 있으면 여기서 잡힌다. 모두 0 이 될 때까지.
+
+- [ ] **Step 7: Toasts 컴포넌트**
+
+`src/components/Toasts.tsx`:
+
+```tsx
+import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { ToastContainer, toast } from "react-toastify";
+import { formatSize, useModels } from "../lib/models";
+import { useUpdate } from "../lib/update";
+
+const DOWNLOAD = "download";
+const UPDATE_AVAILABLE = "update-available";
+const UPDATE_INSTALL = "update-install";
+
+// 받는 중인 모델 하나 + 대기 목록. 토스트 본문은 스토어를 직접 구독하므로 toast.update 로 다시 그릴 필요가 없다.
+function DownloadBody() {
+  const { t } = useTranslation();
+  const models = useModels((s) => s.models);
+  const queue = useModels((s) => s.queue);
+  const cancel = useModels((s) => s.cancel);
+  const dequeue = useModels((s) => s.dequeue);
+  const active = models.find((m) => m.download);
+  const name = (id: string) => models.find((m) => m.info.id === id)?.info.name ?? id;
+  return (
+    <div className="text-sm">
+      {active?.download && (
+        <div className="flex items-center justify-between gap-2">
+          <span className="truncate font-semibold">{t("downloads.downloading", { name: active.info.name })}</span>
+          <button type="button" className="btn btn-ghost btn-xs" aria-label={t("models.cancel")} onClick={() => cancel(active.info.id)}>✕</button>
+        </div>
+      )}
+      {active?.download && (
+        <div className="text-xs opacity-70">
+          {Math.round((active.download.received / Math.max(1, active.download.total)) * 100)}% · {formatSize(active.download.received)} / {formatSize(active.download.total)}
+        </div>
+      )}
+      {queue.map((id) => (
+        <div key={id} className="mt-1 flex items-center justify-between gap-2 text-xs opacity-70">
+          <span className="truncate">{t("downloads.next", { name: name(id) })}</span>
+          <button type="button" className="btn btn-ghost btn-xs" aria-label={t("models.cancel")} onClick={() => dequeue(id)}>✕</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function UpdateAvailableBody({ version, closeToast }: { version: string; closeToast?: () => void }) {
+  const { t } = useTranslation();
+  const install = useUpdate((s) => s.install);
+  return (
+    <div className="flex items-center justify-between gap-3 text-sm">
+      <span>{t("update.available", { version })}</span>
+      <button type="button" className="btn btn-primary btn-xs" onClick={() => { closeToast?.(); install(); }}>{t("update.install")}</button>
+    </div>
+  );
+}
+
+// 스토어 상태를 토스트로 비춘다. 스토어는 토스트를 모른다.
+export function Toasts() {
+  const { t } = useTranslation();
+  const downloading = useModels((s) => s.models.some((m) => m.download) || s.queue.length > 0);
+  const received = useModels((s) => s.models.find((m) => m.download)?.download?.received ?? 0);
+  const total = useModels((s) => s.models.find((m) => m.download)?.download?.total ?? 0);
+  const info = useUpdate((s) => s.info);
+  const progress = useUpdate((s) => s.progress);
+
+  useEffect(() => {
+    if (!downloading) { toast.dismiss(DOWNLOAD); return; }
+    const p = total > 0 ? received / total : 0;
+    if (toast.isActive(DOWNLOAD)) toast.update(DOWNLOAD, { progress: p });
+    else toast(<DownloadBody />, { toastId: DOWNLOAD, autoClose: false, closeButton: false, closeOnClick: false, draggable: false, progress: p });
+  }, [downloading, received, total]);
+
+  useEffect(() => {
+    if (!info) { toast.dismiss(UPDATE_AVAILABLE); return; }
+    if (!toast.isActive(UPDATE_AVAILABLE)) toast.info(<UpdateAvailableBody version={info.version} />, { toastId: UPDATE_AVAILABLE, autoClose: false, closeOnClick: false });
+  }, [info]);
+
+  useEffect(() => {
+    if (!progress) { toast.dismiss(UPDATE_INSTALL); return; }
+    const p = progress.total ? progress.received / progress.total : 0;
+    if (toast.isActive(UPDATE_INSTALL)) toast.update(UPDATE_INSTALL, { progress: p });
+    else toast(t("update.installing"), { toastId: UPDATE_INSTALL, autoClose: false, closeButton: false, closeOnClick: false, draggable: false, progress: p });
+  }, [progress, t]);
+
+  return <ToastContainer position="top-right" theme="light" newestOnTop closeOnClick pauseOnFocusLoss={false} />;
+}
+```
+
+`react-toastify` 에서 커스텀 본문 컴포넌트는 `closeToast` prop 을 받는다(`toast(<Comp />)` 로 넘긴 엘리먼트에 주입). 타입이 맞지 않으면 `toast.info(({ closeToast }) => <UpdateAvailableBody version={info.version} closeToast={closeToast} />, ...)` 렌더 함수 형태로 바꾼다.
+
+`src/main.tsx`: `import { Toasts } from "./components/Toasts";` 추가, Root 의 return 을
+
+```tsx
+  return (
+    <React.Suspense fallback={null}>
+      {page}
+      {label !== "overlay" && <Toasts />}
+    </React.Suspense>
+  );
+```
+
+- [ ] **Step 8: 테마 매핑**
+
+`src/index.css` 의 daisyUI 테마 블록들 아래에:
+
+```css
+/* react-toastify 는 theme="light" 로 고정하고 색만 daisyUI 변수에 붙인다 → 다크/라이트를 자동으로 따라간다. */
+:root {
+  --toastify-color-light: var(--color-neutral);
+  --toastify-text-color-light: var(--color-neutral-content);
+  --toastify-color-info: var(--color-info);
+  --toastify-color-success: var(--color-success);
+  --toastify-color-warning: var(--color-warning);
+  --toastify-color-error: var(--color-error);
+  --toastify-color-progress-light: var(--color-primary);
+  --toastify-toast-bd-radius: var(--radius-box);
+  --toastify-font-family: inherit;
+}
+```
+
+- [ ] **Step 9: 게이트와 눈 확인**
+
+Run: `yarn tsc --noEmit && yarn test`
+Expected: 통과. `grep -rn "setError\|ErrorBar\|DownloadToast\|clearError" src` 가 비어야 한다.
+
+Run: `mise exec -- yarn tauri dev`
+확인: (1) 설정 › 일반 "지금 확인" → 오른쪽 위 빨간 토스트(오류). (2) 모델 탭에서 작은 모델 하나 다운로드 시작 → 진행 토스트(퍼센트, 취소 버튼), 취소하면 사라짐. (3) 히스토리에서 세션 하나 TXT 내보내기 → 초록 토스트 "저장됨: 경로". (4) 번역 탭 "연결 테스트" → 결과 토스트(성공 초록/실패 빨강), 인라인 alert 없음. (5) 다크/라이트 전환 시 토스트 배경·글자색이 따라감. 온보딩 창은 `settings.json` 의 `onboarding_done` 을 잠깐 false 로 바꿔 띄워 보고 오류 토스트가 뜨는지 확인한 뒤 되돌린다(또는 생략하고 보고에 적는다).
+
+- [ ] **Step 10: 커밋**
+
+```bash
+git add -A src package.json yarn.lock
+git commit -m "feat(ui): 알림을 react-toastify 로 통일(오류·다운로드·내보내기·번역 테스트·업데이트)"
+```
