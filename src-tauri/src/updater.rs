@@ -3,7 +3,13 @@
 
 use crate::settings::SettingsState;
 use serde::Serialize;
-use std::{sync::Mutex, time::Duration};
+use std::{
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Mutex,
+    },
+    time::Duration,
+};
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_updater::{Update, UpdaterExt};
 
@@ -64,13 +70,22 @@ pub async fn check(app: &AppHandle) -> Result<Option<UpdateInfo>, String> {
 /// 받고 → 엔진 정리 → 설치 → 재시작. Windows 는 install 이 설치기를 띄우고 프로세스를 끝내므로
 /// 정리가 그 앞에 있어야 한다. 실패해도 보관한 Update 는 남겨 다시 시도할 수 있다.
 pub async fn install(app: &AppHandle) -> Result<(), String> {
+    // 트레이를 연타해도 다운로드·설치는 하나만. 성공 경로는 재시작이라 돌아오지 않는다.
+    static INSTALLING: AtomicBool = AtomicBool::new(false);
+    if INSTALLING.swap(true, Ordering::SeqCst) {
+        return Err("busy".into());
+    }
+    let fail = |e: String| {
+        INSTALLING.store(false, Ordering::SeqCst);
+        e
+    };
     let update = app
         .state::<UpdateState>()
         .0
         .lock()
         .unwrap()
         .clone()
-        .ok_or_else(|| "no_update".to_string())?;
+        .ok_or_else(|| fail("no_update".to_string()))?;
     let mut received: u64 = 0;
     let mut last_pct = u64::MAX;
     let bytes = update
@@ -87,9 +102,9 @@ pub async fn install(app: &AppHandle) -> Result<(), String> {
             || {},
         )
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| fail(e.to_string()))?;
     crate::shutdown(app);
-    update.install(bytes).map_err(|e| e.to_string())?;
+    update.install(bytes).map_err(|e| fail(e.to_string()))?;
     app.restart()
 }
 
@@ -110,8 +125,6 @@ pub fn spawn_periodic(app: AppHandle) {
 }
 
 /// 트레이 항목 하나가 "확인" 과 "설치" 를 겸한다. 오류는 이벤트로 메인 창에 보낸다.
-// 부르는 곳은 Task 3 의 트레이 메뉴다. 배선되면 이 줄을 지우라고 컴파일러가 알려 준다.
-#[expect(dead_code)]
 pub fn on_tray_click(app: AppHandle) {
     tauri::async_runtime::spawn(async move {
         let r = if status(&app).is_some() {

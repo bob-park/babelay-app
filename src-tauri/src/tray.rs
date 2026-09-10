@@ -46,6 +46,7 @@ pub struct TrayItems {
     pub capture: MenuItem<Wry>,
     pub overlay: MenuItem<Wry>,
     pub open: MenuItem<Wry>,
+    pub update: MenuItem<Wry>,
     pub quit: MenuItem<Wry>,
 }
 
@@ -65,6 +66,9 @@ pub fn relabel(app: &AppHandle, settings: &Settings) {
         l.overlay_on
     });
     let _ = items.open.set_text(l.open);
+    let _ = items
+        .update
+        .set_text(update_label(&l, crate::updater::status(app)));
     let _ = items.quit.set_text(l.quit);
 }
 
@@ -79,14 +83,30 @@ pub fn relabel_capture(app: &AppHandle, capturing: bool) {
         .set_text(capture_label(&i18n::tray_labels(lang), capturing));
 }
 
-/// 업데이트 항목 라벨 갱신. Task 3 에서 채운다.
-pub fn relabel_update(_app: &AppHandle) {}
+/// 업데이트 확인이 끝날 때마다 호출된다. 트레이가 아직 없으면 무시된다.
+pub fn relabel_update(app: &AppHandle) {
+    let Some(items) = app.try_state::<TrayItems>() else {
+        return;
+    };
+    let lang = i18n::resolve(&app.state::<SettingsState>().get().general.ui_language);
+    let _ = items.update.set_text(update_label(
+        &i18n::tray_labels(lang),
+        crate::updater::status(app),
+    ));
+}
 
 fn capture_label(l: &i18n::TrayLabels, capturing: bool) -> &'static str {
     if capturing {
         l.stop
     } else {
         l.start
+    }
+}
+
+fn update_label(l: &i18n::TrayLabels, pending: Option<crate::updater::UpdateInfo>) -> String {
+    match pending {
+        Some(info) => l.install_update.replace("{}", &info.version),
+        None => l.check_update.to_string(),
     }
 }
 
@@ -102,11 +122,18 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
     };
     let overlay_item = MenuItem::with_id(app, "overlay", overlay_label, true, None::<&str>)?;
     let open = MenuItem::with_id(app, "open", labels.open, true, None::<&str>)?;
+    let update_item = MenuItem::with_id(
+        app,
+        "update",
+        update_label(&labels, crate::updater::status(app)),
+        true,
+        None::<&str>,
+    )?;
     let quit = MenuItem::with_id(app, "quit", labels.quit, true, None::<&str>)?;
     let menu = MenuBuilder::new(app)
         .items(&[&capture, &overlay_item])
         .separator()
-        .items(&[&open])
+        .items(&[&open, &update_item])
         .separator()
         .items(&[&quit])
         .build()?;
@@ -135,6 +162,7 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
             "open" => {
                 let _ = windows::show_main(app);
             }
+            "update" => crate::updater::on_tray_click(app.clone()),
             "quit" => app.exit(0),
             _ => {}
         })
@@ -144,6 +172,7 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
         capture,
         overlay: overlay_item,
         open,
+        update: update_item,
         quit,
     });
 
@@ -166,4 +195,21 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
         eprintln!("shortcut {SHORTCUT_OVERLAY} unavailable: {e}");
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{i18n::Lang, updater::UpdateInfo};
+
+    #[test]
+    fn update_label_follows_pending_state() {
+        let l = i18n::tray_labels(Lang::Ko);
+        assert_eq!(update_label(&l, None), "업데이트 확인");
+        let info = UpdateInfo {
+            version: "0.3.0".into(),
+            notes: String::new(),
+        };
+        assert_eq!(update_label(&l, Some(info)), "v0.3.0 설치");
+    }
 }

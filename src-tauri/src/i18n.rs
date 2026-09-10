@@ -35,6 +35,9 @@ pub struct TrayLabels {
     pub overlay_off: &'static str,
     pub open: &'static str,
     pub quit: &'static str,
+    pub check_update: &'static str,
+    /// `{}` 자리에 버전
+    pub install_update: &'static str,
 }
 
 pub fn tray_labels(lang: Lang) -> TrayLabels {
@@ -46,6 +49,8 @@ pub fn tray_labels(lang: Lang) -> TrayLabels {
             overlay_off: "오버레이 끄기",
             open: "Babelay 열기",
             quit: "종료",
+            check_update: "업데이트 확인",
+            install_update: "v{} 설치",
         },
         Lang::En => TrayLabels {
             start: "Start Capture",
@@ -54,6 +59,8 @@ pub fn tray_labels(lang: Lang) -> TrayLabels {
             overlay_off: "Hide Overlay",
             open: "Open Babelay",
             quit: "Quit",
+            check_update: "Check for Updates",
+            install_update: "Install v{}",
         },
         Lang::Ja => TrayLabels {
             start: "キャプチャ開始",
@@ -62,6 +69,8 @@ pub fn tray_labels(lang: Lang) -> TrayLabels {
             overlay_off: "オーバーレイを非表示",
             open: "Babelay を開く",
             quit: "終了",
+            check_update: "アップデートを確認",
+            install_update: "v{} をインストール",
         },
     }
 }
@@ -94,5 +103,8 @@ mod tests {
         assert_eq!(tray_labels(Lang::Ko).quit, "종료");
         assert_eq!(tray_labels(Lang::En).quit, "Quit");
         assert_eq!(tray_labels(Lang::Ja).quit, "終了");
+        assert_eq!(tray_labels(Lang::Ko).check_update, "업데이트 확인");
+        assert_eq!(tray_labels(Lang::En).install_update, "Install v{}");
+        assert_eq!(tray_labels(Lang::Ja).install_update, "v{} をインストール");
     }
 }
