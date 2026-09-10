@@ -5,7 +5,7 @@ import type { DeepPartial, Settings } from "./types";
 
 export const defaultSettings: Settings = {
   version: 1,
-  general: { theme: "system", ui_language: "system", onboarding_done: false },
+  general: { theme: "system", ui_language: "system", onboarding_done: false, auto_update: true },
   asr: { model_id: "small", gpu: true, source_lang: "auto" },
   translation: {
     backend: "local",

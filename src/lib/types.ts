@@ -7,7 +7,7 @@ export type Provider = "openai" | "anthropic" | "gemini" | "deepl" | "custom";
 
 export interface Settings {
   version: number;
-  general: { theme: Theme; ui_language: UiLang; onboarding_done: boolean };
+  general: { theme: Theme; ui_language: UiLang; onboarding_done: boolean; auto_update: boolean };
   asr: { model_id: string; gpu: boolean; source_lang: SourceLang };
   translation: {
     backend: "local" | "cloud";

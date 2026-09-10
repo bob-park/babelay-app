@@ -30,6 +30,10 @@ describe("mergeSettings", () => {
     mergeSettings(defaultSettings, { general: { theme: "dark" } });
     expect(defaultSettings.general.theme).toBe("system");
   });
+
+  it("defaults auto_update to on", () => {
+    expect(defaultSettings.general.auto_update).toBe(true);
+  });
 });
 
 describe("useSettings.update", () => {
