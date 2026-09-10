@@ -18,6 +18,10 @@ interface UpdateStore {
 // 업데이트 오류도 설정 오류 배너 하나로 보여준다. 배너를 하나 더 만들 이유가 없다.
 const fail = (e: unknown) => useSettings.getState().setError(e);
 
+// 설치 중 두 번째 설치 요청. 사용자가 알 일이 아니니 배너도 진행률도 건드리지 않는다.
+// invoke 는 문자열로, 이벤트는 payload 로 같은 "busy" 를 준다.
+const isBusy = (e: unknown) => (e instanceof Error ? e.message : String(e)) === "busy";
+
 export const useUpdate = create<UpdateStore>((set) => ({
   info: null,
   progress: null,
@@ -34,10 +38,12 @@ export const useUpdate = create<UpdateStore>((set) => ({
     }
   },
   install: async () => {
-    set({ progress: { received: 0, total: null } });
+    // 이미 받는 중이면 그 진행률을 유지한다. 0 으로 되돌리면 두 번째 클릭이 막대를 되감는다.
+    set((s) => ({ progress: s.progress ?? { received: 0, total: null } }));
     try {
       await api.installUpdate();
     } catch (e) {
+      if (isBusy(e)) return;
       set({ progress: null });
       fail(e);
     }
@@ -49,12 +55,11 @@ export const useUpdate = create<UpdateStore>((set) => ({
       listen<UpdateInfo>("update-available", (e) => set({ info: e.payload })),
       listen<UpdateProgress>("update-progress", (e) => set({ progress: e.payload })),
       listen<string>("update-error", (e) => {
-        // 설치 중 두 번째 설치 요청("busy")은 사용자가 알 일이 아니다. 진행률도 그대로 둔다.
-        if (e.payload === "busy") return;
+        if (isBusy(e.payload)) return;
         set({ progress: null });
         fail(e.payload);
       }),
     ];
-    return () => { for (const p of subs) p.then((un) => un()); };
+    return () => { for (const p of subs) p.then((un) => un()).catch(() => {}); };
   },
 }));

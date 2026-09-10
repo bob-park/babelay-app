@@ -65,6 +65,24 @@ describe("useUpdate", () => {
     expect(useSettings.getState().error).toBe("no_update");
   });
 
+  it("ignores a busy rejection from a second install click", async () => {
+    const prog: UpdateProgress = { received: 10, total: 100 };
+    useUpdate.setState({ progress: prog });
+    vi.mocked(api.installUpdate).mockRejectedValueOnce(new Error("busy"));
+    await useUpdate.getState().install();
+    expect(useUpdate.getState().progress).toEqual(prog);
+    expect(useSettings.getState().error).toBeNull();
+  });
+
+  it("ignores a raw busy string from invoke", async () => {
+    const prog: UpdateProgress = { received: 10, total: 100 };
+    useUpdate.setState({ progress: prog });
+    vi.mocked(api.installUpdate).mockRejectedValueOnce("busy");
+    await useUpdate.getState().install();
+    expect(useUpdate.getState().progress).toEqual(prog);
+    expect(useSettings.getState().error).toBeNull();
+  });
+
   it("ignores busy while an install is running", async () => {
     useUpdate.getState().subscribe();
     await Promise.resolve();
