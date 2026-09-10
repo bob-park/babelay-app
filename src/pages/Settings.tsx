@@ -25,8 +25,8 @@ export default function Settings() {
           </NavLink>
         ))}
       </div>
-      {/* 탭은 고정, 본문만 스크롤. */}
-      <div className="min-h-0 flex-1 overflow-auto">{body}</div>
+      {/* 탭은 고정, 본문만 스크롤. 스크롤 영역을 위로 늘리고 같은 만큼 패딩을 줘서 맨 위 툴팁이 잘리지 않게 한다. */}
+      <div className="-mt-6 min-h-0 flex-1 overflow-auto pt-6">{body}</div>
     </div>
   );
 }
