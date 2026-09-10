@@ -50,7 +50,8 @@ export const useUpdate = create<UpdateStore>((set) => ({
   },
   subscribe: () => {
     // 창이 이벤트보다 늦게 열렸을 수 있다.
-    api.updateStatus().then((info) => set({ info })).catch(() => {});
+    // invoke 가 도는 사이 도착한 update-available 을 덮어쓰지 않도록 비어 있을 때만 채운다.
+    api.updateStatus().then((info) => set((s) => ({ info: s.info ?? info }))).catch(() => {});
     const subs = [
       listen<UpdateInfo>("update-available", (e) => set({ info: e.payload })),
       listen<UpdateProgress>("update-progress", (e) => set({ progress: e.payload })),

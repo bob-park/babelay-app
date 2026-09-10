@@ -42,6 +42,12 @@ if (isMain) {
     console.error("usage: node scripts/latest-json.mjs <tag>");
     process.exit(1);
   }
+  // 공개키가 비어 있으면 그 빌드는 업데이트를 검증하지 못한다 — 받은 뒤에야 실패하므로 여기서 막는다.
+  const conf = JSON.parse(readFileSync(new URL("../src-tauri/tauri.conf.json", import.meta.url), "utf8"));
+  if (!conf.plugins?.updater?.pubkey) {
+    console.error("src-tauri/tauri.conf.json: plugins.updater.pubkey is empty — fill it before releasing (see docs/development.md)");
+    process.exit(1);
+  }
   const dir = mkdtempSync(join(tmpdir(), "babelay-sig-"));
   execFileSync("gh", ["release", "download", tag, "-R", REPO, "-p", "*.sig", "-D", dir], { stdio: "inherit" });
   const sigs = readdirSync(dir).map((name) => ({ name, body: readFileSync(join(dir, name), "utf8") }));

@@ -69,9 +69,12 @@ Rust 에서만 호출하므로 capability 는 추가하지 않는다.
 - `pages/settings/General.tsx` 에 "업데이트" `SettingGroup`:
   - 행 1: "자동으로 확인" 토글 ↔ `general.auto_update`.
   - 행 2: 현재 버전(`getVersion()` from `@tauri-apps/api/app`) + 상태 문구("최신 버전" / "v0.3.0 사용 가능" / "확인 중") + 버튼("지금 확인" 또는 "설치"). 설치 중이면 버튼 대신 `progress`.
-  - 행 3: "로그인 시 자동 실행" 토글. 마운트 시 `getAutostart` 로 초기값, 변경 시 `setAutostart`. 실패하면 `useSettings.setError` 로 기존 오류 배너에 표시.
+  - 행 3: "로그인 시 자동 실행" 토글. 마운트 시 `getAutostart` 로 초기값, 변경 시 `setAutostart`. 실패하면 `showError` 토스트로 표시.
 - `Sidebar.tsx`: 설정 항목에 업데이트 대기 시 점 하나.
 - 로케일 `ko/en/ja.json` 에 `update.*`, `general.autostart` 키.
+
+### 알림 (추가 요구, Task 10)
+모든 알림은 react-toastify 로 보여준다. 오류는 `src/lib/toast.ts` 의 `showError` (같은 메시지는 `toastId` 로 하나로 합침), 다운로드 진행·업데이트 발견(설치 버튼)·설치 진행은 `src/components/Toasts.tsx` 가 스토어를 관찰해 띄운다. 스토어는 토스트를 모른다. 외관은 daisyUI 색 변수를 toastify CSS 변수에 매핑해 기존 UI 를 따른다. 히스토리 내보내기 완료와 번역 연결 테스트 결과도 토스트다.
 
 ## 3. 로그인 시 자동 실행
 
@@ -101,7 +104,7 @@ Rust 에서만 호출하므로 capability 는 추가하지 않는다.
 
 ## 오류 처리
 
-- 확인 실패(오프라인, 404, 서명 불일치): 주기 확인은 조용히 로그만. 수동 확인은 커맨드 오류 → 프론트 오류 배너.
+- 확인 실패(오프라인, 404, 서명 불일치): 주기 확인은 조용히 로그만. 수동 확인은 커맨드 오류 → `showError` 토스트(react-toastify).
 - 설치 실패: `update-progress` 대신 커맨드 오류. 상태의 `Update` 는 유지해 다시 시도할 수 있다.
 - `latest.json` 에 현재 플랫폼 항목이 없으면 플러그인이 "없음" 으로 돌려준다 → "최신 버전" 표시. 이 경우 실제로는 아직 그 플랫폼 빌드가 안 올라온 것이지만 구분하지 않는다.
 

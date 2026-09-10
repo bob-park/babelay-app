@@ -34,6 +34,17 @@ describe("useUpdate", () => {
     expect(useUpdate.getState().info).toEqual(info);
   });
 
+  it("does not let a late updateStatus overwrite an event", async () => {
+    let resolve!: (v: UpdateInfo | null) => void;
+    vi.mocked(api.updateStatus).mockReturnValueOnce(new Promise((r) => { resolve = r; }));
+    useUpdate.getState().subscribe();
+    h.listeners["update-available"]({ payload: info });
+    resolve(null);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(useUpdate.getState().info).toEqual(info);
+  });
+
   it("check stores the result and marks checked", async () => {
     vi.mocked(api.checkUpdate).mockResolvedValueOnce(null);
     await useUpdate.getState().check();
