@@ -23,6 +23,11 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        // 인자 없음: 자동 실행 때도 직접 실행과 같이 메인 창을 띄운다.
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
         .setup(|app| {
             let path = app.path().app_config_dir()?.join("settings.json");
             app.manage(SettingsState::new(path));
@@ -80,6 +85,8 @@ pub fn run() {
             commands::update_status,
             commands::check_update,
             commands::install_update,
+            commands::get_autostart,
+            commands::set_autostart,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
