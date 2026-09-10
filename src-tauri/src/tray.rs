@@ -79,6 +79,9 @@ pub fn relabel_capture(app: &AppHandle, capturing: bool) {
         .set_text(capture_label(&i18n::tray_labels(lang), capturing));
 }
 
+/// 업데이트 항목 라벨 갱신. Task 3 에서 채운다.
+pub fn relabel_update(_app: &AppHandle) {}
+
 fn capture_label(l: &i18n::TrayLabels, capturing: bool) -> &'static str {
     if capturing {
         l.stop

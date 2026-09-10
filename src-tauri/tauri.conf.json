@@ -16,6 +16,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": ["dmg", "nsis"],
     "icon": [
       "icons/32x32.png",
@@ -33,6 +34,13 @@
     "windows": {
       "certificateThumbprint": null,
       "nsis": { "installMode": "currentUser" }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "",
+      "endpoints": ["https://github.com/bob-park/babelay-app/releases/latest/download/latest.json"],
+      "windows": { "installMode": "passive" }
     }
   }
 }
