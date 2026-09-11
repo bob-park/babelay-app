@@ -1,29 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { HashRouter, Navigate, Route, Routes } from "react-router";
-import { Sidebar } from "../components/Sidebar";
+import { TopBar } from "../components/TopBar";
 import Live from "./main/Live";
 import History from "./main/History";
 import Settings from "./Settings";
 import { useUpdate } from "../lib/update";
 
-const KEY = "babelay.sidebar";
-
 export default function MainApp() {
-  const [collapsed, setCollapsed] = useState(() => {
-    try { return localStorage.getItem(KEY) === "collapsed"; } catch { return false; }
-  });
-  const toggle = () => {
-    const next = !collapsed;
-    setCollapsed(next);
-    try { localStorage.setItem(KEY, next ? "collapsed" : "expanded"); } catch { /* ignore */ }
-  };
   useEffect(() => useUpdate.getState().subscribe(), []);
 
   return (
     <HashRouter>
-      <div className="flex h-full bg-base-100">
-        <Sidebar collapsed={collapsed} onToggle={toggle} />
-        <main className="flex-1 overflow-auto px-6 py-5">
+      <div className="flex h-full flex-col bg-base-100">
+        <TopBar />
+        <main className="min-h-0 flex-1 overflow-auto px-6 py-5">
           <Routes>
             <Route path="/" element={<Navigate to="/live" replace />} />
             <Route path="/live" element={<Live />} />
