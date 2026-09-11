@@ -1715,6 +1715,7 @@ __metadata:
     daisyui: "npm:^5.7"
     i18next: "npm:^26"
     jsdom: "npm:^30.0.1"
+    pretendard: "npm:1.3.9"
     react: "npm:^19.1.0"
     react-dom: "npm:^19.1.0"
     react-i18next: "npm:^17"
@@ -2563,6 +2564,13 @@ __metadata:
     picocolors: "npm:^1.1.1"
     source-map-js: "npm:^1.2.1"
   checksum: 10c0/2bdafc00d96bd57b6649a52e458864a4bf58ee56cfdbe4aea1472b5cccc127e6c1ad653bd0bec50d211e650eb0b9270c80e1e72aff2e2fa40d9e7363234d6e43
+  languageName: node
+  linkType: hard
+
+"pretendard@npm:1.3.9":
+  version: 1.3.9
+  resolution: "pretendard@npm:1.3.9"
+  checksum: 10c0/45da0108541a2bd78dc1e43c8a0fc25994d202745ff178faf834477cb341fc376ba367e4e742ef5c139be119c86b8f4d17c8ae4f3a85c310aa7fb4ff419a7cac
   languageName: node
   linkType: hard
 
