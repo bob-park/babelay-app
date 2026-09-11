@@ -64,7 +64,7 @@ export default function History() {
     : <>#{sel} · {clock(segments[segments.length - 1]?.t1_ms ?? 0)} · {t("history.segments", { count: segments.length })}</>;
 
   return (
-    <div className="flex max-w-3xl flex-col gap-4">
+    <div className="flex flex-col gap-4">
       {hits ? (
         <div className="flex flex-col gap-0.5 rounded-box border border-base-300 bg-base-100 p-1 shadow-kr">
           {hits.map((r) => (
