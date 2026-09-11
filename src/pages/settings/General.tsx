@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { AboutDialog } from "../../components/AboutDialog";
 import { Icon } from "../../components/icons";
 import { PermissionRow } from "../../components/PermissionRow";
 import { SettingGroup, SettingRow } from "../../components/SettingGroup";
@@ -92,6 +93,12 @@ export default function General() {
           <PermissionRow />
         </>
       )}
+
+      <SettingGroup>
+        <SettingRow as="div" label={t("app.name")}>
+          <AboutDialog />
+        </SettingRow>
+      </SettingGroup>
     </div>
   );
 }
