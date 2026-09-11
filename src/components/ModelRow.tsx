@@ -69,7 +69,7 @@ export function ModelRow({ status, selected, onSelect }: Props) {
           {status.in_use && status.installed && <span className="badge badge-success badge-soft badge-sm">{t("models.badgeInUse")}</span>}
           {status.installed && !status.in_use && <span className="badge badge-ghost badge-sm">{t("models.badgeInstalled")}</span>}
           {status.balanced && <span className="badge badge-secondary badge-sm">{t("models.badgeRecommended")}</span>}
-          {status.fit === "heavy" && <span className="badge badge-warning badge-soft badge-sm">{t("models.badgeHeavy")}</span>}
+          {status.fit === "heavy" && <span className="badge badge-warning badge-sm">{t("models.badgeHeavy")}</span>}
         </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-fg-muted">
           <span className="truncate">{meta}</span>

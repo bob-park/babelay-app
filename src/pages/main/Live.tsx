@@ -28,13 +28,13 @@ export default function Live() {
     <div className="flex h-full flex-col gap-3">
       {/* 컨트롤 줄: 언어 쌍(설정값, 다음 세션부터 적용) · 상태 점 · 모델 배지 · 오버레이 토글 */}
       <div className="flex flex-wrap items-center gap-2 text-xs text-fg-muted">
-        <select className="select select-sm w-32" aria-label={t("translation.sourceLang")} value={settings.asr.source_lang} onChange={(e) => update({ asr: { source_lang: e.target.value as SourceLang } })}>
+        <select className="select select-sm w-44" aria-label={t("translation.sourceLang")} value={settings.asr.source_lang} onChange={(e) => update({ asr: { source_lang: e.target.value as SourceLang } })}>
           <option value="auto">{t("translation.auto")}</option><option value="ko">{t("general.langKo")}</option><option value="en">{t("general.langEn")}</option><option value="ja">{t("general.langJa")}</option>
         </select>
         {translating && (
           <>
             <span aria-hidden="true">→</span>
-            <select className="select select-sm w-32" aria-label={t("translation.targetLang")} value={settings.overlay.subtitle_lang} onChange={(e) => update({ overlay: { subtitle_lang: e.target.value as UiLang } })}>
+            <select className="select select-sm w-44" aria-label={t("translation.targetLang")} value={settings.overlay.subtitle_lang} onChange={(e) => update({ overlay: { subtitle_lang: e.target.value as UiLang } })}>
               <option value="system">{t("general.langSystem")}</option><option value="ko">{t("general.langKo")}</option><option value="en">{t("general.langEn")}</option><option value="ja">{t("general.langJa")}</option>
             </select>
           </>
@@ -44,8 +44,8 @@ export default function Live() {
         {view.capturing
           ? <SessionBadges src={view.sourceLang ?? "auto"} tgt={translating ? view.targetLang : null} asrModel={view.modelId ?? settings.asr.model_id} translator={translator} />
           : <><span className={badge}>{name(settings.asr.model_id)}</span>{translator && <span className={badge}>{translator}</span>}</>}
-        {view.gpuFallback && <span className="badge badge-warning badge-soft badge-sm">{t("live.cpuFallback")}</span>}
-        {view.lagging && <span className="badge badge-warning badge-soft badge-sm">{t("live.lagging")}</span>}
+        {view.gpuFallback && <span className="badge badge-warning badge-sm">{t("live.cpuFallback")}</span>}
+        {view.lagging && <span className="badge badge-warning badge-sm">{t("live.lagging")}</span>}
         <label className="ml-auto flex items-center gap-2 text-sm text-base-content">
           {t("live.overlay")}
           <input type="checkbox" role="switch" className="toggle toggle-primary toggle-sm" checked={settings.overlay.enabled} onChange={(e) => update({ overlay: { enabled: e.target.checked } })} />

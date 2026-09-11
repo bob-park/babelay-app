@@ -14,9 +14,9 @@ export function AboutDialog() {
 
   return (
     <>
-      <button type="button" className="btn btn-sm" onClick={() => ref.current?.showModal()}>{t("nav.about")}</button>
+      <button type="button" className="btn btn-sm border-base-300" onClick={() => ref.current?.showModal()}>{t("nav.about")}</button>
       <dialog ref={ref} className="modal">
-        <div className="modal-box max-w-xs">
+        <div className="modal-box max-w-xs shadow-kr">
           <div className="flex flex-col items-center gap-1 text-center">
             <img src={logo} alt="" className="h-16 w-16" />
             <h3 className="mt-2 text-lg font-bold tracking-tight">{t("app.name")}</h3>
@@ -30,7 +30,7 @@ export function AboutDialog() {
             </dl>
           )}
           <div className="modal-action justify-center">
-            <form method="dialog"><button className="btn btn-sm">{t("common.close")}</button></form>
+            <form method="dialog"><button className="btn btn-sm border-base-300">{t("common.close")}</button></form>
           </div>
         </div>
         <form method="dialog" className="modal-backdrop"><button aria-label={t("common.close")} /></form>

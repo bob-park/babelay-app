@@ -39,7 +39,7 @@ export default function Onboarding() {
   const llm = byId(settings.translation.local_model);
   const macos = steps.includes("permission");
   const langBtn = (v: UiLang, text: string) => (
-    <button key={v} type="button" className={`btn btn-sm ${settings.general.ui_language === v ? "btn-primary" : ""}`} onClick={() => update({ general: { ui_language: v } })}>{text}</button>
+    <button key={v} type="button" className={`btn btn-sm ${settings.general.ui_language === v ? "btn-primary" : "border-base-300"}`} onClick={() => update({ general: { ui_language: v } })}>{text}</button>
   );
   const pct = (m: typeof asr) => (m?.download ? `${Math.round((m.download.received / Math.max(1, m.download.total)) * 100)}%` : null);
   // 대기열에 있는 모델은 아직 실패가 아니다. ✕ 대신 중립 표시.
@@ -48,7 +48,7 @@ export default function Onboarding() {
     : m?.download
       ? <span className="text-xs tabular-nums text-fg-muted">{pct(m)}</span>
       : m && queue.includes(m.info.id)
-        ? <span role="img" aria-label={t("downloads.next", { name: m.info.name })} className="flex h-6 w-6 items-center justify-center rounded-full bg-neutral text-neutral-content"><Icon name="help" /></span>
+        ? <span role="img" aria-label={t("downloads.next", { name: m.info.name })} className="flex h-6 w-6 items-center justify-center rounded-full bg-base-300 text-base-content"><Icon name="help" /></span>
         : <span role="img" aria-label={t("models.notInstalled")} className="flex h-6 w-6 items-center justify-center rounded-full bg-error text-error-content"><Icon name="x" /></span>;
 
   return (

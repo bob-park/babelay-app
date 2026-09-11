@@ -15,7 +15,7 @@ export function ConfirmModal({ open, message, onConfirm, onCancel }: Props) {
   }, [open]);
   return (
     <dialog ref={ref} className="modal" aria-labelledby={id} onClose={onCancel} onClick={(e) => e.stopPropagation()}>
-      <div className="modal-box max-w-sm">
+      <div className="modal-box max-w-sm shadow-kr">
         <p id={id} className="text-sm">{message}</p>
         <div className="modal-action">
           <button type="button" className="btn btn-ghost btn-sm" onClick={onCancel}>{t("common.cancel")}</button>

@@ -12,7 +12,7 @@ export function PermissionIcon({ perm }: { perm: Perm | null }) {
   const { t } = useTranslation();
   if (perm === "granted") return <span role="img" className="flex h-6 w-6 items-center justify-center rounded-full bg-success text-success-content" aria-label={t("permission.granted")}><Icon name="check" /></span>;
   if (perm === "denied") return <span role="img" className="flex h-6 w-6 items-center justify-center rounded-full bg-error text-error-content" aria-label={t("permission.denied")}><Icon name="x" /></span>;
-  return <span role="img" className="flex h-6 w-6 items-center justify-center rounded-full bg-neutral text-neutral-content" aria-label={t("permission.unknown")}><Icon name="help" /></span>;
+  return <span role="img" className="flex h-6 w-6 items-center justify-center rounded-full bg-base-300 text-base-content" aria-label={t("permission.unknown")}><Icon name="help" /></span>;
 }
 
 // 권한 조회는 실제 탭을 만들어 TCC 프롬프트를 띄운다. 마운트당 한 번만.
@@ -34,7 +34,7 @@ export function PermissionRow({ onStatus }: { onStatus?: (p: Perm) => void }) {
         </div>
       </SettingGroup>
       <div className="flex flex-wrap gap-2">
-        <button type="button" className={`btn btn-sm ${perm === "denied" ? "" : "btn-primary"}`} onClick={check}>{t("permission.check")}</button>
+        <button type="button" className={`btn btn-sm ${perm === "denied" ? "border-base-300" : "btn-primary"}`} onClick={check}>{t("permission.check")}</button>
         <button type="button" className={`btn btn-sm ${perm === "denied" ? "btn-primary" : "btn-outline"}`} onClick={() => api.openPrivacySettings().catch(showError)}>{t("permission.openSettings")}</button>
       </div>
     </div>

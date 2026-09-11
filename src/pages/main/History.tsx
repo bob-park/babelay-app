@@ -18,8 +18,8 @@ export default function History() {
   const [segments, setSegments] = useState<SegmentRow[]>([]);
   const [params] = useSearchParams();
   const [q, setQ] = useState(params.get("q") ?? "");
-  // 사이드바 검색은 ?q= 로 들어온다. 파라미터가 바뀌면 검색어도 따라간다.
-  useEffect(() => { const v = params.get("q"); if (v !== null) setQ(v); }, [params]);
+  // 상단 바 검색은 ?q= 로 들어온다. 파라미터를 그대로 따라가므로 페이지/탭을 떠나면 검색어도 풀린다.
+  useEffect(() => { setQ(params.get("q") ?? ""); }, [params]);
   const [hits, setHits] = useState<SegmentRow[] | null>(null);
 
   // history 커맨드는 DB 상태가 없으면 "state not managed"로 거절한다. 원문 대신 사람 말로.
@@ -72,7 +72,7 @@ export default function History() {
               <span className="shrink-0 tabular-nums text-fg-muted">{sessionLabel(r.session_id)} · {clock(r.t0_ms)}</span>
               <span className="min-w-0 break-words">
                 <span>{r.src_text}</span>
-                {r.tgt_text && <span className="block font-bold">{r.tgt_text}</span>}
+                {r.tgt_text && <span className="block font-semibold">{r.tgt_text}</span>}
               </span>
             </button>
           ))}
@@ -82,8 +82,8 @@ export default function History() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSel(null)}>{`← ${t("nav.history")}`}</button>
             <div className="flex gap-2">
-              <button type="button" className="btn btn-sm" onClick={() => exportAs(sel, "txt")}>{t("history.exportTxt")}</button>
-              <button type="button" className="btn btn-sm" onClick={() => exportAs(sel, "srt")}>{t("history.exportSrt")}</button>
+              <button type="button" className="btn btn-sm border-base-300" onClick={() => exportAs(sel, "txt")}>{t("history.exportTxt")}</button>
+              <button type="button" className="btn btn-sm border-base-300" onClick={() => exportAs(sel, "srt")}>{t("history.exportSrt")}</button>
               <button type="button" className="btn btn-outline btn-error btn-sm" onClick={() => remove(sel)}>{t("history.delete")}</button>
             </div>
           </div>

@@ -19,7 +19,7 @@ export default function Settings() {
     <div className="flex h-full w-full max-w-3xl flex-col gap-4">
       <div role="tablist" className="tabs tabs-border">
         {TABS.map((k) => (
-          <NavLink key={k} to={`/settings/${k}`} role="tab" className={({ isActive }) => `tab gap-1.5 ${isActive ? "tab-active" : ""}`}>
+          <NavLink key={k} to={`/settings/${k}`} role="tab" className={({ isActive }) => `tab gap-1.5 ${isActive ? "tab-active text-primary" : ""}`}>
             <Icon name={k} />{t(`settings.${k}`)}
           </NavLink>
         ))}

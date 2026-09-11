@@ -86,7 +86,7 @@ export function ModelPicker({ applyLabel, onApplied }: Props) {
                 {p.id === "balanced" && <span className="badge badge-secondary badge-sm">{t("models.badgeRecommended")}</span>}
                 {st.inUse && <span className="badge badge-success badge-soft badge-sm">{t("models.badgeInUse")}</span>}
                 {st.installed && !st.inUse && <span className="badge badge-ghost badge-sm">{t("models.badgeInstalled")}</span>}
-                {p.heavy && <span className="badge badge-warning badge-soft badge-sm">{t("models.badgeHeavy")}</span>}
+                {p.heavy && <span className="badge badge-warning badge-sm">{t("models.badgeHeavy")}</span>}
               </span>
               <span className="text-xs text-fg-muted">{t(`models.preset.${p.id}.desc`)}</span>
               <span className="mt-1 text-xs">{name(p.asr)}<br />{name(p.llm)}</span>
