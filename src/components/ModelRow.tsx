@@ -10,7 +10,7 @@ function Meter({ value, accent, label }: { value: number; accent?: boolean; labe
   return (
     <span className="inline-flex items-center gap-1" aria-label={label}>
       <span className="inline-flex gap-0.5">
-        {[1, 2, 3, 4, 5].map((i) => <span key={i} className={`h-1.5 w-1.5 rounded-[2px] ${i <= value ? (accent ? "bg-primary" : "bg-fg-muted") : "bg-neutral"}`} />)}
+        {[1, 2, 3, 4, 5].map((i) => <span key={i} className={`h-1.5 w-1.5 rounded-[2px] ${i <= value ? (accent ? "bg-primary" : "bg-fg-muted") : "bg-base-300"}`} />)}
       </span>
     </span>
   );
@@ -61,15 +61,15 @@ export function ModelRow({ status, selected, onSelect }: Props) {
       aria-pressed={selected}
       onClick={onSelect}
       onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(); } }}
-      className={`grid grid-cols-[1fr_auto] items-center gap-3 rounded-box bg-base-200 px-4 py-3 text-left text-sm hover:bg-base-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${selected ? "ring-[1.5px] ring-inset ring-primary" : ""}`}
+      className={`grid grid-cols-[1fr_auto] items-center gap-3 rounded-box border border-base-300 bg-base-100 px-4 py-3 text-left text-sm shadow-kr hover:bg-base-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${selected ? "border-primary ring-1 ring-inset ring-primary" : ""}`}
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2 font-semibold">
           <span className="truncate">{info.name}</span>
-          {status.in_use && status.installed && <span className="badge badge-primary badge-sm">{t("models.badgeInUse")}</span>}
-          {status.installed && !status.in_use && <span className="badge badge-neutral badge-sm">{t("models.badgeInstalled")}</span>}
-          {status.balanced && <span className="badge badge-neutral badge-sm">{t("models.badgeRecommended")}</span>}
-          {status.fit === "heavy" && <span className="badge badge-warning badge-sm">{t("models.badgeHeavy")}</span>}
+          {status.in_use && status.installed && <span className="badge badge-success badge-soft badge-sm">{t("models.badgeInUse")}</span>}
+          {status.installed && !status.in_use && <span className="badge badge-ghost badge-sm">{t("models.badgeInstalled")}</span>}
+          {status.balanced && <span className="badge badge-secondary badge-sm">{t("models.badgeRecommended")}</span>}
+          {status.fit === "heavy" && <span className="badge badge-warning badge-soft badge-sm">{t("models.badgeHeavy")}</span>}
         </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-fg-muted">
           <span className="truncate">{meta}</span>

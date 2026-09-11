@@ -79,14 +79,14 @@ export function ModelPicker({ applyLabel, onApplied }: Props) {
               role="radio"
               aria-checked={on}
               onClick={() => setSelected(p.id)}
-              className={`flex flex-col items-start gap-1 rounded-box bg-base-200 px-4 py-3 text-left text-sm hover:bg-base-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${on ? "ring-[1.5px] ring-inset ring-primary" : ""}`}
+              className={`flex flex-col items-start gap-1 rounded-box border border-base-300 bg-base-100 px-4 py-3 text-left text-sm shadow-kr hover:bg-base-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${on ? "border-primary ring-1 ring-inset ring-primary" : ""}`}
             >
               <span className="flex flex-wrap items-center gap-1.5 font-semibold">
                 {t(`models.preset.${p.id}.name`)}
-                {p.id === "balanced" && <span className="badge badge-primary badge-sm">{t("models.badgeRecommended")}</span>}
-                {st.inUse && <span className="badge badge-neutral badge-sm">{t("models.badgeInUse")}</span>}
-                {st.installed && !st.inUse && <span className="badge badge-neutral badge-sm">{t("models.badgeInstalled")}</span>}
-                {p.heavy && <span className="badge badge-warning badge-sm">{t("models.badgeHeavy")}</span>}
+                {p.id === "balanced" && <span className="badge badge-secondary badge-sm">{t("models.badgeRecommended")}</span>}
+                {st.inUse && <span className="badge badge-success badge-soft badge-sm">{t("models.badgeInUse")}</span>}
+                {st.installed && !st.inUse && <span className="badge badge-ghost badge-sm">{t("models.badgeInstalled")}</span>}
+                {p.heavy && <span className="badge badge-warning badge-soft badge-sm">{t("models.badgeHeavy")}</span>}
               </span>
               <span className="text-xs text-fg-muted">{t(`models.preset.${p.id}.desc`)}</span>
               <span className="mt-1 text-xs">{name(p.asr)}<br />{name(p.llm)}</span>
