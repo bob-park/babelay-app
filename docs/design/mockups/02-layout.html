@@ -1,0 +1,154 @@
+<style>
+  .kr { --bg:#ffffff; --sf:#ffffff; --sf2:#f6f6f9; --bd:#dedee5; --tx:#101114; --mu:#9497a9; --mu2:#686b82; --pu:#7132f5; --pus:rgba(133,91,251,.16); --gr:#149e61; --grs:rgba(20,158,97,.16); --grd:#026b3f;
+        width:100%; min-height:360px; background:var(--bg); color:var(--tx); font-family:"IBM Plex Sans",-apple-system,"Helvetica Neue",Arial,"Apple SD Gothic Neo",sans-serif; font-size:11px; display:flex; flex-direction:column; border-radius:10px; overflow:hidden; border:1px solid var(--bd); }
+  .kr .bar { height:22px; display:flex; align-items:center; gap:6px; padding:0 10px; flex:none; background:var(--sf2); border-bottom:1px solid var(--bd); }
+  .kr .dot { width:8px; height:8px; border-radius:50%; background:var(--bd); }
+  .kr .body { display:flex; flex:1; min-height:0; }
+  .kr .side { width:120px; padding:12px 8px; border-right:1px solid var(--bd); background:var(--sf2); display:flex; flex-direction:column; gap:3px; flex:none; }
+  .kr .rail { width:56px; padding:10px 6px; border-right:1px solid var(--bd); background:var(--sf2); display:flex; flex-direction:column; align-items:center; gap:4px; flex:none; }
+  .kr .rail .it { flex-direction:column; gap:3px; font-size:8.5px; width:44px; padding:6px 0; justify-content:center; }
+  .kr .brand { display:flex; align-items:center; gap:7px; padding:2px 6px 10px; font-weight:700; font-size:12px; letter-spacing:-.2px; }
+  .kr .rail .brand { padding:0 0 8px; }
+  .kr .logo { width:20px; height:20px; border-radius:6px; background:var(--pu); position:relative; display:inline-block; flex:none; }
+  .kr .logo:after { content:""; position:absolute; left:5px; right:5px; top:6px; height:2px; background:#fff; border-radius:2px; box-shadow:0 4px 0 rgba(255,255,255,.7), 0 8px 0 rgba(255,255,255,.4); }
+  .kr .it { display:flex; align-items:center; gap:7px; padding:6px 8px; border-radius:10px; color:var(--mu2); font-weight:500; }
+  .kr .it.on { background:var(--pus); color:var(--pu); font-weight:600; }
+  .kr .ico { width:13px; height:13px; border-radius:3px; background:currentColor; opacity:.85; display:inline-block; flex:none; }
+  .kr .st { margin-top:auto; }
+  .kr .ver { text-align:center; color:var(--mu); font-size:9px; padding-top:6px; }
+  .kr .main { flex:1; padding:14px 16px; display:flex; flex-direction:column; gap:10px; min-width:0; }
+  .kr h4 { margin:0; font-size:17px; font-weight:700; letter-spacing:-.5px; }
+  .kr .row { display:flex; gap:8px; align-items:center; }
+  .kr .go { display:inline-flex; align-items:center; justify-content:center; gap:6px; background:var(--pu); color:#fff; border-radius:12px; padding:8px 14px; font-weight:600; font-size:11.5px; white-space:nowrap; }
+  .kr .go.big { padding:11px 22px; font-size:13px; }
+  .kr .sel { border:1px solid var(--bd); background:var(--sf); border-radius:10px; padding:5px 8px; color:var(--tx); display:inline-flex; gap:6px; align-items:center; white-space:nowrap; }
+  .kr .sel:after { content:"⌄"; color:var(--mu); }
+  .kr .tog { display:inline-flex; align-items:center; gap:5px; color:var(--mu2); white-space:nowrap; }
+  .kr .tog i { width:22px; height:12px; border-radius:6px; background:var(--pu); position:relative; display:inline-block; }
+  .kr .tog i:after { content:""; position:absolute; right:1.5px; top:1.5px; width:9px; height:9px; border-radius:50%; background:#fff; }
+  .kr .badge { border:1px solid var(--bd); border-radius:6px; padding:2px 6px; color:var(--mu2); font-size:9.5px; white-space:nowrap; }
+  .kr .dotp { width:6px; height:6px; border-radius:50%; background:var(--gr); flex:none; }
+  .kr .card { background:var(--sf); border:1px solid var(--bd); border-radius:12px; padding:10px 12px; box-shadow:rgba(0,0,0,.03) 0 4px 24px; }
+  .kr .grow { flex:1; }
+  .kr .line { display:flex; gap:8px; padding:5px 0; }
+  .kr .t { color:var(--mu); width:32px; flex:none; font-variant-numeric:tabular-nums; }
+  .kr .src { color:var(--mu2); }
+  .kr .tr { font-weight:600; }
+  .kr .partial { color:var(--mu); }
+  .kr .ctrl { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .kr .ctrl .sp { flex:1; }
+  .kr .top { height:40px; display:flex; align-items:center; gap:14px; padding:0 14px; border-bottom:1px solid var(--bd); flex:none; }
+  .kr .top .tabs { display:flex; gap:2px; }
+  .kr .top .tab { padding:5px 10px; border-radius:10px; color:var(--mu2); font-weight:500; }
+  .kr .top .tab.on { background:var(--pus); color:var(--pu); font-weight:600; }
+  .kr .search { border:1px solid var(--bd); background:var(--sf); border-radius:10px; padding:5px 8px; color:var(--mu); }
+  .kr .hero { display:flex; flex-direction:column; align-items:center; gap:10px; padding:16px 12px; text-align:center; }
+  .kr .hero .pair { display:flex; align-items:center; gap:8px; }
+  .kr .hero .meta { color:var(--mu); font-size:10px; }
+  .kr .gear { color:var(--mu2); border:1px solid var(--bd); border-radius:10px; padding:5px 8px; }
+</style>
+
+<h2>사용하기 편한 배치 — 어느 구조가 맞을까요?</h2>
+<p class="subtitle">사용자가 가장 자주 하는 일은 <b>시작/정지</b>, <b>자막 보기</b>, <b>오버레이 켜고 끄기</b>, <b>원어·타겟 언어 바꾸기</b>입니다. 지금은 시작 버튼이 사이드바 맨 아래에 있고 언어 변경은 설정 › 번역까지 들어가야 합니다. 세 안 모두 이 네 가지를 라이브 화면 한 곳에 모았고, 색·라운드·글꼴은 Kraken 라이트입니다.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a-sidebar-controlbar" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="kr">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="body">
+          <div class="side">
+            <div class="brand"><span class="logo"></span>Babelay</div>
+            <div class="it on"><span class="ico"></span>라이브</div>
+            <div class="it"><span class="ico"></span>히스토리</div>
+            <div class="it st"><span class="ico"></span>설정</div>
+            <div class="ver">v0.3.1</div>
+          </div>
+          <div class="main">
+            <div class="ctrl">
+              <span class="go">▶ 시작</span>
+              <span class="sel">영어</span><span style="color:var(--mu)">→</span><span class="sel">한국어</span>
+              <span class="sp"></span>
+              <span class="tog"><i></i>오버레이</span>
+            </div>
+            <div class="row"><span class="dotp"></span><span class="badge">Whisper Small</span><span class="badge">Qwen 3.5 2B</span><span class="badge">Apple M2</span></div>
+            <div class="card grow">
+              <div class="line"><span class="t">00:12</span><div><div class="src">So the key idea here is latency.</div><div class="tr">그래서 여기서 핵심은 지연 시간입니다.</div></div></div>
+              <div class="line"><span class="t">00:15</span><div><div class="src">We buffer about two seconds of audio.</div><div class="tr">약 2초 분량의 오디오를 버퍼링합니다.</div></div></div>
+              <div class="line"><span class="t">00:18</span><div class="partial">Then the model runs on the</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 사이드바 + 컨트롤 바</h3>
+      <p>사이드바는 이동(라이브·히스토리·설정)만 맡고, 시작 버튼·언어 쌍·오버레이 토글이 라이브 화면 맨 위 한 줄에 모입니다. 지금 구조와 가장 가까워 학습 비용이 없고, 컨트롤이 자막 바로 위에 있어 눈이 덜 움직입니다.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b-topbar" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="kr">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="top">
+          <span class="logo"></span>
+          <div class="tabs"><span class="tab on">라이브</span><span class="tab">히스토리</span><span class="tab">설정</span></div>
+          <span class="sp" style="flex:1"></span>
+          <span class="search">검색</span>
+          <span class="go">▶ 시작</span>
+        </div>
+        <div class="main">
+          <div class="ctrl">
+            <span class="sel">영어</span><span style="color:var(--mu)">→</span><span class="sel">한국어</span>
+            <span class="badge">Whisper Small</span><span class="badge">Qwen 3.5 2B</span>
+            <span class="sp"></span>
+            <span class="tog"><i></i>오버레이</span>
+          </div>
+          <div class="card grow">
+            <div class="line"><span class="t">00:12</span><div><div class="src">So the key idea here is latency.</div><div class="tr">그래서 여기서 핵심은 지연 시간입니다.</div></div></div>
+            <div class="line"><span class="t">00:15</span><div><div class="src">We buffer about two seconds of audio.</div><div class="tr">약 2초 분량의 오디오를 버퍼링합니다.</div></div></div>
+            <div class="line"><span class="t">00:18</span><div class="partial">Then the model runs on the</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 상단 바 (사이드바 없음)</h3>
+      <p>이동 탭과 시작 버튼이 상단 바에 고정되어 어느 페이지에 있어도 시작/정지가 같은 자리에 있습니다. 좌우가 넓어져 자막이 길어도 잘 들어가고, 창을 좁게 써도 접기/펼치기가 필요 없습니다.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c-rail-hero" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="kr">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="body">
+          <div class="rail">
+            <div class="brand"><span class="logo"></span></div>
+            <div class="it on"><span class="ico"></span>라이브</div>
+            <div class="it"><span class="ico"></span>히스토리</div>
+            <div class="it st"><span class="ico"></span>설정</div>
+          </div>
+          <div class="main">
+            <div class="card hero">
+              <span class="go big">▶ 캡처 시작</span>
+              <div class="pair"><span class="sel">영어</span><span style="color:var(--mu)">→</span><span class="sel">한국어</span><span class="tog"><i></i>오버레이</span></div>
+              <div class="meta">Whisper Small · Qwen 3.5 2B · Apple M2</div>
+            </div>
+            <div class="card grow">
+              <div class="line"><span class="t">00:12</span><div><div class="src">So the key idea here is latency.</div><div class="tr">그래서 여기서 핵심은 지연 시간입니다.</div></div></div>
+              <div class="line"><span class="t">00:15</span><div><div class="src">We buffer about two seconds of audio.</div><div class="tr">약 2초 분량의 오디오를 버퍼링합니다.</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 아이콘 레일 + 세션 카드</h3>
+      <p>좁은 아이콘 레일로 이동만 하고, 라이브 화면 위에 큰 시작 버튼과 언어·오버레이를 담은 세션 카드를 둡니다. 처음 쓰는 사람이 "여기서 시작한다"를 바로 알 수 있고, 캡처 중에는 이 카드가 상태판이 됩니다. 대신 자막 영역이 조금 줄어듭니다.</p>
+    </div>
+  </div>
+
+</div>

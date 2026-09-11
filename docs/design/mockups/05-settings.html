@@ -1,0 +1,94 @@
+<style>
+  .kr { --bg:#ffffff; --sf:#ffffff; --sf2:#f6f6f9; --bd:#dedee5; --tx:#101114; --mu:#9497a9; --mu2:#686b82; --pu:#7132f5; --pus:rgba(133,91,251,.16);
+        width:100%; min-height:360px; background:var(--bg); color:var(--tx); font-family:"IBM Plex Sans",-apple-system,"Helvetica Neue",Arial,"Apple SD Gothic Neo",sans-serif; font-size:11px; display:flex; flex-direction:column; border-radius:10px; overflow:hidden; border:1px solid var(--bd); }
+  .kr .logo { width:20px; height:20px; border-radius:6px; background:var(--pu); position:relative; display:inline-block; flex:none; }
+  .kr .logo:after { content:""; position:absolute; left:5px; right:5px; top:6px; height:2px; background:#fff; border-radius:2px; box-shadow:0 4px 0 rgba(255,255,255,.7), 0 8px 0 rgba(255,255,255,.4); }
+  .kr .top { height:40px; display:flex; align-items:center; gap:14px; padding:0 14px; border-bottom:1px solid var(--bd); flex:none; }
+  .kr .tabs { display:flex; gap:2px; }
+  .kr .tab { padding:5px 10px; border-radius:10px; color:var(--mu2); font-weight:500; }
+  .kr .tab.on { background:var(--pus); color:var(--pu); font-weight:600; }
+  .kr .sp { flex:1; }
+  .kr .go { display:inline-flex; align-items:center; gap:6px; background:var(--pu); color:#fff; border-radius:12px; padding:8px 14px; font-weight:600; font-size:11.5px; }
+  .kr .body { display:flex; flex:1; min-height:0; }
+  .kr .main { flex:1; padding:14px 16px; display:flex; flex-direction:column; gap:10px; min-width:0; }
+  .kr h4 { margin:0; font-size:17px; font-weight:700; letter-spacing:-.5px; }
+  .kr .sub { display:flex; gap:2px; border-bottom:1px solid var(--bd); }
+  .kr .sub span { padding:6px 10px; color:var(--mu2); font-weight:500; margin-bottom:-1px; }
+  .kr .sub span.on { color:var(--pu); font-weight:600; border-bottom:2px solid var(--pu); }
+  .kr .snav { width:110px; padding:14px 8px; border-right:1px solid var(--bd); background:var(--sf2); display:flex; flex-direction:column; gap:3px; flex:none; }
+  .kr .snav span { padding:6px 8px; border-radius:10px; color:var(--mu2); font-weight:500; }
+  .kr .snav span.on { background:var(--pus); color:var(--pu); font-weight:600; }
+  .kr .sec { font-size:9px; font-weight:600; letter-spacing:.8px; text-transform:uppercase; color:var(--mu); margin-top:4px; }
+  .kr .grp { background:var(--sf); border:1px solid var(--bd); border-radius:12px; box-shadow:rgba(0,0,0,.03) 0 4px 24px; }
+  .kr .r { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-top:1px solid var(--bd); }
+  .kr .r:first-child { border-top:0; }
+  .kr .sel { border:1px solid var(--bd); background:var(--sf); border-radius:10px; padding:4px 8px; color:var(--tx); display:inline-flex; gap:8px; white-space:nowrap; }
+  .kr .sel:after { content:"⌄"; color:var(--mu); }
+  .kr .tog { width:22px; height:12px; border-radius:6px; background:var(--pu); position:relative; display:inline-block; }
+  .kr .tog:after { content:""; position:absolute; right:1.5px; top:1.5px; width:9px; height:9px; border-radius:50%; background:#fff; }
+  .kr .tog.off { background:var(--bd); } .kr .tog.off:after { right:auto; left:1.5px; }
+  .kr .btn { border:1px solid var(--bd); background:var(--sf); border-radius:10px; padding:4px 10px; font-weight:500; }
+  .kr .btn.pri { background:var(--pu); color:#fff; border-color:transparent; }
+  .kr .btn.out { color:#5741d8; border-color:#5741d8; }
+  .kr .mu { color:var(--mu); }
+  .kr .anchor { display:flex; gap:12px; font-size:10px; color:var(--mu2); }
+  .kr .anchor span.on { color:var(--pu); font-weight:600; }
+</style>
+
+<h2>설정 화면 — 상단 바 구조에서 하위 항목을 어떻게 나눌까요?</h2>
+<p class="subtitle">설정에는 일반 · 모델 · 번역 · 오버레이 네 묶음이 있습니다. 사이드바가 없어졌으니 설정 안에서 두 번째 단계를 어디에 둘지 정해야 합니다. 셋 다 "일반" 화면을 예로 그렸습니다.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="subtabs" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="kr">
+        <div class="top"><span class="logo"></span><div class="tabs"><span class="tab">라이브</span><span class="tab">히스토리</span><span class="tab on">설정</span></div><span class="sp"></span><span class="go">▶ 시작</span></div>
+        <div class="main">
+          <div class="sub"><span class="on">일반</span><span>모델</span><span>번역</span><span>오버레이</span></div>
+          <div class="grp"><div class="r"><span>테마</span><span class="sel">시스템</span></div><div class="r"><span>언어</span><span class="sel">시스템 기본 (한국어)</span></div></div>
+          <div class="sec">업데이트</div>
+          <div class="grp"><div class="r"><span>자동으로 확인</span><span class="tog"></span></div><div class="r"><span>현재 버전 0.3.1</span><span><span class="mu">최신 버전 &nbsp;</span><span class="btn">지금 확인</span></span></div><div class="r"><span>로그인 시 자동 실행</span><span class="tog off"></span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body"><h3>A. 밑줄 서브탭</h3><p>상단 바 아래 한 줄에 네 탭. 구조가 한 단 더 있다는 게 바로 보이고, 지금 코드(탭 고정·본문 스크롤)를 거의 그대로 씁니다.</p></div>
+  </div>
+
+  <div class="card" data-choice="sidenav" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="kr">
+        <div class="top"><span class="logo"></span><div class="tabs"><span class="tab">라이브</span><span class="tab">히스토리</span><span class="tab on">설정</span></div><span class="sp"></span><span class="go">▶ 시작</span></div>
+        <div class="body">
+          <div class="snav"><span class="on">일반</span><span>모델</span><span>번역</span><span>오버레이</span></div>
+          <div class="main">
+            <h4>일반</h4>
+            <div class="grp"><div class="r"><span>테마</span><span class="sel">시스템</span></div><div class="r"><span>언어</span><span class="sel">시스템 기본 (한국어)</span></div></div>
+            <div class="sec">업데이트</div>
+            <div class="grp"><div class="r"><span>자동으로 확인</span><span class="tog"></span></div><div class="r"><span>현재 버전 0.3.1</span><span><span class="mu">최신 버전 &nbsp;</span><span class="btn">지금 확인</span></span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body"><h3>B. 설정 안 왼쪽 목록</h3><p>설정 페이지에서만 왼쪽에 목록이 나옵니다. macOS 시스템 설정과 같은 문법이라 익숙하지만, 라이브에는 없던 사이드바가 설정에서만 나타나 화면이 흔들립니다.</p></div>
+  </div>
+
+  <div class="card" data-choice="onepage" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="kr">
+        <div class="top"><span class="logo"></span><div class="tabs"><span class="tab">라이브</span><span class="tab">히스토리</span><span class="tab on">설정</span></div><span class="sp"></span><span class="go">▶ 시작</span></div>
+        <div class="main">
+          <div class="anchor"><span class="on">일반</span><span>모델</span><span>번역</span><span>오버레이</span></div>
+          <div class="sec">일반</div>
+          <div class="grp"><div class="r"><span>테마</span><span class="sel">시스템</span></div><div class="r"><span>언어</span><span class="sel">시스템 기본 (한국어)</span></div><div class="r"><span>자동으로 확인</span><span class="tog"></span></div></div>
+          <div class="sec">모델</div>
+          <div class="grp"><div class="r"><span>프리셋</span><span><span class="btn out">빠름</span> <span class="btn pri">균형</span> <span class="btn out">정확</span></span></div><div class="r"><span>Apple Silicon 가속</span><span class="tog"></span></div></div>
+          <div class="sec">번역</div>
+          <div class="grp"><div class="r"><span>원어 → 타겟</span><span><span class="sel">자동 감지</span> <span class="sel">한국어</span></span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body"><h3>C. 한 페이지 스크롤</h3><p>네 묶음을 한 페이지에 세로로 쌓고 위에 앵커만 둡니다. 클릭 없이 훑어볼 수 있지만 모델 목록(직접 고르기)이 길어 페이지가 매우 길어집니다.</p></div>
+  </div>
+
+</div>

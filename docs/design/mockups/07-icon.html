@@ -1,0 +1,45 @@
+<style>
+  .ic { display:flex; flex-direction:column; align-items:center; gap:14px; padding:18px 0 6px; }
+  .ic svg { width:128px; height:128px; filter:drop-shadow(0 6px 14px rgba(0,0,0,.18)); }
+  .ic .small { display:flex; gap:12px; align-items:center; }
+  .ic .small svg { width:32px; height:32px; filter:none; }
+  .ic .small .dock { width:56px; height:56px; }
+  .lab { font-size:10px; color:#888; }
+</style>
+
+<h2>앱 아이콘 — 초록을 어떻게 바꿀까요?</h2>
+<p class="subtitle">지금 아이콘은 어두운 사각형에 Spotify 초록 줄 하나가 포인트입니다. 도크·설정·정보 창·트레이(단색)에 모두 쓰입니다. 큰 것은 도크 크기, 아래 작은 것들은 설정 창과 파인더 크기입니다.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="recolor" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="ic">
+        <svg viewBox="0 0 1024 1024"><defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2a2a"/><stop offset="1" stop-color="#121212"/></linearGradient></defs><rect x="100" y="100" width="824" height="824" rx="185" fill="url(#g1)"/><rect x="384" y="282" width="256" height="76" rx="38" fill="#855bfb"/><rect x="332" y="410" width="360" height="76" rx="38" fill="#ffffff"/><rect x="280" y="538" width="464" height="76" rx="38" fill="#b3b3b3"/><rect x="228" y="666" width="568" height="76" rx="38" fill="#6a6a6a"/></svg>
+        <div class="small"><svg class="dock" viewBox="0 0 1024 1024"><rect x="100" y="100" width="824" height="824" rx="185" fill="url(#g1)"/><rect x="384" y="282" width="256" height="76" rx="38" fill="#855bfb"/><rect x="332" y="410" width="360" height="76" rx="38" fill="#fff"/><rect x="280" y="538" width="464" height="76" rx="38" fill="#b3b3b3"/><rect x="228" y="666" width="568" height="76" rx="38" fill="#6a6a6a"/></svg><svg viewBox="0 0 1024 1024"><rect x="100" y="100" width="824" height="824" rx="185" fill="url(#g1)"/><rect x="384" y="282" width="256" height="76" rx="38" fill="#855bfb"/><rect x="332" y="410" width="360" height="76" rx="38" fill="#fff"/><rect x="280" y="538" width="464" height="76" rx="38" fill="#b3b3b3"/><rect x="228" y="666" width="568" height="76" rx="38" fill="#6a6a6a"/></svg></div>
+      </div>
+    </div>
+    <div class="card-body"><h3>A. 색만 교체</h3><p>모양은 그대로, 초록 줄만 퍼플로. 변경이 가장 작고 기존 사용자가 도크에서 바로 알아봅니다. 어두운 바탕은 Kraken 흰 바탕과 결이 다릅니다.</p></div>
+  </div>
+
+  <div class="card" data-choice="purple-bg" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="ic">
+        <svg viewBox="0 0 1024 1024"><defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#5b1ecf"/></linearGradient></defs><rect x="100" y="100" width="824" height="824" rx="185" fill="url(#g2)"/><rect x="384" y="282" width="256" height="76" rx="38" fill="#ffffff"/><rect x="332" y="410" width="360" height="76" rx="38" fill="#ffffff" opacity=".85"/><rect x="280" y="538" width="464" height="76" rx="38" fill="#ffffff" opacity=".6"/><rect x="228" y="666" width="568" height="76" rx="38" fill="#ffffff" opacity=".35"/></svg>
+        <div class="small"><svg class="dock" viewBox="0 0 1024 1024"><rect x="100" y="100" width="824" height="824" rx="185" fill="url(#g2)"/><rect x="384" y="282" width="256" height="76" rx="38" fill="#fff"/><rect x="332" y="410" width="360" height="76" rx="38" fill="#fff" opacity=".85"/><rect x="280" y="538" width="464" height="76" rx="38" fill="#fff" opacity=".6"/><rect x="228" y="666" width="568" height="76" rx="38" fill="#fff" opacity=".35"/></svg><svg viewBox="0 0 1024 1024"><rect x="100" y="100" width="824" height="824" rx="185" fill="url(#g2)"/><rect x="384" y="282" width="256" height="76" rx="38" fill="#fff"/><rect x="332" y="410" width="360" height="76" rx="38" fill="#fff" opacity=".85"/><rect x="280" y="538" width="464" height="76" rx="38" fill="#fff" opacity=".6"/><rect x="228" y="666" width="568" height="76" rx="38" fill="#fff" opacity=".35"/></svg></div>
+      </div>
+    </div>
+    <div class="card-body"><h3>B. 퍼플 바탕 + 흰 줄</h3><p>Kraken 퍼플 그라데이션 바탕에 흰 줄이 아래로 갈수록 옅어집니다. 도크에서 가장 눈에 띄고 브랜드가 한 번에 읽힙니다. 앱 안의 로고(상단 바)도 이 모양을 그대로 씁니다.</p></div>
+  </div>
+
+  <div class="card" data-choice="white-bg" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="ic">
+        <svg viewBox="0 0 1024 1024"><rect x="100" y="100" width="824" height="824" rx="185" fill="#ffffff"/><rect x="100.5" y="100.5" width="823" height="823" rx="185" fill="none" stroke="#dedee5" stroke-width="3"/><rect x="384" y="282" width="256" height="76" rx="38" fill="#7132f5"/><rect x="332" y="410" width="360" height="76" rx="38" fill="#101114"/><rect x="280" y="538" width="464" height="76" rx="38" fill="#9497a9"/><rect x="228" y="666" width="568" height="76" rx="38" fill="#dedee5"/></svg>
+        <div class="small"><svg class="dock" viewBox="0 0 1024 1024"><rect x="100" y="100" width="824" height="824" rx="185" fill="#fff"/><rect x="100.5" y="100.5" width="823" height="823" rx="185" fill="none" stroke="#dedee5" stroke-width="3"/><rect x="384" y="282" width="256" height="76" rx="38" fill="#7132f5"/><rect x="332" y="410" width="360" height="76" rx="38" fill="#101114"/><rect x="280" y="538" width="464" height="76" rx="38" fill="#9497a9"/><rect x="228" y="666" width="568" height="76" rx="38" fill="#dedee5"/></svg><svg viewBox="0 0 1024 1024"><rect x="100" y="100" width="824" height="824" rx="185" fill="#fff"/><rect x="100.5" y="100.5" width="823" height="823" rx="185" fill="none" stroke="#dedee5" stroke-width="3"/><rect x="384" y="282" width="256" height="76" rx="38" fill="#7132f5"/><rect x="332" y="410" width="360" height="76" rx="38" fill="#101114"/><rect x="280" y="538" width="464" height="76" rx="38" fill="#9497a9"/><rect x="228" y="666" width="568" height="76" rx="38" fill="#dedee5"/></svg></div>
+      </div>
+    </div>
+    <div class="card-body"><h3>C. 흰 바탕 + 퍼플 포인트</h3><p>Kraken 본체와 똑같은 문법(흰 표면, 근검정, 회색 스케일, 퍼플 포인트). 가장 "문서대로"지만 도크의 흰 아이콘은 다른 앱 사이에서 존재감이 약하고 다크 모드 도크에서 튑니다.</p></div>
+  </div>
+
+</div>

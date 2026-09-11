@@ -1,0 +1,72 @@
+<style>
+  .kr { --bg:#ffffff; --sf:#ffffff; --sf2:#f6f6f9; --bd:#dedee5; --tx:#101114; --mu:#9497a9; --mu2:#686b82; --pu:#7132f5; --pus:rgba(133,91,251,.16);
+        width:100%; background:var(--bg); color:var(--tx); font-family:"IBM Plex Sans",-apple-system,"Helvetica Neue",Arial,"Apple SD Gothic Neo",sans-serif; font-size:11px; display:flex; flex-direction:column; border-radius:10px; overflow:hidden; border:1px solid var(--bd); }
+  .kr .logo { width:20px; height:20px; border-radius:6px; background:var(--pu); position:relative; display:inline-block; flex:none; }
+  .kr .logo:after { content:""; position:absolute; left:5px; right:5px; top:6px; height:2px; background:#fff; border-radius:2px; box-shadow:0 4px 0 rgba(255,255,255,.7), 0 8px 0 rgba(255,255,255,.4); }
+  .kr .top { height:44px; display:flex; align-items:center; gap:14px; padding:0 14px; flex:none; }
+  .kr .tabs { display:flex; gap:2px; }
+  .kr .tab { padding:5px 10px; border-radius:10px; color:var(--mu2); font-weight:500; }
+  .kr .tab.on { background:var(--pus); color:var(--pu); font-weight:600; }
+  .kr .sp { flex:1; }
+  .kr .go { display:inline-flex; align-items:center; gap:6px; border-radius:12px; padding:8px 14px; font-weight:600; font-size:11.5px; white-space:nowrap; position:relative; z-index:1; }
+  .kr .go.idle { background:var(--pu); color:#fff; }
+  .kr .go.on { background:var(--sf2); color:var(--tx); border:1px solid var(--bd); }
+  .kr .eq { display:inline-flex; align-items:center; gap:2px; height:12px; }
+  .kr .eq i { display:block; width:2px; border-radius:1px; background:var(--pu); animation:eq 1s ease-in-out infinite; }
+  .kr .eq i:nth-child(1){height:5px} .kr .eq i:nth-child(2){height:12px;animation-delay:.15s} .kr .eq i:nth-child(3){height:8px;animation-delay:.3s} .kr .eq i:nth-child(4){height:11px;animation-delay:.45s}
+  @keyframes eq { 50% { transform:scaleY(.35); } }
+  @property --ang { syntax:"<angle>"; initial-value:0deg; inherits:false; }
+  .aura { --pad:2px; padding:var(--pad); border-radius:14px; position:relative; display:inline-block; animation:spin 6s linear infinite; }
+  .aura:before,.aura:after { content:""; position:absolute; inset:0; border-radius:inherit; background:inherit; z-index:0; opacity:.7; filter:blur(4px); }
+  .aura:after { opacity:.3; filter:blur(14px); }
+  @keyframes spin { to { --ang:360deg; } }
+  .rainbow { background:conic-gradient(from var(--ang) in oklch longer hue, transparent 10%, oklch(80% .15 0), oklch(80% .15 360), transparent 90%); }
+  .purple { background:conic-gradient(from var(--ang), transparent 40%, #7132f5 70%, #b49bff 85%, transparent 100%); }
+  .holo { background:repeating-conic-gradient(from var(--ang), oklch(82% .17 327), oklch(75% .12 274), oklch(82% .11 191), oklch(91% .11 105), oklch(88% .08 68), oklch(82% .17 327) 10%); animation-duration:20s; }
+  .kr .lab { font-size:9.5px; color:var(--mu); padding:0 14px 10px; }
+  .pulse { box-shadow:0 0 0 0 rgba(113,50,245,.5); animation:pulse 1.6s ease-out infinite; }
+  @keyframes pulse { 70% { box-shadow:0 0 0 8px rgba(113,50,245,0); } 100% { box-shadow:0 0 0 0 rgba(113,50,245,0); } }
+</style>
+
+<h2>"시작" 버튼 — 캡처 중의 느낌을 어떻게 옮길까요?</h2>
+<p class="subtitle">지금은 캡처 중에 버튼이 어두워지고 무지개 링이 돌며 안에서 파형이 뜁니다. 이 느낌은 살립니다. 세 안 모두 정지 상태는 퍼플 CTA로 같고, 캡처 중 표현만 다릅니다. 상단 바 오른쪽 끝에 놓인 모습이며 실제로 애니메이션이 돕니다.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="rainbow" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="kr">
+        <div class="top"><span class="logo"></span><div class="tabs"><span class="tab on">라이브</span><span class="tab">히스토리</span><span class="tab">설정</span></div><span class="sp"></span><span class="go idle">▶ 시작</span></div>
+        <div class="lab">정지 상태</div>
+        <div class="top"><span class="logo"></span><div class="tabs"><span class="tab on">라이브</span><span class="tab">히스토리</span><span class="tab">설정</span></div><span class="sp"></span><span class="aura rainbow"><span class="go on"><span class="eq"><i></i><i></i><i></i><i></i></span>정지</span></span></div>
+        <div class="lab">캡처 중</div>
+      </div>
+    </div>
+    <div class="card-body"><h3>A. 무지개 링 그대로</h3><p>지금과 같은 무지개 링. 버튼은 흰 표면으로 가라앉고 파형은 퍼플. Kraken 팔레트 밖의 색이 유일하게 여기 하나 남는데, "여러 언어를 넘나든다"는 의미로 읽혀 개성이 됩니다.</p></div>
+  </div>
+
+  <div class="card" data-choice="purple" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="kr">
+        <div class="top"><span class="logo"></span><div class="tabs"><span class="tab on">라이브</span><span class="tab">히스토리</span><span class="tab">설정</span></div><span class="sp"></span><span class="go idle">▶ 시작</span></div>
+        <div class="lab">정지 상태</div>
+        <div class="top"><span class="logo"></span><div class="tabs"><span class="tab on">라이브</span><span class="tab">히스토리</span><span class="tab">설정</span></div><span class="sp"></span><span class="aura purple"><span class="go on"><span class="eq"><i></i><i></i><i></i><i></i></span>정지</span></span></div>
+        <div class="lab">캡처 중</div>
+      </div>
+    </div>
+    <div class="card-body"><h3>B. 퍼플 링</h3><p>링이 도는 구조는 같고 색만 Kraken 퍼플 계열로. 팔레트를 벗어나지 않아 가장 정돈되지만 무지개보다 눈에 덜 띕니다.</p></div>
+  </div>
+
+  <div class="card" data-choice="holo" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="kr">
+        <div class="top"><span class="logo"></span><div class="tabs"><span class="tab on">라이브</span><span class="tab">히스토리</span><span class="tab">설정</span></div><span class="sp"></span><span class="go idle">▶ 시작</span></div>
+        <div class="lab">정지 상태</div>
+        <div class="top"><span class="logo"></span><div class="tabs"><span class="tab on">라이브</span><span class="tab">히스토리</span><span class="tab">설정</span></div><span class="sp"></span><span class="aura holo"><span class="go on"><span class="eq"><i></i><i></i><i></i><i></i></span>정지</span></span></div>
+        <div class="lab">캡처 중</div>
+      </div>
+    </div>
+    <div class="card-body"><h3>C. 홀로그램 링</h3><p>파스텔 다색이 천천히 흐르는 링. 무지개보다 채도가 낮아 흰 배경에 부드럽게 얹히고, 퍼플과 잘 섞입니다.</p></div>
+  </div>
+
+</div>
