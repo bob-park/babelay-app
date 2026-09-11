@@ -16,7 +16,7 @@ export default function Settings() {
   if (!isTab(tab)) return <Navigate to="/settings/general" replace />;
   const body = { general: <General />, models: <Models />, translation: <Translation />, overlay: <Overlay /> }[tab];
   return (
-    <div className="flex h-full w-full max-w-3xl flex-col gap-4">
+    <div className="flex h-full w-full flex-col gap-4">
       <div role="tablist" className="tabs tabs-border">
         {TABS.map((k) => (
           <NavLink key={k} to={`/settings/${k}`} role="tab" className={({ isActive }) => `tab gap-1.5 ${isActive ? "tab-active text-primary" : ""}`}>
