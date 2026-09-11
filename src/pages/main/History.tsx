@@ -65,21 +65,10 @@ export default function History() {
 
   return (
     <div className="flex max-w-3xl flex-col gap-4">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-2xl font-bold">{t("nav.history")}</h2>
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder={t("history.search")}
-          aria-label={t("history.search")}
-          className="input input-sm w-56 rounded-full"
-        />
-      </div>
-
       {hits ? (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-0.5 rounded-box border border-base-300 bg-base-100 p-1 shadow-kr">
           {hits.map((r) => (
-            <button key={r.id} type="button" onClick={() => { setQ(""); setSel(r.session_id); }} className="flex gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-base-300">
+            <button key={r.id} type="button" onClick={() => { setQ(""); setSel(r.session_id); }} className="flex gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-base-200">
               <span className="shrink-0 tabular-nums text-fg-muted">{sessionLabel(r.session_id)} · {clock(r.t0_ms)}</span>
               <span className="min-w-0 break-words">
                 <span>{r.src_text}</span>
@@ -93,36 +82,36 @@ export default function History() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSel(null)}>{`← ${t("nav.history")}`}</button>
             <div className="flex gap-2">
-              <button type="button" className="btn btn-neutral btn-sm" onClick={() => exportAs(sel, "txt")}>{t("history.exportTxt")}</button>
-              <button type="button" className="btn btn-neutral btn-sm" onClick={() => exportAs(sel, "srt")}>{t("history.exportSrt")}</button>
-              <button type="button" className="btn btn-outline btn-sm" onClick={() => remove(sel)}>{t("history.delete")}</button>
+              <button type="button" className="btn btn-sm" onClick={() => exportAs(sel, "txt")}>{t("history.exportTxt")}</button>
+              <button type="button" className="btn btn-sm" onClick={() => exportAs(sel, "srt")}>{t("history.exportSrt")}</button>
+              <button type="button" className="btn btn-outline btn-error btn-sm" onClick={() => remove(sel)}>{t("history.delete")}</button>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-1 text-xs text-fg-muted">
             <span>{head}</span>
             {current && badges(current)}
           </div>
-          <div className="flex flex-col gap-2 rounded-box bg-base-200 p-4 text-sm">
+          <div className="flex flex-col gap-2 rounded-box border border-base-300 bg-base-100 p-4 text-sm shadow-kr">
             {segments.map((s) => (
               <div key={s.id} className="flex gap-3">
                 <span className="shrink-0 tabular-nums text-fg-muted">{clock(s.t0_ms)}</span>
                 <div className="min-w-0 break-words">
-                  <div>{s.src_text}</div>
-                  {s.tgt_text && <div className="font-bold">{s.tgt_text}</div>}
+                  <div className="text-fg-muted">{s.src_text}</div>
+                  {s.tgt_text && <div className="font-semibold">{s.tgt_text}</div>}
                 </div>
               </div>
             ))}
           </div>
         </div>
       ) : sessions.length === 0 ? (
-        <div className="rounded-lg bg-base-200 p-4 text-sm text-fg-muted">{t("history.empty")}</div>
+        <div className="rounded-box border border-base-300 bg-base-100 p-4 text-sm text-fg-muted shadow-kr">{t("history.empty")}</div>
       ) : (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-0.5 rounded-box border border-base-300 bg-base-100 p-1 shadow-kr">
           {sessions.map((s) => (
-            <button key={s.id} type="button" onClick={() => setSel(s.id)} className="flex flex-wrap items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-base-300">
+            <button key={s.id} type="button" onClick={() => setSel(s.id)} className="flex flex-wrap items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-base-200">
               <span className="font-semibold">{when(s.started_at)}</span>
               <span className="text-xs text-fg-muted">{duration(s)} · {t("history.segments", { count: s.segments })}</span>
-              <span className="flex flex-wrap items-center gap-1 text-xs text-fg-muted">{badges(s)}</span>
+              <span className="ml-auto flex flex-wrap items-center gap-1 text-xs text-fg-muted">{badges(s)}</span>
             </button>
           ))}
         </div>
